@@ -1,2 +1,2 @@
-:HL["/_next/static/chunks/0j1kdmv7eofgj.css","style"]
-0:{"tree":{"name":"","param":null,"prefetchHints":16,"slots":{"children":{"name":"work","param":null,"prefetchHints":0,"slots":{"children":{"name":"real-estate-analysis-system","param":null,"prefetchHints":0,"slots":{"children":{"name":"dongtan-report","param":null,"prefetchHints":0,"slots":{"children":{"name":"__PAGE__","param":null,"prefetchHints":0,"slots":null}}}}}}}}},"staleTime":300,"buildId":"KMH_sJshSx57KWqs3XoZM"}
+:HL["/_next/static/chunks/02p2nyhslgqat.css","style"]
+0:{"tree":{"name":"","param":null,"prefetchHints":16,"slots":{"children":{"name":"work","param":null,"prefetchHints":0,"slots":{"children":{"name":"real-estate-analysis-system","param":null,"prefetchHints":0,"slots":{"children":{"name":"dongtan-report","param":null,"prefetchHints":0,"slots":{"children":{"name":"__PAGE__","param":null,"prefetchHints":0,"slots":null}}}}}}}}},"staleTime":300,"buildId":"9T768Q3SUcCjN3EQHE5HK"}
