@@ -1,2 +1,2 @@
-:HL["/_next/static/chunks/0jjzr..r~-5xj.css","style"]
-0:{"tree":{"name":"","param":null,"prefetchHints":16,"slots":{"children":{"name":"work","param":null,"prefetchHints":0,"slots":{"children":{"name":"real-estate-analysis-system","param":null,"prefetchHints":0,"slots":{"children":{"name":"dashboard-gallery","param":null,"prefetchHints":0,"slots":{"children":{"name":"__PAGE__","param":null,"prefetchHints":0,"slots":null}}}}}}}}},"staleTime":300,"buildId":"xGYLJhWJcJeq14_0cQBIM"}
+:HL["/_next/static/chunks/0boqmr2ibqqqn.css","style"]
+0:{"tree":{"name":"","param":null,"prefetchHints":16,"slots":{"children":{"name":"work","param":null,"prefetchHints":0,"slots":{"children":{"name":"real-estate-analysis-system","param":null,"prefetchHints":0,"slots":{"children":{"name":"dashboard-gallery","param":null,"prefetchHints":0,"slots":{"children":{"name":"__PAGE__","param":null,"prefetchHints":0,"slots":null}}}}}}}}},"staleTime":300,"buildId":"LUcIqxrDx6TvQ6wSIGust"}
