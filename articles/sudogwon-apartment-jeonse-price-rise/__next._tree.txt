@@ -1,2 +1,2 @@
-:HL["/_next/static/chunks/0djs4k6xct480.css","style"]
-0:{"tree":{"name":"","param":null,"prefetchHints":16,"slots":{"children":{"name":"articles","param":null,"prefetchHints":0,"slots":{"children":{"name":"sudogwon-apartment-jeonse-price-rise","param":null,"prefetchHints":0,"slots":{"children":{"name":"__PAGE__","param":null,"prefetchHints":0,"slots":null}}}}}}},"staleTime":300,"buildId":"2yRLhXiMBCO3uRxWe28vV"}
+:HL["/_next/static/chunks/0.yylqzw_jcc8.css","style"]
+0:{"tree":{"name":"","param":null,"prefetchHints":16,"slots":{"children":{"name":"articles","param":null,"prefetchHints":0,"slots":{"children":{"name":"sudogwon-apartment-jeonse-price-rise","param":null,"prefetchHints":0,"slots":{"children":{"name":"__PAGE__","param":null,"prefetchHints":0,"slots":null}}}}}}},"staleTime":300,"buildId":"N8LCEycXpKf2Ov4kk8WhQ"}
