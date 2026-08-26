@@ -1,0 +1,64 @@
+portals.forEach((p, i) => {
+p.ring.rotation.z += dt * 0.6;
+p.ring.material.emissiveIntensity = 0.6 + Math.sin(t * 2 + i) * 0.25;
+const dx = player.pos.x - p.x;
+const dz = player.pos.z - p.z;
+const dist = Math.hypot(dx, dz);
+if (dist < 2.5 && Math.abs(player.pos.y - 0) < 2.2) {
+showToast('포털에 닿았습니다. 버튼을 누르거나 그대로 진입하세요.', 0.2);
+if (dist < 1.3) startMap(p.id);
+}
+});
+}
+function updateCamera(dt) {
+const follow = player.pos.clone();
+const forward = new THREE.Vector3(Math.sin(player.yaw), 0, Math.cos(player.yaw));
+let targetPos;
+let lookAtTarget;
+if (state.cameraMode === 'first') {
+targetPos = follow.clone().add(new THREE.Vector3(0, 1.62, 0)).addScaledVector(forward, 0.16);
+lookAtTarget = targetPos.clone().addScaledVector(forward, 12).add(new THREE.Vector3(0, 0.12, 0));
+} else if (state.cameraMode === 'close') {
+targetPos = follow.clone().addScaledVector(forward, -4.2).add(new THREE.Vector3(0, 3.1, 0));
+lookAtTarget = follow.clone().add(new THREE.Vector3(0, 1.4, 0));
+} else if (state.cameraMode === 'top') {
+targetPos = follow.clone().add(new THREE.Vector3(0, 18, 11));
+lookAtTarget = follow.clone().add(new THREE.Vector3(0, 0.7, 0));
+} else {
+targetPos = follow.clone().addScaledVector(forward, -7.8).add(new THREE.Vector3(0, 5.4, 0));
+lookAtTarget = follow.clone().add(new THREE.Vector3(0, 1.35, 0));
+}
+const positionEase = state.cameraMode === 'first' ? 1 - Math.pow(0.00002, dt) : 1 - Math.pow(0.003, dt);
+const targetEase = state.cameraMode === 'first' ? 1 - Math.pow(0.00002, dt) : 1 - Math.pow(0.002, dt);
+camera.position.lerp(targetPos, positionEase);
+state.cameraTarget.lerp(lookAtTarget, targetEase);
+camera.lookAt(state.cameraTarget);
+}
+function updateConfetti(dt) {
+state.confetti.forEach(c => {
+c.life -= dt;
+c.vel.y -= 8 * dt;
+c.mesh.position.addScaledVector(c.vel, dt);
+});
+const remain = [];
+state.confetti.forEach(c => {
+if (c.life > 0) remain.push(c); else scene.remove(c.mesh);
+});
+state.confetti = remain;
+}
+function animate() {
+requestAnimationFrame(animate);
+const now = performance.now() / 1000;
+const dt = Math.min(0.033, Math.max(0.001, now - state.lastTime));
+state.lastTime = now;
+hideToastIfNeeded(now);
+if (state.mode === 'playing') {
+state.elapsed += dt;
+updatePlatforms(dt, state.elapsed);
+updatePlayer(dt);
+timerText.textContent = fmt(state.elapsed * 1000);
+} else if (state.mode === 'lobby') {
+updateLobby(dt, now);
+}
+updateCamera(dt);
+updateConfetti(dt);
