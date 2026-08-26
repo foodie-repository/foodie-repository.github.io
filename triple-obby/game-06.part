@@ -1,0 +1,118 @@
+  function resizeCanvas() {
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const rect = canvas.getBoundingClientRect();
+    canvas.width = Math.round(rect.width * dpr);
+    canvas.height = Math.round(rect.height * dpr);
+    const uniformScale = canvas.height / H;
+    game.viewportW = canvas.width / uniformScale;
+    ctx.setTransform(uniformScale, 0, 0, uniformScale, 0, 0);
+  }
+
+  function update(dt) {
+    if (game.mode === "lobby") updateLobby(dt);
+    else if (game.mode === "playing") {
+      game.elapsed += dt;
+      updatePlayer(dt);
+      els.timer.textContent = formatTime(game.elapsed * 1000);
+    }
+    updateParticles(dt);
+    if (game.toastTimer > 0) {
+      game.toastTimer -= dt;
+      if (game.toastTimer <= 0) els.toast.dataset.visible = "false";
+    }
+    game.shake = Math.max(0, game.shake - dt);
+    input.jumpPressed = false;
+    input.interactPressed = false;
+  }
+
+  function render(time) {
+    ctx.save();
+    if (game.shake > 0) ctx.translate((Math.random() - .5) * 12, (Math.random() - .5) * 9);
+    if (game.mode === "lobby") drawLobby(time);
+    else drawWorld(time);
+    ctx.restore();
+    if (game.mode === "complete") drawConfetti();
+  }
+
+  function loop(timestamp) {
+    const raw = (timestamp - game.lastTime) / 1000;
+    game.lastTime = timestamp;
+    const dt = Math.min(.033, Math.max(0, raw));
+    update(dt);
+    render(timestamp / 1000);
+    requestAnimationFrame(loop);
+  }
+
+  function setKey(code, pressed) {
+    if (["ArrowLeft", "KeyA"].includes(code)) input.left = pressed;
+    if (["ArrowRight", "KeyD"].includes(code)) input.right = pressed;
+    if (["ArrowUp", "KeyW", "Space"].includes(code)) {
+      if (pressed && !input.jump) input.jumpPressed = true;
+      input.jump = pressed;
+    }
+  }
+
+  window.addEventListener("keydown", event => {
+    if (["ArrowLeft", "ArrowRight", "ArrowUp", "Space"].includes(event.code)) event.preventDefault();
+    setKey(event.code, true);
+    if (event.code === "KeyE") input.interactPressed = true;
+    if (event.code === "KeyR" && game.mode === "playing") restartMap();
+    if ((event.code === "KeyL" || event.code === "Escape") && game.mode !== "lobby") returnLobby();
+  }, { passive: false });
+  window.addEventListener("keyup", event => setKey(event.code, false));
+  window.addEventListener("blur", () => { input.left = input.right = input.jump = false; });
+
+  document.querySelectorAll(".portal-card").forEach(button => button.addEventListener("click", () => startMap(button.dataset.map)));
+  document.getElementById("lobbyButton").addEventListener("click", returnLobby);
+  document.getElementById("restartButton").addEventListener("click", restartMap);
+  document.getElementById("retryButton").addEventListener("click", restartMap);
+  document.getElementById("completeLobbyButton").addEventListener("click", returnLobby);
+
+  document.querySelectorAll("[data-control]").forEach(button => {
+    const control = button.dataset.control;
+    const press = event => {
+      event.preventDefault();
+      button.dataset.pressed = "true";
+      if (control === "left") input.left = true;
+      if (control === "right") input.right = true;
+      if (control === "jump") { if (!input.jump) input.jumpPressed = true; input.jump = true; }
+      if (button.setPointerCapture && event.pointerId !== undefined) button.setPointerCapture(event.pointerId);
+    };
+    const release = event => {
+      event.preventDefault();
+      button.dataset.pressed = "false";
+      if (control === "left") input.left = false;
+      if (control === "right") input.right = false;
+      if (control === "jump") input.jump = false;
+    };
+    button.addEventListener("pointerdown", press, { passive: false });
+    button.addEventListener("pointerup", release, { passive: false });
+    button.addEventListener("pointercancel", release, { passive: false });
+    button.addEventListener("pointerleave", event => { if (event.buttons === 0) release(event); }, { passive: false });
+  });
+
+  canvas.addEventListener("pointerdown", event => {
+    if (game.mode !== "lobby") return;
+    const rect = canvas.getBoundingClientRect();
+    const x = (event.clientX - rect.left) * game.viewportW / rect.width + game.camera.x;
+    const y = (event.clientY - rect.top) * H / rect.height + game.camera.y;
+    const portals = [
+      { id: "color", x: 205 }, { id: "lava", x: 555 }, { id: "sky", x: 905 }
+    ];
+    for (const portal of portals) {
+      if (x >= portal.x && x <= portal.x + 170 && y >= 365 && y <= 620) startMap(portal.id);
+    }
+  });
+
+  window.addEventListener("resize", resizeCanvas);
+  resizeCanvas();
+  requestAnimationFrame(timestamp => { game.lastTime = timestamp; requestAnimationFrame(loop); });
+
+  window.__TRIPLE_OBBY__ = {
+    startMap,
+    returnLobby,
+    restartMap,
+    getState: () => ({ mode: game.mode, mapId: game.mapId, stage: game.player ? game.player.stage : null, elapsed: game.elapsed, x: game.player ? game.player.x : game.lobbyPlayer.x, y: game.player ? game.player.y : game.lobbyPlayer.y, platformCount: game.level ? game.level.platforms.length : 0 }),
+    maps: MAPS
+  };
+})();
