@@ -1,0 +1,50 @@
+      player.grounded = false;
+
+      level.platforms.forEach(p => {
+        if (!p.active) return;
+        const top = p.mesh.position.y + p.h / 2;
+        const prevBottom = prevPos.y;
+        const nowBottom = player.pos.y;
+        const inside = withinTop(p, player.pos.x, player.pos.z);
+        if (inside && prevBottom >= top && nowBottom <= top && player.vel.y <= 0) {
+          player.pos.y = top;
+          player.vel.y = 0;
+          player.grounded = true;
+          if (p.kind === 'checkpoint') activateCheckpoint(p);
+          if (p.kind === 'finish' && player.finishCooldown <= 0) { player.finishCooldown = 1; finishMap(); }
+          if (p.kind === 'crumble' && p.timer <= 0) p.timer = 0.6;
+          if (p.kind === 'boost') { player.boost = 1.2; showToast('가속 패드!', 0.55); }
+        }
+      });
+
+      if (player.pos.y < level.killY) respawn('바닥 킬존에 떨어졌습니다');
+      playerGroup.position.set(player.pos.x, player.pos.y, player.pos.z);
+      if (player.vel.x || player.vel.z) {
+        player.yaw = Math.atan2(player.vel.x, player.vel.z);
+      }
+      playerGroup.rotation.y = player.yaw;
+      const swing = state.elapsed * 10;
+      const amp = player.grounded && (Math.abs(player.vel.x) + Math.abs(player.vel.z)) > 0.2 ? 0.55 : 0;
+      leg1.rotation.x = Math.sin(swing) * amp;
+      leg2.rotation.x = -Math.sin(swing) * amp;
+      bodyMat.emissive.set(player.boost > 0 ? 0x44ffae : 0x000000);
+      bodyMat.emissiveIntensity = player.boost > 0 ? 0.45 : 0;
+      input.jumpPressed = false;
+    }
+
+    function updateLobby(dt, t) {
+      const portals = state.level.portals;
+      const move = new THREE.Vector3((input.right ? 1 : 0) - (input.left ? 1 : 0), 0, (input.back ? 1 : 0) - (input.forward ? 1 : 0));
+      if (move.lengthSq() > 0) move.normalize();
+      player.vel.x += (move.x * 7 - player.vel.x) * Math.min(1, dt * 10);
+      player.vel.z += (move.z * 7 - player.vel.z) * Math.min(1, dt * 10);
+      if (move.lengthSq() === 0) { player.vel.x *= Math.max(0, 1 - dt * 8); player.vel.z *= Math.max(0, 1 - dt * 8); }
+      player.coyote = player.grounded ? 0.12 : Math.max(0, player.coyote - dt);
+      if (input.jumpPressed && player.coyote > 0) { player.vel.y = 9.5; player.grounded = false; }
+      input.jumpPressed = false;
+      player.vel.y -= 24 * dt;
+      player.pos.addScaledVector(player.vel, dt);
+      if (player.pos.y <= 0) { player.pos.y = 0; player.vel.y = 0; player.grounded = true; }
+      playerGroup.position.set(player.pos.x, player.pos.y, player.pos.z);
+      if (player.vel.x || player.vel.z) player.yaw = Math.atan2(player.vel.x, player.vel.z);
+      playerGroup.rotation.y = player.yaw;

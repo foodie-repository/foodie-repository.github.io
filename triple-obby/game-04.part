@@ -1,150 +1,117 @@
-      { id: "lava", x: 555, y: 365, w: 170, h: 255 },
-      { id: "sky", x: 905, y: 365, w: 170, h: 255 }
-    ];
-    game.lobbyPortalHover = null;
-    const playerRect = { x: p.x - p.w / 2, y: p.y - p.h / 2, w: p.w, h: p.h };
-    for (const portal of portals) {
-      const near = overlaps(playerRect.x, playerRect.y, playerRect.w, playerRect.h, portal.x - 24, portal.y, portal.w + 48, portal.h);
-      if (near) {
-        game.lobbyPortalHover = portal.id;
-        if (input.interactPressed || Math.abs(p.vx) > 40) startMap(portal.id);
-        break;
-      }
-    }
-  }
+      const islands = [
+        [6, 2, -2], [12, 3, 2], [19, 5, -3], [27, 7, 3], [34, 8.5, -2],
+        [42, 10, 4], [51, 12.2, -4], [61, 13.8, 3], [72, 15.8, -1], [84, 18, 3],
+        [97, 20, -3], [111, 22.5, 4], [126, 24, 0]
+      ];
+      let stage = 1;
+      islands.forEach((p, idx) => {
+        const [x, y, z] = p;
+        const islandW = idx % 3 === 0 ? 6.5 : 5.2;
+        const islandD = idx % 2 === 0 ? 5.7 : 4.8;
+        makePlatform(level, x, y, z, islandW, 0.7, islandD, 'solid', { color: idx % 2 ? 0xffffff : 0xe6fbff });
+        const underside = makeBox(new THREE.Vector3(islandW * 0.72, 2.0, islandD * 0.72), 0x7b6d5f, new THREE.Vector3(x, y - 1.45, z), { roughness: 0.95 });
+        underside.scale.x = 0.9; underside.scale.z = 0.9;
+        level.group.add(underside);
 
-  function spawnBurst(x, y, color, count) {
-    for (let i = 0; i < count; i++) {
-      const a = Math.random() * TAU;
-      const speed = 40 + Math.random() * 210;
-      game.particles.push({
-        x, y, vx: Math.cos(a) * speed, vy: Math.sin(a) * speed - 40,
-        life: .45 + Math.random() * .55, maxLife: 1,
-        size: 2 + Math.random() * 6, color
+        if ([2, 5, 8, 11].includes(idx)) {
+          stage += 4;
+          makePlatform(level, x + 3.6, y + 0.7, z + 2.8, 4.2, 0.55, 4.2, 'checkpoint', { stage: Math.min(stage, 20), color: 0x50e0ff });
+        }
+        if ([3, 6, 10].includes(idx)) {
+          makePlatform(level, x + 5.2, y + 0.4, z - 3.2, 3.3, 0.45, 3.3, 'crumble', { color: 0xb6f6ff });
+          makePlatform(level, x + 8.6, y + 1.2, z - 0.2, 3.3, 0.45, 3.3, 'crumble', { color: 0xdffcff });
+        }
+        if ([4, 9].includes(idx)) {
+          makePlatform(level, x + 5.6, y + 0.2, z + 4.4, 4.4, 0.45, 4.4, 'boost', { color: 0x63ffbf });
+        }
       });
-    }
-  }
+      const cloudSteps = [
+        [15, 4.2, -5], [22, 5.4, -6.6], [30, 8.5, 6], [48, 11.2, 6.8], [68, 15.2, 5.5], [103, 21.1, 6.5]
+      ];
+      cloudSteps.forEach((p, i) => {
+        const cloud = buildCloud(new THREE.Vector3(p[0], p[1], p[2]), 1.25 + (i % 2) * 0.15);
+        level.group.add(cloud);
+        makePlatform(level, p[0], p[1] - 0.25, p[2], 4.2, 0.35, 3.7, i % 2 ? 'crumble' : 'solid', { color: 0xf4feff });
+      });
+      makePlatform(level, 139, 26.5, 0, 7.4, 0.7, 7.4, 'finish', { color: 0xffef6d, label: 'GOAL' });
+      const voidFloor = makeBox(new THREE.Vector3(220, 0.4, 70), 0xff3d5f, new THREE.Vector3(70, -10.5, 0), { roughness: 0.25, opacity: 0.92, transparent: true });
+      voidFloor.material.emissive = new THREE.Color(0xff3d5f);
+      voidFloor.material.emissiveIntensity = 0.7;
+      level.group.add(voidFloor);
 
-  function updateParticles(dt) {
-    for (const p of game.particles) {
-      p.x += p.vx * dt;
-      p.y += p.vy * dt;
-      p.vy += 520 * dt;
-      p.life -= dt;
-    }
-    game.particles = game.particles.filter(p => p.life > 0);
-    for (const c of game.confetti) {
-      c.x += c.vx * dt;
-      c.y += c.vy * dt;
-      c.vy += 80 * dt;
-      c.rot += c.vr * dt;
-      if (c.y > H + 30) c.y = -30;
-    }
-  }
-
-  function drawBackground(kind, time) {
-    const viewportWidth = Math.max(W, game.viewportW);
-    if (kind === "lobby") {
-      const grad = ctx.createLinearGradient(0, 0, 0, H);
-      grad.addColorStop(0, "#273f83");
-      grad.addColorStop(.6, "#17244e");
-      grad.addColorStop(1, "#0a0e25");
-      ctx.fillStyle = grad; ctx.fillRect(0, 0, viewportWidth, H);
-      for (let i = 0; i < 70; i++) {
-        const x = (i * 197.3) % W;
-        const y = (i * 83.7) % 360;
-        const alpha = .25 + .4 * Math.sin(time * 1.2 + i);
-        ctx.fillStyle = `rgba(255,255,255,${alpha})`;
-        ctx.fillRect(x, y, i % 4 === 0 ? 3 : 2, i % 4 === 0 ? 3 : 2);
+      for (let i = 0; i < 28; i++) {
+        level.group.add(buildCloud(new THREE.Vector3(-8 + i * 6 + Math.random() * 8, 7 + Math.random() * 20, -18 + Math.random() * 36), 1.4 + Math.random() * 0.9));
       }
-      ctx.fillStyle = "rgba(72,96,181,.22)";
-      for (let i = 0; i < 10; i++) {
-        ctx.beginPath(); ctx.arc(70 + i * 145, 330 + Math.sin(i) * 45, 120, 0, TAU); ctx.fill();
-      }
-    } else if (kind === "color") {
-      const grad = ctx.createLinearGradient(0, 0, W, H);
-      grad.addColorStop(0, "#321c62"); grad.addColorStop(.48, "#17498e"); grad.addColorStop(1, "#151b51");
-      ctx.fillStyle = grad; ctx.fillRect(0, 0, viewportWidth, H);
-      for (let i = 0; i < 14; i++) {
-        const x = ((i * 211 - game.camera.x * .14) % (W + 250)) - 100;
-        const y = 90 + (i % 5) * 95;
-        ctx.fillStyle = `hsla(${i * 31 + time * 9} 85% 65% / .08)`;
-        ctx.beginPath(); ctx.arc(x, y, 80 + (i % 3) * 30, 0, TAU); ctx.fill();
-      }
-    } else if (kind === "lava") {
-      const grad = ctx.createLinearGradient(0, 0, 0, H);
-      grad.addColorStop(0, "#220c25"); grad.addColorStop(.58, "#3a1015"); grad.addColorStop(1, "#8b1c08");
-      ctx.fillStyle = grad; ctx.fillRect(0, 0, viewportWidth, H);
-      for (let i = 0; i < 50; i++) {
-        const x = (i * 137.2 + Math.sin(time + i) * 20) % W;
-        const y = (i * 71.9 + time * (20 + i % 5)) % H;
-        ctx.fillStyle = `rgba(255,${80 + i % 80},20,${.15 + (i % 4) * .05})`;
-        ctx.beginPath(); ctx.arc(x, H - y, 2 + i % 4, 0, TAU); ctx.fill();
-      }
-      ctx.fillStyle = "rgba(255,53,10,.2)";
-      ctx.fillRect(0, H - 90, W, 90);
-    } else {
-      const grad = ctx.createLinearGradient(0, 0, 0, H);
-      grad.addColorStop(0, "#238fd5"); grad.addColorStop(.65, "#7bd9f1"); grad.addColorStop(1, "#e9fbff");
-      ctx.fillStyle = grad; ctx.fillRect(0, 0, viewportWidth, H);
-      ctx.fillStyle = "rgba(255,255,255,.72)";
-      for (let i = 0; i < 18; i++) {
-        const x = ((i * 191 - game.camera.x * (.08 + (i % 3) * .02)) % (W + 320)) - 160;
-        const y = 80 + (i % 6) * 86;
-        ctx.beginPath();
-        ctx.arc(x, y, 42, 0, TAU); ctx.arc(x + 40, y - 12, 52, 0, TAU); ctx.arc(x + 88, y, 38, 0, TAU); ctx.fill();
-      }
-    }
-  }
-
-  function drawLobby(time) {
-    drawBackground("lobby", time);
-    const portals = [
-      { id: "color", x: 205, color1: "#ff3eab", color2: "#7557ff", label: "COLOR" },
-      { id: "lava", x: 555, color1: "#ff922f", color2: "#d41418", label: "LAVA" },
-      { id: "sky", x: 905, color1: "#37ddff", color2: "#4d59ff", label: "SKY" }
-    ];
-
-    ctx.fillStyle = "#111933"; ctx.fillRect(0, 620, Math.max(W, game.viewportW), 100);
-    ctx.fillStyle = "rgba(255,255,255,.08)";
-    for (let x = 0; x < W; x += 80) ctx.fillRect(x, 620, 2, 100);
-    ctx.fillStyle = "rgba(255,255,255,.12)"; ctx.fillRect(0, 620, Math.max(W, game.viewportW), 5);
-
-    for (const portal of portals) {
-      const hover = game.lobbyPortalHover === portal.id;
-      const pulse = 1 + Math.sin(time * 3 + portal.x) * .04;
-      ctx.save();
-      ctx.translate(portal.x + 85, 495);
-      ctx.scale(pulse, pulse);
-      ctx.translate(-(portal.x + 85), -495);
-      ctx.shadowColor = portal.color1; ctx.shadowBlur = hover ? 42 : 24;
-      const g = ctx.createLinearGradient(portal.x, 365, portal.x + 170, 620);
-      g.addColorStop(0, portal.color1); g.addColorStop(1, portal.color2);
-      ctx.fillStyle = g;
-      roundedRect(portal.x, 365, 170, 255, 80); ctx.fill();
-      ctx.shadowBlur = 0;
-      ctx.fillStyle = "rgba(8,11,27,.62)";
-      roundedRect(portal.x + 18, 383, 134, 219, 64); ctx.fill();
-      ctx.strokeStyle = "rgba(255,255,255,.65)"; ctx.lineWidth = hover ? 5 : 3;
-      roundedRect(portal.x + 8, 373, 154, 239, 72); ctx.stroke();
-      ctx.fillStyle = "rgba(255,255,255,.9)"; ctx.font = "900 18px system-ui"; ctx.textAlign = "center";
-      ctx.fillText(portal.label, portal.x + 85, 565);
-      ctx.restore();
+      return level;
     }
 
-    drawCharacter(game.lobbyPlayer.x, game.lobbyPlayer.y, game.lobbyPlayer.facing, "#ffd044", 1, false);
-    if (game.lobbyPortalHover) {
-      ctx.fillStyle = "rgba(0,0,0,.65)"; roundedRect(W / 2 - 125, 300, 250, 48, 24); ctx.fill();
-      ctx.fillStyle = "white"; ctx.font = "900 16px system-ui"; ctx.textAlign = "center";
-      ctx.fillText("E 또는 포털 버튼으로 입장", W / 2, 331);
+    function startMap(id) {
+      clearLevel();
+      let level;
+      if (id === 'color') level = buildColorMap();
+      else if (id === 'lava') level = buildLavaMap();
+      else level = buildSkyMap();
+      worldRoot.add(level.group);
+      state.level = level;
+      state.mode = 'playing';
+      state.elapsed = 0;
+      player.mapId = id;
+      player.pos.copy(level.spawn);
+      player.vel.set(0, 0, 0);
+      player.checkpoint.copy(level.spawn);
+      player.stage = 1;
+      player.boost = 0;
+      player.finishCooldown = 0;
+      mapName.textContent = MAPS[id].name;
+      mapDesc.textContent = MAPS[id].desc;
+      stageText.textContent = '1 / ' + MAPS[id].stages;
+      timerText.textContent = fmt(0);
+      bestText.textContent = fmt(getBest(id));
+      hud.dataset.visible = 'true';
+      lobbyOverlay.dataset.visible = 'false';
+      mobileControls.dataset.visible = 'true';
+      finishOverlay.dataset.visible = 'false';
+      showToast(MAPS[id].name + ' 시작', 1.2);
     }
-  }
 
-  function platformScreen(p) { return { x: p.x - game.camera.x, y: p.y - game.camera.y }; }
+    function returnLobby() {
+      state.mode = 'lobby';
+      buildLobby();
+    }
 
-  function drawPlatform(p, time) {
-    if (!p.active) return;
-    const s = platformScreen(p);
-    if (s.x + p.w < -100 || s.x > W + 100 || s.y + p.h < -100 || s.y > H + 100) return;
-    ctx.save();
-    let alpha = 1;
+    function respawn(text) {
+      player.pos.copy(player.checkpoint);
+      player.vel.set(0, 0, 0);
+      player.grounded = false;
+      player.boost = 0;
+      showToast(text || '체크포인트에서 다시 시작', 0.85);
+    }
+
+    function finishMap() {
+      if (state.mode !== 'playing' || !player.mapId) return;
+      state.mode = 'finish';
+      const timeMs = state.elapsed * 1000;
+      const oldBest = getBest(player.mapId);
+      const best = setBest(player.mapId, timeMs);
+      resultTime.textContent = fmt(timeMs);
+      resultBest.textContent = fmt(best);
+      finishMessage.textContent = timeMs < oldBest ? '새로운 최고 기록입니다.' : '멋지게 완주했습니다.';
+      finishOverlay.dataset.visible = 'true';
+      mobileControls.dataset.visible = 'false';
+      bestText.textContent = fmt(best);
+      for (let i = 0; i < 90; i++) {
+        const mesh = new THREE.Mesh(particleGeo, new THREE.MeshBasicMaterial({ color: new THREE.Color().setHSL(Math.random(), 0.9, 0.6) }));
+        mesh.position.set(player.pos.x + (Math.random() - 0.5) * 2, player.pos.y + 2 + Math.random() * 2, player.pos.z + (Math.random() - 0.5) * 2);
+        scene.add(mesh);
+        state.confetti.push({ mesh, vel: new THREE.Vector3((Math.random() - 0.5) * 6, Math.random() * 5 + 2, (Math.random() - 0.5) * 6), life: 2.8 + Math.random() * 1.8 });
+      }
+    }
+
+    function activateCheckpoint(p) {
+      if (p.stage > player.stage) {
+        player.stage = p.stage;
+        player.checkpoint.set(p.mesh.position.x, p.mesh.position.y + 1.7, p.mesh.position.z);
+        stageText.textContent = Math.min(player.stage, MAPS[player.mapId].stages) + ' / ' + MAPS[player.mapId].stages;
+        showToast('체크포인트 ' + player.stage, 0.9);
+      }
+    }

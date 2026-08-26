@@ -1,118 +1,123 @@
-  function resizeCanvas() {
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
-    const rect = canvas.getBoundingClientRect();
-    canvas.width = Math.round(rect.width * dpr);
-    canvas.height = Math.round(rect.height * dpr);
-    const uniformScale = canvas.height / H;
-    game.viewportW = canvas.width / uniformScale;
-    ctx.setTransform(uniformScale, 0, 0, uniformScale, 0, 0);
-  }
-
-  function update(dt) {
-    if (game.mode === "lobby") updateLobby(dt);
-    else if (game.mode === "playing") {
-      game.elapsed += dt;
-      updatePlayer(dt);
-      els.timer.textContent = formatTime(game.elapsed * 1000);
+      portals.forEach((p, i) => {
+        p.ring.rotation.z += dt * 0.6;
+        p.ring.material.emissiveIntensity = 0.6 + Math.sin(t * 2 + i) * 0.25;
+        const dx = player.pos.x - p.x;
+        const dz = player.pos.z - p.z;
+        const dist = Math.hypot(dx, dz);
+        if (dist < 2.5 && Math.abs(player.pos.y - 0) < 2.2) {
+          showToast('포털에 닿았습니다. 버튼을 누르거나 그대로 진입하세요.', 0.2);
+          if (dist < 1.3) startMap(p.id);
+        }
+      });
     }
-    updateParticles(dt);
-    if (game.toastTimer > 0) {
-      game.toastTimer -= dt;
-      if (game.toastTimer <= 0) els.toast.dataset.visible = "false";
+
+    function updateCamera(dt) {
+      const follow = player.pos.clone();
+      const behind = new THREE.Vector3(Math.sin(player.yaw) * 7.5, 5.5, Math.cos(player.yaw) * 7.5);
+      const targetPos = follow.clone().add(behind);
+      camera.position.lerp(targetPos, 1 - Math.pow(0.003, dt));
+      state.cameraTarget.lerp(follow.clone().add(new THREE.Vector3(0, 1.7, 0)), 1 - Math.pow(0.002, dt));
+      camera.lookAt(state.cameraTarget);
     }
-    game.shake = Math.max(0, game.shake - dt);
-    input.jumpPressed = false;
-    input.interactPressed = false;
-  }
 
-  function render(time) {
-    ctx.save();
-    if (game.shake > 0) ctx.translate((Math.random() - .5) * 12, (Math.random() - .5) * 9);
-    if (game.mode === "lobby") drawLobby(time);
-    else drawWorld(time);
-    ctx.restore();
-    if (game.mode === "complete") drawConfetti();
-  }
-
-  function loop(timestamp) {
-    const raw = (timestamp - game.lastTime) / 1000;
-    game.lastTime = timestamp;
-    const dt = Math.min(.033, Math.max(0, raw));
-    update(dt);
-    render(timestamp / 1000);
-    requestAnimationFrame(loop);
-  }
-
-  function setKey(code, pressed) {
-    if (["ArrowLeft", "KeyA"].includes(code)) input.left = pressed;
-    if (["ArrowRight", "KeyD"].includes(code)) input.right = pressed;
-    if (["ArrowUp", "KeyW", "Space"].includes(code)) {
-      if (pressed && !input.jump) input.jumpPressed = true;
-      input.jump = pressed;
+    function updateConfetti(dt) {
+      state.confetti.forEach(c => {
+        c.life -= dt;
+        c.vel.y -= 8 * dt;
+        c.mesh.position.addScaledVector(c.vel, dt);
+      });
+      const remain = [];
+      state.confetti.forEach(c => {
+        if (c.life > 0) remain.push(c); else scene.remove(c.mesh);
+      });
+      state.confetti = remain;
     }
-  }
 
-  window.addEventListener("keydown", event => {
-    if (["ArrowLeft", "ArrowRight", "ArrowUp", "Space"].includes(event.code)) event.preventDefault();
-    setKey(event.code, true);
-    if (event.code === "KeyE") input.interactPressed = true;
-    if (event.code === "KeyR" && game.mode === "playing") restartMap();
-    if ((event.code === "KeyL" || event.code === "Escape") && game.mode !== "lobby") returnLobby();
-  }, { passive: false });
-  window.addEventListener("keyup", event => setKey(event.code, false));
-  window.addEventListener("blur", () => { input.left = input.right = input.jump = false; });
-
-  document.querySelectorAll(".portal-card").forEach(button => button.addEventListener("click", () => startMap(button.dataset.map)));
-  document.getElementById("lobbyButton").addEventListener("click", returnLobby);
-  document.getElementById("restartButton").addEventListener("click", restartMap);
-  document.getElementById("retryButton").addEventListener("click", restartMap);
-  document.getElementById("completeLobbyButton").addEventListener("click", returnLobby);
-
-  document.querySelectorAll("[data-control]").forEach(button => {
-    const control = button.dataset.control;
-    const press = event => {
-      event.preventDefault();
-      button.dataset.pressed = "true";
-      if (control === "left") input.left = true;
-      if (control === "right") input.right = true;
-      if (control === "jump") { if (!input.jump) input.jumpPressed = true; input.jump = true; }
-      if (button.setPointerCapture && event.pointerId !== undefined) button.setPointerCapture(event.pointerId);
-    };
-    const release = event => {
-      event.preventDefault();
-      button.dataset.pressed = "false";
-      if (control === "left") input.left = false;
-      if (control === "right") input.right = false;
-      if (control === "jump") input.jump = false;
-    };
-    button.addEventListener("pointerdown", press, { passive: false });
-    button.addEventListener("pointerup", release, { passive: false });
-    button.addEventListener("pointercancel", release, { passive: false });
-    button.addEventListener("pointerleave", event => { if (event.buttons === 0) release(event); }, { passive: false });
-  });
-
-  canvas.addEventListener("pointerdown", event => {
-    if (game.mode !== "lobby") return;
-    const rect = canvas.getBoundingClientRect();
-    const x = (event.clientX - rect.left) * game.viewportW / rect.width + game.camera.x;
-    const y = (event.clientY - rect.top) * H / rect.height + game.camera.y;
-    const portals = [
-      { id: "color", x: 205 }, { id: "lava", x: 555 }, { id: "sky", x: 905 }
-    ];
-    for (const portal of portals) {
-      if (x >= portal.x && x <= portal.x + 170 && y >= 365 && y <= 620) startMap(portal.id);
+    function animate() {
+      requestAnimationFrame(animate);
+      const now = performance.now() / 1000;
+      const dt = Math.min(0.033, Math.max(0.001, now - state.lastTime));
+      state.lastTime = now;
+      hideToastIfNeeded(now);
+      if (state.mode === 'playing') {
+        state.elapsed += dt;
+        updatePlatforms(dt, state.elapsed);
+        updatePlayer(dt);
+        timerText.textContent = fmt(state.elapsed * 1000);
+      } else if (state.mode === 'lobby') {
+        updateLobby(dt, now);
+      }
+      updateCamera(dt);
+      updateConfetti(dt);
+      renderer.render(scene, camera);
     }
-  });
 
-  window.addEventListener("resize", resizeCanvas);
-  resizeCanvas();
-  requestAnimationFrame(timestamp => { game.lastTime = timestamp; requestAnimationFrame(loop); });
+    function bindKey(name, pressed) {
+      if (name === 'w') input.forward = pressed;
+      else if (name === 's') input.back = pressed;
+      else if (name === 'a') input.left = pressed;
+      else if (name === 'd') input.right = pressed;
+      else if (name === 'jump') {
+        if (pressed && !input.jump) input.jumpPressed = true;
+        input.jump = pressed;
+      } else if (name === 'sprint') input.sprint = pressed;
+    }
+    addEventListener('keydown', e => {
+      if (['KeyW','ArrowUp'].includes(e.code)) bindKey('w', true);
+      if (['KeyS','ArrowDown'].includes(e.code)) bindKey('s', true);
+      if (['KeyA','ArrowLeft'].includes(e.code)) bindKey('a', true);
+      if (['KeyD','ArrowRight'].includes(e.code)) bindKey('d', true);
+      if (e.code === 'Space') { bindKey('jump', true); e.preventDefault(); }
+      if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') bindKey('sprint', true);
+      if (e.code === 'KeyR' && state.mode === 'playing') startMap(player.mapId);
+      if ((e.code === 'KeyL' || e.code === 'Escape') && state.mode !== 'lobby') returnLobby();
+    });
+    addEventListener('keyup', e => {
+      if (['KeyW','ArrowUp'].includes(e.code)) bindKey('w', false);
+      if (['KeyS','ArrowDown'].includes(e.code)) bindKey('s', false);
+      if (['KeyA','ArrowLeft'].includes(e.code)) bindKey('a', false);
+      if (['KeyD','ArrowRight'].includes(e.code)) bindKey('d', false);
+      if (e.code === 'Space') bindKey('jump', false);
+      if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') bindKey('sprint', false);
+    });
+    addEventListener('blur', () => {
+      Object.keys(input).forEach(k => input[k] = false);
+      input.jumpPressed = false;
+    });
 
-  window.__TRIPLE_OBBY__ = {
-    startMap,
-    returnLobby,
-    restartMap,
-    getState: () => ({ mode: game.mode, mapId: game.mapId, stage: game.player ? game.player.stage : null, elapsed: game.elapsed, x: game.player ? game.player.x : game.lobbyPlayer.x, y: game.player ? game.player.y : game.lobbyPlayer.y, platformCount: game.level ? game.level.platforms.length : 0 }),
-    maps: MAPS
-  };
-})();
+    document.querySelectorAll('.portalBtn').forEach(btn => btn.addEventListener('click', () => startMap(btn.dataset.map)));
+    document.getElementById('restartBtn').addEventListener('click', () => { if (player.mapId) startMap(player.mapId); });
+    document.getElementById('lobbyBtn').addEventListener('click', returnLobby);
+    document.getElementById('retryFinishBtn').addEventListener('click', () => { if (player.mapId) startMap(player.mapId); });
+    document.getElementById('lobbyFinishBtn').addEventListener('click', returnLobby);
+
+    document.querySelectorAll('[data-key]').forEach(btn => {
+      const key = btn.dataset.key;
+      const down = e => {
+        e.preventDefault();
+        if (key === 'jump') bindKey('jump', true);
+        else input[key] = true;
+        if (btn.setPointerCapture && e.pointerId !== undefined) btn.setPointerCapture(e.pointerId);
+      };
+      const up = e => {
+        e.preventDefault();
+        if (key === 'jump') bindKey('jump', false);
+        else input[key] = false;
+      };
+      btn.addEventListener('pointerdown', down, { passive: false });
+      btn.addEventListener('pointerup', up, { passive: false });
+      btn.addEventListener('pointercancel', up, { passive: false });
+      btn.addEventListener('pointerleave', e => { if (e.buttons === 0) up(e); }, { passive: false });
+    });
+
+    addEventListener('resize', () => {
+      camera.aspect = innerWidth / innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(innerWidth, innerHeight);
+    });
+
+    buildLobby();
+    animate();
+    window.__TRIPLE_OBBY_3D__ = { startMap, returnLobby };
+  })();
+  

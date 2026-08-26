@@ -1,178 +1,104 @@
-    const leftX = 115;
-    const rightX = 995;
 
-    for (let s = 1; s <= 18; s++) {
-      const y = startY - (s - 1) * rise;
-      const nextY = y - rise;
-      const startX = s % 2 === 1 ? leftX : rightX;
-      const targetX = s % 2 === 1 ? rightX : leftX;
-      const cp = addPlatform(platforms, startX, y, 170, 25, "checkpoint", { stage: s, color: "#ff9d30", label: `FLOOR ${s}` });
-      checkpoints.push(cp);
-
-      for (let i = 1; i <= 4; i++) {
-        const t = i / 5;
-        const px = lerp(startX + 30, targetX + 30, t) + Math.sin((s + i) * 1.7) * 32;
-        const py = lerp(y, nextY, t);
-        const width = Math.max(70, 108 - Math.floor(s / 4) * 7);
-        let kind = "solid";
-        const opts = { color: i % 2 ? "#ffca56" : "#ff7b2f" };
-        if (s >= 4 && s % 4 === 0 && i === 2) { kind = "moveX"; opts.range = 95; opts.speed = 1.8; }
-        if (s >= 6 && s % 5 === 1 && i === 3) { kind = "moveY"; opts.range = 48; opts.speed = 2.1; }
-        if ([7, 12, 16].includes(s) && (i === 1 || i === 4)) kind = "crumble";
-        if ([9, 15, 18].includes(s) && i === 2) kind = "bounce";
-        addPlatform(platforms, px, py, width, 21, kind, opts);
-      }
-
-      if (s >= 3 && s % 3 === 0) {
-        addPlatform(platforms, 500, y - 170, 150, 17, "hazardMove", {
-          color: "#ff233f", range: 330, speed: 1.25 + s * .025, phase: s * .7
-        });
-      }
+    function makeBox(size, color, pos, opts = {}) {
+      const mat = new THREE.MeshStandardMaterial({ color, roughness: opts.roughness ?? 0.55, metalness: opts.metalness ?? 0.08, transparent: !!opts.transparent, opacity: opts.opacity ?? 1 });
+      const mesh = new THREE.Mesh(new THREE.BoxGeometry(size.x, size.y, size.z), mat);
+      mesh.position.copy(pos);
+      mesh.receiveShadow = opts.receiveShadow !== false;
+      mesh.castShadow = opts.castShadow !== false;
+      if (opts.rotationY) mesh.rotation.y = opts.rotationY;
+      return mesh;
     }
 
-    const finalY = startY - 18 * rise;
-    addPlatform(platforms, 535, finalY, 210, 30, "finish", { color: "#ffe765", label: "TOP" });
-    return {
-      id: "lava", type: "vertical", platforms, checkpoints,
-      start: { x: leftX + 65, y: startY - 40 },
-      finishY: finalY, worldWidth: W, deathY: startY + 200,
-      background: "lava"
-    };
-  }
-
-  function makeSkyLevel() {
-    const platforms = [];
-    const checkpoints = [];
-    const segment = 700;
-    const baseX = 70;
-    const ySeq = Array.from({ length: 21 }, (_, i) => 500 + Math.round(Math.sin(i * .95) * 78));
-
-    for (let s = 1; s <= 20; s++) {
-      const x = baseX + (s - 1) * segment;
-      const y = ySeq[s - 1];
-      const targetY = ySeq[s];
-      const cp = addPlatform(platforms, x, y, 190, 30, "checkpoint", { stage: s, color: "#62dcff", label: `ISLAND ${s}` });
-      checkpoints.push(cp);
-
-      const xs = [225, 350, 480, 600];
-      xs.forEach((offset, index) => {
-        const t = (index + 1) / 5;
-        const py = lerp(y, targetY, t) + Math.sin((s + index) * 1.5) * 25;
-        let kind = "solid";
-        const opts = { color: index % 2 ? "#dff8ff" : "#ffffff" };
-        if ((s % 4 === 0 || s === 11 || s === 19) && index === 1) { kind = "moveY"; opts.range = 62; opts.speed = 1.8; }
-        if ((s % 6 === 0 || s === 13) && index === 2) { kind = "moveX"; opts.range = 82; opts.speed = 2.2; }
-        if ([7, 14, 18].includes(s) && index === 3) kind = "crumble";
-        if ([5, 10, 15, 20].includes(s) && index === 2) kind = "bounce";
-        if ([3, 8, 12, 17].includes(s) && index === 0) { kind = "speed"; opts.direction = 1; opts.color = "#6dffb3"; }
-        addPlatform(platforms, x + offset, py, index === 2 ? 92 : 105, 22, kind, opts);
+    function createCrackLines(w, d, y) {
+      const points = [];
+      const pathSets = [
+        [[-w * 0.35, 0, -d * 0.2], [-w * 0.1, 0, -d * 0.05], [w * 0.05, 0, d * 0.15], [w * 0.28, 0, d * 0.26]],
+        [[-w * 0.15, 0, d * 0.28], [-w * 0.04, 0, d * 0.06], [w * 0.1, 0, -d * 0.15], [w * 0.24, 0, -d * 0.28]],
+        [[-w * 0.02, 0, -d * 0.34], [w * 0.02, 0, -d * 0.16], [w * 0.09, 0, 0.02], [w * 0.16, 0, d * 0.2]]
+      ];
+      pathSets.forEach(path => {
+        for (let i = 0; i < path.length - 1; i++) {
+          points.push(new THREE.Vector3(path[i][0], y, path[i][2]), new THREE.Vector3(path[i + 1][0], y, path[i + 1][2]));
+        }
       });
+      const geo = new THREE.BufferGeometry().setFromPoints(points);
+      const mat = new THREE.LineBasicMaterial({ color: 0x2f2434, transparent: true, opacity: 0.75 });
+      const lines = new THREE.LineSegments(geo, mat);
+      return lines;
     }
 
-    const finalX = baseX + 20 * segment;
-    addPlatform(platforms, finalX, ySeq[20], 245, 32, "finish", { color: "#ffe95b", label: "GOAL" });
-    return {
-      id: "sky", type: "horizontal", platforms, checkpoints,
-      start: { x: baseX + 70, y: ySeq[0] - 40 },
-      finishY: ySeq[20], worldWidth: finalX + 500, deathY: 900,
-      background: "sky"
-    };
-  }
+    function makePlatform(level, x, y, z, w, h, d, kind = 'solid', extra = {}) {
+      const color = extra.color ?? (kind === 'checkpoint' ? 0x49f2ff : kind === 'finish' ? 0xffe34f : 0xffffff);
+      const mesh = makeBox(new THREE.Vector3(w, h, d), color, new THREE.Vector3(x, y + h / 2, z), { roughness: 0.48 });
+      const obj = { kind, mesh, x, y, z, w, h, d, active: true, baseX: x, baseY: y, baseZ: z, phase: extra.phase || 0, speed: extra.speed || 1.5, range: extra.range || 2.5, stage: extra.stage || 0, timer: 0, respawnAt: 0, label: extra.label || '' };
+      if (kind === 'crumble') {
+        const cracks = createCrackLines(w, d, h / 2 + 0.011);
+        mesh.add(cracks);
+        obj.cracks = cracks;
+      }
+      if (kind === 'checkpoint' || kind === 'finish') {
+        const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 2.1), new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.4 }));
+        pole.position.set(0, h / 2 + 1.05, 0);
+        mesh.add(pole);
+        const flag = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.44, 0.06), new THREE.MeshStandardMaterial({ color: kind === 'finish' ? 0xfff16a : color, roughness: 0.4 }));
+        flag.position.set(0.46, h / 2 + 1.35, 0);
+        mesh.add(flag);
+      }
+      if (kind === 'hazard') {
+        mesh.material.emissive = new THREE.Color(color);
+        mesh.material.emissiveIntensity = 0.5;
+      }
+      level.platforms.push(obj);
+      level.group.add(mesh);
+      return obj;
+    }
 
-  const levelFactories = { color: makeColorLevel, lava: makeLavaLevel, sky: makeSkyLevel };
+    function buildLobby() {
+      clearLevel();
+      const group = new THREE.Group();
+      const ground = makeBox(new THREE.Vector3(60, 2, 32), 0x192445, new THREE.Vector3(0, -1, 0), { roughness: 0.88 });
+      ground.receiveShadow = true;
+      group.add(ground);
 
-  function newPlayer(start) {
-    return {
-      x: start.x, y: start.y, prevY: start.y,
-      vx: 0, vy: 0, w: 36, h: 50,
-      grounded: false, coyote: 0, jumpBuffer: 0,
-      facing: 1, stage: 1, checkpointX: start.x, checkpointY: start.y,
-      standing: null, boostTimer: 0, invincible: .35,
-      trail: []
-    };
-  }
+      for (let i = 0; i < 80; i++) {
+        const star = new THREE.Mesh(new THREE.SphereGeometry(0.08 + Math.random() * 0.04, 8, 8), new THREE.MeshBasicMaterial({ color: 0xffffff }));
+        star.position.set((Math.random() - 0.5) * 150, 18 + Math.random() * 35, (Math.random() - 0.5) * 150);
+        group.add(star);
+      }
 
-  function startMap(mapId) {
-    if (!MAPS[mapId]) return;
-    game.mapId = mapId;
-    game.level = levelFactories[mapId]();
-    game.player = newPlayer(game.level.start);
-    game.camera.x = 0;
-    game.camera.y = mapId === "lava" ? 0 : 0;
-    game.elapsed = 0;
-    game.finishedTime = 0;
-    game.mode = "playing";
-    game.particles.length = 0;
-    game.confetti.length = 0;
-    els.lobby.dataset.visible = "false";
-    els.hud.dataset.visible = "true";
-    els.mobile.dataset.visible = "true";
-    els.complete.dataset.visible = "false";
-    const info = MAPS[mapId];
-    els.mapName.textContent = info.name;
-    document.getElementById("mapSub").textContent = info.subtitle;
-    els.stage.textContent = `1 / ${info.stages}`;
-    els.timer.textContent = formatTime(0);
-    els.best.textContent = formatTime(getBest(mapId));
-    showToast(`${info.name} 시작!`, 1.2);
-  }
+      const titleBase = makeBox(new THREE.Vector3(15, 0.8, 4), 0x24315f, new THREE.Vector3(0, 3.5, -10), { roughness: 0.8 });
+      group.add(titleBase);
 
-  function returnLobby() {
-    game.mode = "lobby";
-    game.mapId = null;
-    game.level = null;
-    game.player = null;
-    game.camera.x = 0;
-    game.camera.y = 0;
-    game.lobbyPlayer.x = 120;
-    game.lobbyPlayer.y = 570;
-    game.lobbyPlayer.vx = 0;
-    game.lobbyPlayer.vy = 0;
-    els.lobby.dataset.visible = "true";
-    els.hud.dataset.visible = "false";
-    els.mobile.dataset.visible = "false";
-    els.complete.dataset.visible = "false";
-  }
+      const portals = [
+        { id: 'color', x: -16, color: 0xff49ae },
+        { id: 'lava', x: 0, color: 0xff6f2a },
+        { id: 'sky', x: 16, color: 0x45d9ff },
+      ];
+      const portalObjects = [];
+      portals.forEach(p => {
+        const ring = new THREE.Mesh(new THREE.TorusGeometry(2.4, 0.35, 16, 64), new THREE.MeshStandardMaterial({ color: p.color, emissive: p.color, emissiveIntensity: 0.75, roughness: 0.32 }));
+        ring.position.set(p.x, 3.6, 0);
+        ring.rotation.x = Math.PI / 2;
+        ring.castShadow = true;
+        group.add(ring);
+        const pad = makeBox(new THREE.Vector3(4.8, 0.5, 4.8), 0x202d5f, new THREE.Vector3(p.x, 0.25, 0), { roughness: 0.8 });
+        group.add(pad);
+        portalObjects.push({ id: p.id, ring, x: p.x, z: 0 });
+      });
 
-  function restartMap() {
-    if (!game.mapId) return;
-    startMap(game.mapId);
-  }
+      const clouds = new THREE.Group();
+      for (let i = 0; i < 24; i++) {
+        const c = new THREE.Group();
+        const mat = new THREE.MeshStandardMaterial({ color: 0xffffff, transparent: true, opacity: 0.8 });
+        [0, 1, 2].forEach(n => {
+          const s = new THREE.Mesh(new THREE.SphereGeometry(1.1 + Math.random() * 0.9, 16, 16), mat);
+          s.position.set(n * 1.1 - 1, Math.random() * 0.4, Math.random() * 0.3);
+          c.add(s);
+        });
+        c.position.set((Math.random() - 0.5) * 90, 10 + Math.random() * 10, -16 + Math.random() * 40);
+        clouds.add(c);
+      }
+      group.add(clouds);
 
-  function showToast(text, duration = 1) {
-    els.toast.textContent = text;
-    els.toast.dataset.visible = "true";
-    game.toastTimer = duration;
-  }
-
-  function respawn(reason = "fall") {
-    const p = game.player;
-    if (!p || p.invincible > 0) return;
-    game.shake = .22;
-    spawnBurst(p.x, p.y, reason === "hazard" ? "#ff385b" : "#ffffff", 18);
-    p.x = p.checkpointX;
-    p.y = p.checkpointY;
-    p.vx = 0;
-    p.vy = 0;
-    p.grounded = false;
-    p.standing = null;
-    p.invincible = .7;
-    showToast("체크포인트에서 다시 시작", .8);
-  }
-
-  function activateCheckpoint(platform) {
-    const p = game.player;
-    if (!p || platform.stage <= p.stage) return;
-    p.stage = platform.stage;
-    p.checkpointX = platform.x + platform.w / 2;
-    p.checkpointY = platform.y - p.h / 2 - 6;
-    els.stage.textContent = `${p.stage} / ${MAPS[game.mapId].stages}`;
-    showToast(`체크포인트 ${p.stage}`, .75);
-    spawnBurst(p.x, p.y, platform.color, 22);
-  }
-
-  function finishMap() {
-    if (game.mode !== "playing") return;
-    game.mode = "complete";
-    game.finishedTime = game.elapsed * 1000;
-    const oldBest = getBest(game.mapId);
+      worldRoot.add(group);
+      state.level = { id: 'lobby', group, portals: portalObjects, platforms: [], killY: -30, spawn: new THREE.Vector3(0, 2, 10) };
