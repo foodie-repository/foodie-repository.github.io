@@ -33,7 +33,7 @@
         throw new Error('이 브라우저는 게임 압축 해제를 지원하지 않습니다. Chrome 또는 Edge 최신 버전으로 열어주세요.');
       }
       const payload = window.__KICDUO_PAYLOAD__ || '';
-      if (payload.length !== 47948) throw new Error('게임 데이터 일부를 불러오지 못했습니다. 페이지를 새로고침해 주세요.');
+      if (payload.length !== 47944) throw new Error('게임 데이터 일부를 불러오지 못했습니다. 페이지를 새로고침해 주세요.');
       const compressed = Uint8Array.from(atob(payload), (char) => char.charCodeAt(0));
       const stream = new Blob([compressed]).stream().pipeThrough(new DecompressionStream('gzip'));
       const gameHtml = await new Response(stream).text();
