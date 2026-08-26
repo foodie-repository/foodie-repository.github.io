@@ -1,0 +1,174 @@
+(() => {
+  "use strict";
+
+  const canvas = document.getElementById("gameCanvas");
+  const ctx = canvas.getContext("2d");
+  const W = 1280;
+  const H = 720;
+  const TAU = Math.PI * 2;
+
+  const els = {
+    lobby: document.getElementById("lobbyOverlay"),
+    hud: document.getElementById("hud"),
+    mobile: document.getElementById("mobileControls"),
+    complete: document.getElementById("completeOverlay"),
+    mapName: document.getElementById("mapName"),
+    stage: document.getElementById("stageText"),
+    timer: document.getElementById("timerText"),
+    best: document.getElementById("bestText"),
+    resultTime: document.getElementById("resultTime"),
+    resultBest: document.getElementById("resultBest"),
+    completeMessage: document.getElementById("completeMessage"),
+    toast: document.getElementById("toast")
+  };
+
+  const MAPS = {
+    color: { id: "color", name: "컬러 점프맵", stages: 20, subtitle: "움직이고 사라지는 컬러 발판을 통과하세요.", accent: "#ff4aa7" },
+    lava: { id: "lava", name: "용암 타워", stages: 18, subtitle: "용암 장애물을 피하며 타워 정상까지 올라가세요.", accent: "#ff6a21" },
+    sky: { id: "sky", name: "하늘섬 스피드런", stages: 20, subtitle: "가속과 점프 패드로 최고 기록을 노리세요.", accent: "#35c8ff" }
+  };
+
+  const input = {
+    left: false, right: false, jump: false,
+    jumpPressed: false, interactPressed: false
+  };
+
+  const game = {
+    mode: "lobby",
+    mapId: null,
+    level: null,
+    player: null,
+    camera: { x: 0, y: 0 },
+    viewportW: W,
+    elapsed: 0,
+    finishedTime: 0,
+    lastTime: performance.now(),
+    lobbyPlayer: { x: 120, y: 570, vx: 0, vy: 0, w: 36, h: 50, grounded: true, facing: 1 },
+    lobbyPortalHover: null,
+    particles: [],
+    confetti: [],
+    toastTimer: 0,
+    shake: 0
+  };
+
+  function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
+  function lerp(a, b, t) { return a + (b - a) * t; }
+  function easeOut(t) { return 1 - Math.pow(1 - t, 3); }
+  function hsl(h, s = 85, l = 58) { return `hsl(${h} ${s}% ${l}%)`; }
+  function nowSeconds() { return performance.now() / 1000; }
+
+  function formatTime(ms) {
+    if (!Number.isFinite(ms)) return "--:--.---";
+    const total = Math.max(0, Math.floor(ms));
+    const min = Math.floor(total / 60000);
+    const sec = Math.floor((total % 60000) / 1000);
+    const milli = total % 1000;
+    return `${String(min).padStart(2, "0")}:${String(sec).padStart(2, "0")}.${String(milli).padStart(3, "0")}`;
+  }
+
+  const memoryStorage = Object.create(null);
+  function bestKey(mapId) { return `tripleObby.best.${mapId}`; }
+  function storageGet(key) {
+    try { return window.localStorage.getItem(key); }
+    catch (_) { return Object.prototype.hasOwnProperty.call(memoryStorage, key) ? memoryStorage[key] : null; }
+  }
+  function storageSet(key, value) {
+    memoryStorage[key] = String(value);
+    try { window.localStorage.setItem(key, String(value)); }
+    catch (_) { /* 로컬 파일 제한 환경에서는 현재 실행 중에만 기록을 보관합니다. */ }
+  }
+  function getBest(mapId) {
+    const value = Number(storageGet(bestKey(mapId)));
+    return Number.isFinite(value) && value > 0 ? value : Infinity;
+  }
+  function setBest(mapId, value) {
+    const old = getBest(mapId);
+    if (value < old) storageSet(bestKey(mapId), Math.floor(value));
+    return Math.min(old, value);
+  }
+
+  function roundedRect(x, y, w, h, r) {
+    const radius = Math.min(r, w / 2, h / 2);
+    ctx.beginPath();
+    ctx.moveTo(x + radius, y);
+    ctx.arcTo(x + w, y, x + w, y + h, radius);
+    ctx.arcTo(x + w, y + h, x, y + h, radius);
+    ctx.arcTo(x, y + h, x, y, radius);
+    ctx.arcTo(x, y, x + w, y, radius);
+    ctx.closePath();
+  }
+
+  function addPlatform(list, x, y, w, h = 22, kind = "solid", options = {}) {
+    const p = {
+      id: `${kind}-${list.length}-${Math.random().toString(36).slice(2)}`,
+      x, y, w, h, kind,
+      baseX: x, baseY: y, prevX: x, prevY: y,
+      active: true, triggerAt: 0, reappearAt: 0,
+      color: options.color || "#ffffff",
+      stage: options.stage || 0,
+      range: options.range || 0,
+      speed: options.speed || 1,
+      phase: options.phase || 0,
+      direction: options.direction || 1,
+      label: options.label || "",
+      ...options
+    };
+    list.push(p);
+    return p;
+  }
+
+  function makeColorLevel() {
+    const platforms = [];
+    const checkpoints = [];
+    const ySeq = [560, 500, 545, 465, 525, 440, 515, 475, 550, 455, 520, 430, 500, 555, 470, 420, 495, 445, 530, 460, 500];
+    const segment = 620;
+    const baseX = 80;
+
+    for (let s = 1; s <= 20; s++) {
+      const x = baseX + (s - 1) * segment;
+      const y = ySeq[s - 1];
+      const targetY = ySeq[s];
+      const hue = (s * 37) % 360;
+      const cp = addPlatform(platforms, x, y, 150, 26, "checkpoint", { stage: s, color: hsl(hue, 88, 60), label: `CHECK ${s}` });
+      checkpoints.push(cp);
+
+      const narrow = [8, 13, 17, 20].includes(s);
+      const width = narrow ? 58 : Math.max(68, 100 - Math.floor(s / 3) * 4);
+      const xOffsets = [185, 300, 415, 530];
+      const wiggle = [-24, 20, -18, 14];
+
+      xOffsets.forEach((offset, index) => {
+        const t = (index + 1) / 5;
+        const py = lerp(y, targetY, t) + wiggle[(index + s) % wiggle.length];
+        let kind = "solid";
+        const opts = { color: hsl(hue + index * 18, 88, 61) };
+        if ((s === 4 || s === 11 || s === 18) && index === 1) { kind = "moveX"; opts.range = 58 + s; opts.speed = 1.7; }
+        if ((s === 7 || s === 15) && index === 2) { kind = "moveY"; opts.range = 55; opts.speed = 1.9; }
+        if ([5, 10, 12, 16, 20].includes(s) && (index === 1 || index === 3)) kind = "crumble";
+        if ((s === 6 || s === 14) && index === 1) { kind = "conveyor"; opts.direction = s === 6 ? 1 : -1; }
+        if ((s === 9 || s === 19) && index === 2) kind = "bounce";
+        addPlatform(platforms, x + offset, py, width, 22, kind, opts);
+      });
+
+      if ([3, 8, 13, 17].includes(s)) {
+        addPlatform(platforms, x + 365, Math.min(y, targetY) - 115, 95, 17, "hazardMove", {
+          color: "#ff2b55", range: 95, speed: 2.1, phase: s
+        });
+      }
+    }
+
+    const finalX = baseX + 20 * segment;
+    addPlatform(platforms, finalX, ySeq[20], 210, 30, "finish", { color: "#ffe55c", label: "FINISH" });
+    return {
+      id: "color", type: "horizontal", platforms, checkpoints,
+      start: { x: baseX + 55, y: ySeq[0] - 40 },
+      finishY: ySeq[20], worldWidth: finalX + 420, deathY: 900,
+      background: "color"
+    };
+  }
+
+  function makeLavaLevel() {
+    const platforms = [];
+    const checkpoints = [];
+    const startY = 610;
+    const rise = 310;
