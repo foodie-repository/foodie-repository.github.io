@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#080b16">
+  <meta name="color-scheme" content="dark">
+  <title>아이언 클래시 아레나</title>
+  <style>
+    html,body{margin:0;width:100%;height:100%;display:grid;place-items:center;background:#050711;color:#f5f7ff;font-family:system-ui,sans-serif}
+    main{width:min(560px,calc(100% - 48px));text-align:center} h1{font-size:clamp(25px,6vw,44px);letter-spacing:.04em}
+    .bar{height:5px;border-radius:99px;background:#151b31;overflow:hidden} .bar::after{content:"";display:block;width:45%;height:100%;background:#43ddff;animation:load 1s linear infinite}
+    small{display:block;margin-top:14px;color:#9ba4c6;line-height:1.6} @keyframes load{from{transform:translateX(-110%)}to{transform:translateX(330%)}}
+  </style>
+</head>
+<body>
+  <main id="loading"><h1>IRON CLASH ARENA</h1><div class="bar"></div><small>게임을 불러오는 중입니다.</small></main>
+  <script>window.__IRON_CLASH_PAYLOAD=[];</script>
+  <script src="./payload-0.js"></script>
+  <script src="./payload-1.js"></script>
+  <script src="./payload-2.js"></script>
+  <script src="./payload-3.js"></script>
+  <script src="./payload-4.js"></script>
+  <script src="./payload-5.js"></script>
+  <script src="./payload-6.js"></script>
+  <script>
+    (async () => {
+      try {
+        if (typeof DecompressionStream !== 'function') throw new Error('Chrome 또는 Edge 최신 버전에서 열어 주세요.');
+        const binary = atob(window.__IRON_CLASH_PAYLOAD.join(''));
+        const bytes = Uint8Array.from(binary, character => character.charCodeAt(0));
+        const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'));
+        const gameHtml = await new Response(stream).text();
+        document.open(); document.write(gameHtml); document.close();
+      } catch (error) {
+        document.getElementById('loading').innerHTML = `<h1>게임을 시작할 수 없습니다</h1><small>${String(error && error.message || error)}</small>`;
+      }
+    })();
+  </script>
+</body>
+</html>
