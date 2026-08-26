@@ -1,0 +1,138 @@
+  (() => {
+    const stageText = document.getElementById('stageText');
+    const timerText = document.getElementById('timerText');
+    const bestText = document.getElementById('bestText');
+    const mapName = document.getElementById('mapName');
+    const mapDesc = document.getElementById('mapDesc');
+    const hud = document.getElementById('hud');
+    const lobbyOverlay = document.getElementById('lobbyOverlay');
+    const mobileControls = document.getElementById('mobileControls');
+    const toast = document.getElementById('toast');
+    const finishOverlay = document.getElementById('finishOverlay');
+    const resultTime = document.getElementById('resultTime');
+    const resultBest = document.getElementById('resultBest');
+    const finishMessage = document.getElementById('finishMessage');
+
+    const MAPS = {
+      color: { name: '컬러 점프맵 3D', stages: 20, desc: '컬러 플랫폼과 금 간 사라지는 블록을 통과하세요.' },
+      lava: { name: '용암 타워 3D', stages: 18, desc: '바닥과 장애물 모두 킬 요소인 용암 타워를 오르세요.' },
+      sky: { name: '하늘섬 리메이크 3D', stages: 20, desc: '공중섬 구조를 전면 리메이크한 스피드런형 3D 하늘섬입니다.' },
+    };
+
+    const scene = new THREE.Scene();
+    scene.fog = new THREE.Fog(0x9dd9ff, 35, 180);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
+    renderer.setSize(innerWidth, innerHeight);
+    document.body.appendChild(renderer.domElement);
+
+    const camera = new THREE.PerspectiveCamera(65, innerWidth / innerHeight, 0.1, 1000);
+    camera.position.set(0, 8, 14);
+
+    const hemi = new THREE.HemisphereLight(0xffffff, 0x446688, 1.15);
+    scene.add(hemi);
+    const dir = new THREE.DirectionalLight(0xffffff, 1.05);
+    dir.position.set(16, 24, 10);
+    dir.castShadow = true;
+    dir.shadow.mapSize.set(2048, 2048);
+    dir.shadow.camera.left = -80;
+    dir.shadow.camera.right = 80;
+    dir.shadow.camera.top = 80;
+    dir.shadow.camera.bottom = -80;
+    scene.add(dir);
+
+    const worldRoot = new THREE.Group();
+    scene.add(worldRoot);
+
+    const player = {
+      pos: new THREE.Vector3(0, 2, 0),
+      vel: new THREE.Vector3(),
+      radius: 0.42,
+      height: 1.8,
+      grounded: false,
+      yaw: 0,
+      checkpoint: new THREE.Vector3(0, 2, 0),
+      stage: 1,
+      mapId: null,
+      jumpBuffer: 0,
+      coyote: 0,
+      boost: 0,
+      finishCooldown: 0
+    };
+
+    const input = {
+      forward: false, back: false, left: false, right: false, jump: false, jumpPressed: false, sprint: false
+    };
+
+    const state = {
+      mode: 'lobby',
+      elapsed: 0,
+      toastUntil: 0,
+      level: null,
+      particles: [],
+      confetti: [],
+      lastTime: performance.now() / 1000,
+      cameraTarget: new THREE.Vector3(),
+    };
+
+    const playerGroup = new THREE.Group();
+    const bodyMat = new THREE.MeshStandardMaterial({ color: 0xff4fb2, roughness: 0.5 });
+    const headMat = new THREE.MeshStandardMaterial({ color: 0xffddb9, roughness: 0.65 });
+    const hairMat = new THREE.MeshStandardMaterial({ color: 0x211a22, roughness: 0.8 });
+    const body = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.95, 0.6), bodyMat);
+    body.position.y = 1.05;
+    body.castShadow = true;
+    const head = new THREE.Mesh(new THREE.BoxGeometry(0.72, 0.52, 0.62), headMat);
+    head.position.y = 1.85;
+    head.castShadow = true;
+    const hair = new THREE.Mesh(new THREE.BoxGeometry(0.74, 0.2, 0.64), hairMat);
+    hair.position.y = 2.08;
+    hair.castShadow = true;
+    const leg1 = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.8, 0.24), bodyMat.clone());
+    const leg2 = leg1.clone();
+    leg1.position.set(-0.18, 0.38, 0); leg2.position.set(0.18, 0.38, 0);
+    leg1.castShadow = true; leg2.castShadow = true;
+    playerGroup.add(body, head, hair, leg1, leg2);
+    worldRoot.add(playerGroup);
+
+    const particleGeo = new THREE.SphereGeometry(0.08, 8, 8);
+
+    function fmt(ms) {
+      if (!Number.isFinite(ms)) return '--:--.---';
+      const t = Math.max(0, Math.floor(ms));
+      const m = Math.floor(t / 60000);
+      const s = Math.floor((t % 60000) / 1000);
+      const z = t % 1000;
+      return String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0') + '.' + String(z).padStart(3, '0');
+    }
+    function getBestKey(id) { return 'tripleObby3D.best.' + id; }
+    function getBest(id) {
+      const n = Number(localStorage.getItem(getBestKey(id)) || 'Infinity');
+      return Number.isFinite(n) ? n : Infinity;
+    }
+    function setBest(id, value) {
+      const old = getBest(id);
+      if (value < old) localStorage.setItem(getBestKey(id), String(Math.floor(value)));
+      return Math.min(old, value);
+    }
+    function showToast(text, seconds = 1) {
+      toast.textContent = text;
+      toast.dataset.visible = 'true';
+      state.toastUntil = performance.now() / 1000 + seconds;
+    }
+    function hideToastIfNeeded(now) {
+      if (state.toastUntil && now >= state.toastUntil) toast.dataset.visible = 'false';
+    }
+
+    function clearLevel() {
+      while (worldRoot.children.length > 1) {
+        const obj = worldRoot.children[1];
+        worldRoot.remove(obj);
+      }
+      state.level = null;
+      scene.background = new THREE.Color(0x0a1a35);
+      scene.fog.color.set(0x9dd9ff);
+    }
