@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#080b12">
+  <meta name="robots" content="noindex,nofollow">
+  <title>KICDUO Racing 불러오는 중</title>
+  <style>
+    *{box-sizing:border-box}html,body{height:100%;margin:0}body{display:grid;place-items:center;background:#080b12;color:#f7f8fc;font-family:system-ui,-apple-system,"Segoe UI",sans-serif}.loader{text-align:center;padding:32px}.mark{width:72px;height:72px;margin:0 auto 20px;border-radius:20px;display:grid;place-items:center;background:linear-gradient(135deg,#ff3d5a,#51d8ff);font-size:38px;font-weight:900;box-shadow:0 18px 60px rgba(81,216,255,.2)}h1{margin:0 0 10px;font-size:clamp(28px,7vw,48px)}p{margin:0;color:#9ea8bb}.spinner{width:44px;height:44px;margin:28px auto 0;border:4px solid rgba(255,255,255,.15);border-top-color:#fff;border-radius:50%;animation:spin .8s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}.error{max-width:620px;line-height:1.55;color:#ffd45c;white-space:pre-line}
+  </style>
+</head>
+<body>
+  <main class="loader">
+    <div class="mark">K</div>
+    <h1>KICDUO RACING</h1>
+    <p id="status">게임을 불러오고 있습니다.</p>
+    <div class="spinner" id="spinner" aria-hidden="true"></div>
+  </main>
+  <script src="./payload-0.js"></script>
+  <script src="./payload-1.js"></script>
+  <script src="./payload-2.js"></script>
+  <script src="./payload-3.js"></script>
+  <script src="./payload-4.js"></script>
+  <script src="./payload-5.js"></script>
+  <script src="./payload-6.js"></script>
+  <script>
+  (async function loadGame(){
+    const status = document.getElementById('status');
+    const spinner = document.getElementById('spinner');
+    try {
+      if (typeof DecompressionStream !== 'function') {
+        throw new Error('이 브라우저는 게임 압축 해제를 지원하지 않습니다. Chrome 또는 Edge 최신 버전으로 열어주세요.');
+      }
+      const payload = window.__KICDUO_PAYLOAD__ || '';
+      if (payload.length !== 47948) throw new Error('게임 데이터 일부를 불러오지 못했습니다. 페이지를 새로고침해 주세요.');
+      const compressed = Uint8Array.from(atob(payload), (char) => char.charCodeAt(0));
+      const stream = new Blob([compressed]).stream().pipeThrough(new DecompressionStream('gzip'));
+      const gameHtml = await new Response(stream).text();
+      document.open();
+      document.write(gameHtml);
+      document.close();
+    } catch (error) {
+      spinner.hidden = true;
+      status.className = 'error';
+      status.textContent = '게임을 불러오지 못했습니다.\n' + (error && error.message ? error.message : String(error));
+      console.error(error);
+    }
+  })();
+  </script>
+</body>
+</html>
