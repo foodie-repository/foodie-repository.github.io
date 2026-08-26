@@ -1,0 +1,150 @@
+      { id: "lava", x: 555, y: 365, w: 170, h: 255 },
+      { id: "sky", x: 905, y: 365, w: 170, h: 255 }
+    ];
+    game.lobbyPortalHover = null;
+    const playerRect = { x: p.x - p.w / 2, y: p.y - p.h / 2, w: p.w, h: p.h };
+    for (const portal of portals) {
+      const near = overlaps(playerRect.x, playerRect.y, playerRect.w, playerRect.h, portal.x - 24, portal.y, portal.w + 48, portal.h);
+      if (near) {
+        game.lobbyPortalHover = portal.id;
+        if (input.interactPressed || Math.abs(p.vx) > 40) startMap(portal.id);
+        break;
+      }
+    }
+  }
+
+  function spawnBurst(x, y, color, count) {
+    for (let i = 0; i < count; i++) {
+      const a = Math.random() * TAU;
+      const speed = 40 + Math.random() * 210;
+      game.particles.push({
+        x, y, vx: Math.cos(a) * speed, vy: Math.sin(a) * speed - 40,
+        life: .45 + Math.random() * .55, maxLife: 1,
+        size: 2 + Math.random() * 6, color
+      });
+    }
+  }
+
+  function updateParticles(dt) {
+    for (const p of game.particles) {
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+      p.vy += 520 * dt;
+      p.life -= dt;
+    }
+    game.particles = game.particles.filter(p => p.life > 0);
+    for (const c of game.confetti) {
+      c.x += c.vx * dt;
+      c.y += c.vy * dt;
+      c.vy += 80 * dt;
+      c.rot += c.vr * dt;
+      if (c.y > H + 30) c.y = -30;
+    }
+  }
+
+  function drawBackground(kind, time) {
+    const viewportWidth = Math.max(W, game.viewportW);
+    if (kind === "lobby") {
+      const grad = ctx.createLinearGradient(0, 0, 0, H);
+      grad.addColorStop(0, "#273f83");
+      grad.addColorStop(.6, "#17244e");
+      grad.addColorStop(1, "#0a0e25");
+      ctx.fillStyle = grad; ctx.fillRect(0, 0, viewportWidth, H);
+      for (let i = 0; i < 70; i++) {
+        const x = (i * 197.3) % W;
+        const y = (i * 83.7) % 360;
+        const alpha = .25 + .4 * Math.sin(time * 1.2 + i);
+        ctx.fillStyle = `rgba(255,255,255,${alpha})`;
+        ctx.fillRect(x, y, i % 4 === 0 ? 3 : 2, i % 4 === 0 ? 3 : 2);
+      }
+      ctx.fillStyle = "rgba(72,96,181,.22)";
+      for (let i = 0; i < 10; i++) {
+        ctx.beginPath(); ctx.arc(70 + i * 145, 330 + Math.sin(i) * 45, 120, 0, TAU); ctx.fill();
+      }
+    } else if (kind === "color") {
+      const grad = ctx.createLinearGradient(0, 0, W, H);
+      grad.addColorStop(0, "#321c62"); grad.addColorStop(.48, "#17498e"); grad.addColorStop(1, "#151b51");
+      ctx.fillStyle = grad; ctx.fillRect(0, 0, viewportWidth, H);
+      for (let i = 0; i < 14; i++) {
+        const x = ((i * 211 - game.camera.x * .14) % (W + 250)) - 100;
+        const y = 90 + (i % 5) * 95;
+        ctx.fillStyle = `hsla(${i * 31 + time * 9} 85% 65% / .08)`;
+        ctx.beginPath(); ctx.arc(x, y, 80 + (i % 3) * 30, 0, TAU); ctx.fill();
+      }
+    } else if (kind === "lava") {
+      const grad = ctx.createLinearGradient(0, 0, 0, H);
+      grad.addColorStop(0, "#220c25"); grad.addColorStop(.58, "#3a1015"); grad.addColorStop(1, "#8b1c08");
+      ctx.fillStyle = grad; ctx.fillRect(0, 0, viewportWidth, H);
+      for (let i = 0; i < 50; i++) {
+        const x = (i * 137.2 + Math.sin(time + i) * 20) % W;
+        const y = (i * 71.9 + time * (20 + i % 5)) % H;
+        ctx.fillStyle = `rgba(255,${80 + i % 80},20,${.15 + (i % 4) * .05})`;
+        ctx.beginPath(); ctx.arc(x, H - y, 2 + i % 4, 0, TAU); ctx.fill();
+      }
+      ctx.fillStyle = "rgba(255,53,10,.2)";
+      ctx.fillRect(0, H - 90, W, 90);
+    } else {
+      const grad = ctx.createLinearGradient(0, 0, 0, H);
+      grad.addColorStop(0, "#238fd5"); grad.addColorStop(.65, "#7bd9f1"); grad.addColorStop(1, "#e9fbff");
+      ctx.fillStyle = grad; ctx.fillRect(0, 0, viewportWidth, H);
+      ctx.fillStyle = "rgba(255,255,255,.72)";
+      for (let i = 0; i < 18; i++) {
+        const x = ((i * 191 - game.camera.x * (.08 + (i % 3) * .02)) % (W + 320)) - 160;
+        const y = 80 + (i % 6) * 86;
+        ctx.beginPath();
+        ctx.arc(x, y, 42, 0, TAU); ctx.arc(x + 40, y - 12, 52, 0, TAU); ctx.arc(x + 88, y, 38, 0, TAU); ctx.fill();
+      }
+    }
+  }
+
+  function drawLobby(time) {
+    drawBackground("lobby", time);
+    const portals = [
+      { id: "color", x: 205, color1: "#ff3eab", color2: "#7557ff", label: "COLOR" },
+      { id: "lava", x: 555, color1: "#ff922f", color2: "#d41418", label: "LAVA" },
+      { id: "sky", x: 905, color1: "#37ddff", color2: "#4d59ff", label: "SKY" }
+    ];
+
+    ctx.fillStyle = "#111933"; ctx.fillRect(0, 620, Math.max(W, game.viewportW), 100);
+    ctx.fillStyle = "rgba(255,255,255,.08)";
+    for (let x = 0; x < W; x += 80) ctx.fillRect(x, 620, 2, 100);
+    ctx.fillStyle = "rgba(255,255,255,.12)"; ctx.fillRect(0, 620, Math.max(W, game.viewportW), 5);
+
+    for (const portal of portals) {
+      const hover = game.lobbyPortalHover === portal.id;
+      const pulse = 1 + Math.sin(time * 3 + portal.x) * .04;
+      ctx.save();
+      ctx.translate(portal.x + 85, 495);
+      ctx.scale(pulse, pulse);
+      ctx.translate(-(portal.x + 85), -495);
+      ctx.shadowColor = portal.color1; ctx.shadowBlur = hover ? 42 : 24;
+      const g = ctx.createLinearGradient(portal.x, 365, portal.x + 170, 620);
+      g.addColorStop(0, portal.color1); g.addColorStop(1, portal.color2);
+      ctx.fillStyle = g;
+      roundedRect(portal.x, 365, 170, 255, 80); ctx.fill();
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = "rgba(8,11,27,.62)";
+      roundedRect(portal.x + 18, 383, 134, 219, 64); ctx.fill();
+      ctx.strokeStyle = "rgba(255,255,255,.65)"; ctx.lineWidth = hover ? 5 : 3;
+      roundedRect(portal.x + 8, 373, 154, 239, 72); ctx.stroke();
+      ctx.fillStyle = "rgba(255,255,255,.9)"; ctx.font = "900 18px system-ui"; ctx.textAlign = "center";
+      ctx.fillText(portal.label, portal.x + 85, 565);
+      ctx.restore();
+    }
+
+    drawCharacter(game.lobbyPlayer.x, game.lobbyPlayer.y, game.lobbyPlayer.facing, "#ffd044", 1, false);
+    if (game.lobbyPortalHover) {
+      ctx.fillStyle = "rgba(0,0,0,.65)"; roundedRect(W / 2 - 125, 300, 250, 48, 24); ctx.fill();
+      ctx.fillStyle = "white"; ctx.font = "900 16px system-ui"; ctx.textAlign = "center";
+      ctx.fillText("E 또는 포털 버튼으로 입장", W / 2, 331);
+    }
+  }
+
+  function platformScreen(p) { return { x: p.x - game.camera.x, y: p.y - game.camera.y }; }
+
+  function drawPlatform(p, time) {
+    if (!p.active) return;
+    const s = platformScreen(p);
+    if (s.x + p.w < -100 || s.x > W + 100 || s.y + p.h < -100 || s.y > H + 100) return;
+    ctx.save();
+    let alpha = 1;
