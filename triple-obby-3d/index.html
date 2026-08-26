@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>Triple Obby 3D</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="hud" class="glass" data-visible="false">
+    <div class="titleBox">
+      <div class="main" id="mapName">컬러 점프맵 3D</div>
+      <div class="sub" id="mapDesc">포털을 선택해 시작하세요.</div>
+    </div>
+    <div class="stat"><span>STAGE</span><strong id="stageText">1 / 1</strong></div>
+    <div class="stat"><span>TIME</span><strong id="timerText">00:00.000</strong></div>
+    <div class="stat bestHide"><span>BEST</span><strong id="bestText">--:--.---</strong></div>
+    <div class="spacer"></div>
+    <button id="restartBtn">재시작</button>
+    <button id="lobbyBtn">로비</button>
+  </div>
+
+  <section id="lobbyOverlay" data-visible="true">
+    <div class="lobbyCard glass">
+      <div class="lobbyHead">
+        <h1>TRIPLE OBBY 3D</h1>
+        <p>3D로 리메이크한 점프맵입니다. 로비에서 세 가지 맵을 선택할 수 있고, 모든 맵 바닥에는 킬 영역이 있습니다. 하늘섬은 구조와 분위기를 전면 리메이크했습니다.</p>
+      </div>
+      <div class="portalGrid">
+        <button class="portalBtn color" data-map="color"><div>🌈</div><h2>컬러 점프맵 3D</h2><p>기본 점프, 체크포인트, 움직이는 발판, 금 간 사라지는 블록.</p><span class="tag">20 STAGES</span></button>
+        <button class="portalBtn lava" data-map="lava"><div>🌋</div><h2>용암 타워 3D</h2><p>타워를 올라가며 용암 바닥과 장애물을 피하는 수직 맵.</p><span class="tag">18 STAGES</span></button>
+        <button class="portalBtn sky" data-map="sky"><div>☁️</div><h2>하늘섬 리메이크 3D</h2><p>구름, 공중섬, 대형 점프, 크랙 블록과 가속 패드가 추가된 리메이크 버전.</p><span class="tag">20 STAGES</span></button>
+      </div>
+    </div>
+  </section>
+
+  <div id="toast">체크포인트!</div>
+
+  <section id="finishOverlay" data-visible="false">
+    <div class="finishCard glass">
+      <div style="font-size:60px">🏆</div>
+      <h2>완주 성공</h2>
+      <p id="finishMessage">맵을 완주했습니다.</p>
+      <div class="resultGrid">
+        <div><span>이번 기록</span><strong id="resultTime">00:00.000</strong></div>
+        <div><span>최고 기록</span><strong id="resultBest">00:00.000</strong></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <button id="retryFinishBtn">한 번 더</button>
+        <button id="lobbyFinishBtn">로비로</button>
+      </div>
+    </div>
+  </section>
+
+  <div id="mobileControls" data-visible="false">
+    <div class="dpad">
+      <div class="blank"></div>
+      <div class="mBtn" data-key="forward">▲</div>
+      <div class="blank"></div>
+      <div class="mBtn" data-key="left">◀</div>
+      <div class="blank"></div>
+      <div class="mBtn" data-key="right">▶</div>
+      <div class="blank"></div>
+      <div class="mBtn" data-key="back">▼</div>
+      <div class="blank"></div>
+    </div>
+    <div class="actions">
+      <div class="mBtn big" data-key="jump">⬆</div>
+    </div>
+  </div>
+  <div id="help">WASD 이동 · Space 점프 · Shift 달리기 · R 재시작 · L 로비</div>
+
+  <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+  <script src="loader.js"></script>
+</body>
+</html>
