@@ -1,0 +1,97 @@
+      player.pos.copy(state.level.spawn);
+      player.checkpoint.copy(player.pos);
+      player.vel.set(0, 0, 0);
+      player.stage = 1;
+      player.mapId = null;
+      player.grounded = false;
+      playerGroup.position.copy(player.pos);
+      scene.background = new THREE.Color(0x0c1734);
+      scene.fog.color.set(0x0c1734);
+      lobbyOverlay.dataset.visible = 'true';
+      hud.dataset.visible = 'false';
+      mobileControls.dataset.visible = 'false';
+      finishOverlay.dataset.visible = 'false';
+      mapName.textContent = '로비';
+      mapDesc.textContent = '포털로 세 가지 3D 점프맵을 선택하세요.';
+      stageText.textContent = '-';
+      timerText.textContent = '00:00.000';
+      bestText.textContent = '--:--.---';
+    }
+
+    function buildColorMap() {
+      const level = { id: 'color', platforms: [], group: new THREE.Group(), spawn: new THREE.Vector3(0, 3, 0), killY: -16 };
+      scene.background = new THREE.Color(0x101a48);
+      scene.fog.color.set(0x101a48);
+      const floor = makeBox(new THREE.Vector3(18, 1.5, 18), 0x24346f, new THREE.Vector3(0, -1.5, 0), { roughness: 0.88 });
+      level.group.add(floor);
+      makePlatform(level, 0, 0.2, 0, 7, 0.5, 7, 'checkpoint', { stage: 1, color: 0xff5fae });
+      const colors = [0xff4ca7, 0xff8855, 0xffe454, 0x66dd77, 0x42d3ff, 0x6d6dff, 0xd66dff];
+      for (let i = 1; i <= 20; i++) {
+        const baseX = i * 6.2;
+        const y = (i % 4) * 1.1 + (i > 10 ? 1.4 : 0) + (i > 16 ? 1 : 0);
+        const z = (i % 2 === 0 ? 2.8 : -2.8);
+        if (i < 20) makePlatform(level, baseX - 2.4, y, z * 0.45, 3.1, 0.45, 3.1, i % 5 === 0 ? 'crumble' : 'solid', { color: colors[i % colors.length] });
+        makePlatform(level, baseX + 1.2, y + 0.45, z, 3.1, 0.45, 3.1, i % 4 === 0 ? 'crumble' : 'solid', { color: colors[(i + 2) % colors.length] });
+        if (i % 5 === 0) makePlatform(level, baseX + 4.8, y + 0.85, 0, 4.5, 0.55, 4.5, 'checkpoint', { stage: Math.min(i + 1, 20), color: colors[(i + 3) % colors.length] });
+        if (i === 20) makePlatform(level, baseX + 6.6, y + 1.2, 0, 6.5, 0.65, 6.5, 'finish', { color: 0xffef65, label: 'FINISH' });
+      }
+      const kill = makeBox(new THREE.Vector3(180, 0.4, 50), 0xff335e, new THREE.Vector3(60, -8.4, 0), { roughness: 0.25 });
+      kill.material.emissive = new THREE.Color(0xff335e);
+      kill.material.emissiveIntensity = 0.9;
+      level.group.add(kill);
+      return level;
+    }
+
+    function buildLavaMap() {
+      const level = { id: 'lava', platforms: [], group: new THREE.Group(), spawn: new THREE.Vector3(0, 4, 0), killY: -8 };
+      scene.background = new THREE.Color(0x2b0c0c);
+      scene.fog.color.set(0x2b0c0c);
+      const base = makeBox(new THREE.Vector3(14, 1.5, 14), 0x3a2530, new THREE.Vector3(0, -1.5, 0), { roughness: 0.9 });
+      level.group.add(base);
+      makePlatform(level, 0, 0.2, 0, 6.5, 0.5, 6.5, 'checkpoint', { stage: 1, color: 0xffa23f });
+      let side = -1;
+      for (let i = 1; i <= 18; i++) {
+        const y = i * 2.2;
+        side *= -1;
+        const z = side * 4.5;
+        makePlatform(level, -1.5, y, z, 3.2, 0.45, 3.2, i % 4 === 0 ? 'crumble' : 'solid', { color: i % 2 ? 0xffc85b : 0xff8640 });
+        makePlatform(level, 2.6, y + 0.5, -z * 0.6, 3.2, 0.45, 3.2, i % 5 === 0 ? 'crumble' : 'solid', { color: i % 2 ? 0xff8640 : 0xffc85b });
+        if (i % 3 === 0 && i < 18) makePlatform(level, 0.5, y + 1.0, 0, 4.8, 0.55, 4.8, 'checkpoint', { stage: i + 1, color: 0xff9a35 });
+        if (i === 18) makePlatform(level, 0.5, y + 1.8, 0, 6.4, 0.7, 6.4, 'finish', { color: 0xffea64 });
+      }
+      const lava = makeBox(new THREE.Vector3(38, 0.5, 38), 0xff4f1f, new THREE.Vector3(0, -4.4, 0), { roughness: 0.18 });
+      lava.material.emissive = new THREE.Color(0xff4f1f);
+      lava.material.emissiveIntensity = 1.1;
+      level.group.add(lava);
+      for (let i = 0; i < 14; i++) {
+        const spike = makeBox(new THREE.Vector3(1.5, 3 + Math.random() * 6, 1.5), 0x2f2430, new THREE.Vector3(-10 + Math.random() * 20, -2, -10 + Math.random() * 20), { roughness: 0.85 });
+        level.group.add(spike);
+      }
+      return level;
+    }
+
+    function buildCloud(pos, scale = 1) {
+      const g = new THREE.Group();
+      const mat = new THREE.MeshStandardMaterial({ color: 0xffffff, transparent: true, opacity: 0.92 });
+      const offsets = [[0,0,0],[1.2,0.2,0.2],[-1.15,0.15,-0.1],[0.35,0.35,-0.8]];
+      offsets.forEach(o => {
+        const s = new THREE.Mesh(new THREE.SphereGeometry((0.95 + Math.random() * 0.35) * scale, 18, 18), mat);
+        s.position.set(o[0] * scale, o[1] * scale, o[2] * scale);
+        s.castShadow = true;
+        s.receiveShadow = true;
+        g.add(s);
+      });
+      g.position.copy(pos);
+      return g;
+    }
+
+    function buildSkyMap() {
+      const level = { id: 'sky', platforms: [], group: new THREE.Group(), spawn: new THREE.Vector3(0, 4, 0), killY: -18 };
+      scene.background = new THREE.Color(0x87d9ff);
+      scene.fog.color.set(0x87d9ff);
+      const sun = new THREE.Mesh(new THREE.SphereGeometry(3, 20, 20), new THREE.MeshBasicMaterial({ color: 0xfff1b3 }));
+      sun.position.set(50, 28, -60);
+      level.group.add(sun);
+
+      makePlatform(level, 0, 0.2, 0, 7.5, 0.6, 7.5, 'checkpoint', { stage: 1, color: 0x66e5ff });
+      // Remade sky-island route: larger islands, curved path, vertical variety.
