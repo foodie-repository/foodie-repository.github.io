@@ -1,0 +1,28 @@
+if (btn.setPointerCapture && e.pointerId !== undefined) btn.setPointerCapture(e.pointerId);
+};
+const up = e => {
+e.preventDefault();
+if (key === 'jump') bindKey('jump', false);
+else input[key] = false;
+};
+btn.addEventListener('pointerdown', down, { passive: false });
+btn.addEventListener('pointerup', up, { passive: false });
+btn.addEventListener('pointercancel', up, { passive: false });
+btn.addEventListener('pointerleave', e => { if (e.buttons === 0) up(e); }, { passive: false });
+});
+addEventListener('resize', () => {
+camera.aspect = innerWidth / innerHeight;
+camera.updateProjectionMatrix();
+renderer.setSize(innerWidth, innerHeight);
+});
+function syncCameraButtonVisibility() {
+const inGame = lobbyOverlay.dataset.visible === 'false';
+viewBtn.dataset.visible = inGame ? 'true' : 'false';
+if (!inGame && state.cameraMode !== 'third') setCameraMode('third', false);
+}
+new MutationObserver(syncCameraButtonVisibility).observe(lobbyOverlay, { attributes: true, attributeFilter: ['data-visible'] });
+syncCameraButtonVisibility();
+buildLobby();
+animate();
+window.__TRIPLE_OBBY_3D__ = { startMap, returnLobby };
+})();
