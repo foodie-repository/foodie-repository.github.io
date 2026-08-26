@@ -1,0 +1,137 @@
+        [[-w * 0.02, 0, -d * 0.34], [w * 0.02, 0, -d * 0.16], [w * 0.09, 0, 0.02], [w * 0.16, 0, d * 0.2]]
+      ];
+      pathSets.forEach(path => {
+        for (let i = 0; i < path.length - 1; i++) {
+          points.push(new THREE.Vector3(path[i][0], y, path[i][2]), new THREE.Vector3(path[i + 1][0], y, path[i + 1][2]));
+        }
+      });
+      const geo = new THREE.BufferGeometry().setFromPoints(points);
+      const mat = new THREE.LineBasicMaterial({ color: 0x2f2434, transparent: true, opacity: 0.75 });
+      const lines = new THREE.LineSegments(geo, mat);
+      return lines;
+    }
+
+    function makePlatform(level, x, y, z, w, h, d, kind = 'solid', extra = {}) {
+      const color = extra.color ?? (kind === 'checkpoint' ? 0x49f2ff : kind === 'finish' ? 0xffe34f : 0xffffff);
+      const mesh = makeBox(new THREE.Vector3(w, h, d), color, new THREE.Vector3(x, y + h / 2, z), { roughness: 0.48 });
+      const obj = { kind, mesh, x, y, z, w, h, d, active: true, baseX: x, baseY: y, baseZ: z, phase: extra.phase || 0, speed: extra.speed || 1.5, range: extra.range || 2.5, stage: extra.stage || 0, timer: 0, respawnAt: 0, label: extra.label || '' };
+      if (kind === 'crumble') {
+        const cracks = createCrackLines(w, d, h / 2 + 0.011);
+        mesh.add(cracks);
+        obj.cracks = cracks;
+      }
+      if (kind === 'checkpoint' || kind === 'finish') {
+        const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 2.1), new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.4 }));
+        pole.position.set(0, h / 2 + 1.05, 0);
+        mesh.add(pole);
+        const flag = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.44, 0.06), new THREE.MeshStandardMaterial({ color: kind === 'finish' ? 0xfff16a : color, roughness: 0.4 }));
+        flag.position.set(0.46, h / 2 + 1.35, 0);
+        mesh.add(flag);
+      }
+      if (kind === 'hazard') {
+        mesh.material.emissive = new THREE.Color(color);
+        mesh.material.emissiveIntensity = 0.5;
+      }
+      level.platforms.push(obj);
+      level.group.add(mesh);
+      return obj;
+    }
+
+    function buildLobby() {
+      clearLevel();
+      const group = new THREE.Group();
+      const ground = makeBox(new THREE.Vector3(60, 2, 32), 0x192445, new THREE.Vector3(0, -1, 0), { roughness: 0.88 });
+      ground.receiveShadow = true;
+      group.add(ground);
+
+      for (let i = 0; i < 80; i++) {
+        const star = new THREE.Mesh(new THREE.SphereGeometry(0.08 + Math.random() * 0.04, 8, 8), new THREE.MeshBasicMaterial({ color: 0xffffff }));
+        star.position.set((Math.random() - 0.5) * 150, 18 + Math.random() * 35, (Math.random() - 0.5) * 150);
+        group.add(star);
+      }
+
+      const titleBase = makeBox(new THREE.Vector3(15, 0.8, 4), 0x24315f, new THREE.Vector3(0, 3.5, -10), { roughness: 0.8 });
+      group.add(titleBase);
+
+      const portals = [
+        { id: 'color', x: -16, color: 0xff49ae },
+        { id: 'lava', x: 0, color: 0xff6f2a },
+        { id: 'sky', x: 16, color: 0x45d9ff },
+      ];
+      const portalObjects = [];
+      portals.forEach(p => {
+        const ring = new THREE.Mesh(new THREE.TorusGeometry(2.4, 0.35, 16, 64), new THREE.MeshStandardMaterial({ color: p.color, emissive: p.color, emissiveIntensity: 0.75, roughness: 0.32 }));
+        ring.position.set(p.x, 3.6, 0);
+        ring.rotation.x = Math.PI / 2;
+        ring.castShadow = true;
+        group.add(ring);
+        const pad = makeBox(new THREE.Vector3(4.8, 0.5, 4.8), 0x202d5f, new THREE.Vector3(p.x, 0.25, 0), { roughness: 0.8 });
+        group.add(pad);
+        portalObjects.push({ id: p.id, ring, x: p.x, z: 0 });
+      });
+
+      const clouds = new THREE.Group();
+      for (let i = 0; i < 24; i++) {
+        const c = new THREE.Group();
+        const mat = new THREE.MeshStandardMaterial({ color: 0xffffff, transparent: true, opacity: 0.8 });
+        [0, 1, 2].forEach(n => {
+          const s = new THREE.Mesh(new THREE.SphereGeometry(1.1 + Math.random() * 0.9, 16, 16), mat);
+          s.position.set(n * 1.1 - 1, Math.random() * 0.4, Math.random() * 0.3);
+          c.add(s);
+        });
+        c.position.set((Math.random() - 0.5) * 90, 10 + Math.random() * 10, -16 + Math.random() * 40);
+        clouds.add(c);
+      }
+      group.add(clouds);
+
+      worldRoot.add(group);
+      state.level = { id: 'lobby', group, portals: portalObjects, platforms: [], killY: -30, spawn: new THREE.Vector3(0, 2, 10) };
+      player.pos.copy(state.level.spawn);
+      player.checkpoint.copy(player.pos);
+      player.vel.set(0, 0, 0);
+      player.stage = 1;
+      player.mapId = null;
+      player.grounded = false;
+      playerGroup.position.copy(player.pos);
+      setCameraMode('third', false);
+      scene.background = new THREE.Color(0x0c1734);
+      scene.fog.color.set(0x0c1734);
+      lobbyOverlay.dataset.visible = 'true';
+      hud.dataset.visible = 'false';
+      mobileControls.dataset.visible = 'false';
+      finishOverlay.dataset.visible = 'false';
+      mapName.textContent = '로비';
+      mapDesc.textContent = '포털로 세 가지 3D 점프맵을 선택하세요.';
+      stageText.textContent = '-';
+      timerText.textContent = '00:00.000';
+      bestText.textContent = '--:--.---';
+    }
+
+    function buildColorMap() {
+      const level = { id: 'color', platforms: [], group: new THREE.Group(), spawn: new THREE.Vector3(0, 3, 0), killY: -16 };
+      scene.background = new THREE.Color(0x101a48);
+      scene.fog.color.set(0x101a48);
+      const floor = makeBox(new THREE.Vector3(18, 1.5, 18), 0x24346f, new THREE.Vector3(0, -1.5, 0), { roughness: 0.88 });
+      level.group.add(floor);
+      makePlatform(level, 0, 0.2, 0, 7, 0.5, 7, 'checkpoint', { stage: 1, color: 0xff5fae });
+      const colors = [0xff4ca7, 0xff8855, 0xffe454, 0x66dd77, 0x42d3ff, 0x6d6dff, 0xd66dff];
+      for (let i = 1; i <= 20; i++) {
+        const baseX = i * 6.2;
+        const y = (i % 4) * 1.1 + (i > 10 ? 1.4 : 0) + (i > 16 ? 1 : 0);
+        const z = (i % 2 === 0 ? 2.8 : -2.8);
+        if (i < 20) makePlatform(level, baseX - 2.4, y, z * 0.45, 3.1, 0.45, 3.1, i % 5 === 0 ? 'crumble' : 'solid', { color: colors[i % colors.length] });
+        makePlatform(level, baseX + 1.2, y + 0.45, z, 3.1, 0.45, 3.1, i % 4 === 0 ? 'crumble' : 'solid', { color: colors[(i + 2) % colors.length] });
+        if (i % 5 === 0) makePlatform(level, baseX + 4.8, y + 0.85, 0, 4.5, 0.55, 4.5, 'checkpoint', { stage: Math.min(i + 1, 20), color: colors[(i + 3) % colors.length] });
+        if (i === 20) makePlatform(level, baseX + 6.6, y + 1.2, 0, 6.5, 0.65, 6.5, 'finish', { color: 0xffef65, label: 'FINISH' });
+      }
+      const kill = makeBox(new THREE.Vector3(180, 0.4, 50), 0xff335e, new THREE.Vector3(60, -8.4, 0), { roughness: 0.25 });
+      kill.material.emissive = new THREE.Color(0xff335e);
+      kill.material.emissiveIntensity = 0.9;
+      level.group.add(kill);
+      return level;
+    }
+
+    function buildLavaMap() {
+      const level = { id: 'lava', platforms: [], group: new THREE.Group(), spawn: new THREE.Vector3(0, 4, 0), killY: -8 };
+      scene.background = new THREE.Color(0x2b0c0c);
+      scene.fog.color.set(0x2b0c0c);
