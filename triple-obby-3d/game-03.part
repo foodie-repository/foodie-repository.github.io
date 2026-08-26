@@ -19,7 +19,7 @@
     }
 
     function buildColorMap() {
-      const level = { id: 'color', platforms: [], group: new THREE.Group(), spawn: new THREE.Vector3(0, 3, 0), killY: -16 };
+      const level = { id: 'color', platforms: [], group: new THREE.Group(), spawn: new THREE.Vector3(0, 3, 0), killY: -8.1 };
       scene.background = new THREE.Color(0x101a48);
       scene.fog.color.set(0x101a48);
       const floor = makeBox(new THREE.Vector3(18, 1.5, 18), 0x24346f, new THREE.Vector3(0, -1.5, 0), { roughness: 0.88 });
@@ -43,7 +43,7 @@
     }
 
     function buildLavaMap() {
-      const level = { id: 'lava', platforms: [], group: new THREE.Group(), spawn: new THREE.Vector3(0, 4, 0), killY: -8 };
+      const level = { id: 'lava', platforms: [], group: new THREE.Group(), spawn: new THREE.Vector3(0, 4, 0), killY: -4.05 };
       scene.background = new THREE.Color(0x2b0c0c);
       scene.fog.color.set(0x2b0c0c);
       const base = makeBox(new THREE.Vector3(14, 1.5, 14), 0x3a2530, new THREE.Vector3(0, -1.5, 0), { roughness: 0.9 });
@@ -86,7 +86,7 @@
     }
 
     function buildSkyMap() {
-      const level = { id: 'sky', platforms: [], group: new THREE.Group(), spawn: new THREE.Vector3(0, 4, 0), killY: -18 };
+      const level = { id: 'sky', platforms: [], group: new THREE.Group(), spawn: new THREE.Vector3(0, 4, 0), killY: -10.2 };
       scene.background = new THREE.Color(0x87d9ff);
       scene.fog.color.set(0x87d9ff);
       const sun = new THREE.Mesh(new THREE.SphereGeometry(3, 20, 20), new THREE.MeshBasicMaterial({ color: 0xfff1b3 }));
