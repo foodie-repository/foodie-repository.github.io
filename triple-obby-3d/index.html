@@ -2,11 +2,16 @@
 <html lang="ko">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
-  <meta name="theme-color" content="#030814" />
-  <meta name="description" content="로비에서 컬러 점프맵, 용암 타워, 하늘섬 리메이크를 선택해 즐기는 3D 브라우저 점프맵" />
-  <title>Triple Obby 3D</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>Triple Obby 3D - 친구와 공유하는 점프맵</title>
+  <meta name="description" content="3D 컬러 점프맵, 용암 타워, 하늘섬 리메이크를 로비에서 골라 플레이하세요." />
+  <meta name="theme-color" content="#101a48" />
+  <meta property="og:title" content="Triple Obby 3D" />
+  <meta property="og:description" content="3개의 3D 점프맵과 시점 변경 기능을 친구들과 공유하세요." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://foodie-repository.github.io/triple-obby-3d/" />
   <link rel="stylesheet" href="styles.css?v=3d-20260826-1" />
+  <link rel="stylesheet" href="camera.css?v=3d-20260826-2" />
 </head>
 <body>
   <div id="hud" class="glass" data-visible="false">
@@ -21,6 +26,8 @@
     <button id="restartBtn">재시작</button>
     <button id="lobbyBtn">로비</button>
   </div>
+
+  <button id="viewBtn" data-visible="false" aria-label="시점 변경"><span class="viewLabel">시점: </span><span id="viewModeText">3인칭</span></button>
 
   <section id="lobbyOverlay" data-visible="true">
     <div class="lobbyCard glass">
@@ -70,9 +77,8 @@
       <div class="mBtn big" data-key="jump">⬆</div>
     </div>
   </div>
-  <div id="help">WASD 이동 · Space 점프 · Shift 달리기 · R 재시작 · L 로비</div>
-
+  <div id="help">WASD 이동 · Space 점프 · Shift 달리기 · C 시점 변경 · R 재시작 · L 로비</div>
   <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
-  <script src="loader.js?v=3d-20260826-1"></script>
+  <script src="loader-camera.js?v=3d-20260826-2"></script>
 </body>
 </html>
