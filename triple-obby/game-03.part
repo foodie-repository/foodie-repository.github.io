@@ -1,0 +1,178 @@
+    const best = setBest(game.mapId, game.finishedTime);
+    els.resultTime.textContent = formatTime(game.finishedTime);
+    els.resultBest.textContent = formatTime(best);
+    els.best.textContent = formatTime(best);
+    els.completeMessage.textContent = game.finishedTime < oldBest ? "새로운 최고 기록입니다!" : "멋지게 모든 스테이지를 통과했습니다.";
+    els.complete.dataset.visible = "true";
+    els.mobile.dataset.visible = "false";
+    for (let i = 0; i < 150; i++) {
+      game.confetti.push({
+        x: Math.random() * W, y: -30 - Math.random() * H,
+        vx: -60 + Math.random() * 120, vy: 120 + Math.random() * 240,
+        rot: Math.random() * TAU, vr: -5 + Math.random() * 10,
+        size: 5 + Math.random() * 9,
+        color: hsl(Math.random() * 360, 90, 60)
+      });
+    }
+  }
+
+  function overlaps(ax, ay, aw, ah, bx, by, bw, bh) {
+    return ax < bx + bw && ax + aw > bx && ay < by + bh && ay + ah > by;
+  }
+
+  function updatePlatforms(level, time) {
+    for (const p of level.platforms) {
+      p.prevX = p.x;
+      p.prevY = p.y;
+      if (p.kind === "moveX" || p.kind === "hazardMove") {
+        p.x = p.baseX + Math.sin(time * p.speed + p.phase) * p.range;
+      } else if (p.kind === "moveY") {
+        p.y = p.baseY + Math.sin(time * p.speed + p.phase) * p.range;
+      }
+      if (p.kind === "crumble" && p.triggerAt > 0) {
+        if (time >= p.triggerAt + .42 && time < p.reappearAt) p.active = false;
+        if (time >= p.reappearAt) {
+          p.active = true;
+          p.triggerAt = 0;
+          p.reappearAt = 0;
+        }
+      }
+    }
+  }
+
+  function updatePlayer(dt) {
+    const p = game.player;
+    const level = game.level;
+    if (!p || !level) return;
+    const time = game.elapsed;
+    updatePlatforms(level, time);
+
+    if (p.standing && p.standing.active) {
+      p.x += p.standing.x - p.standing.prevX;
+      p.y += p.standing.y - p.standing.prevY;
+    }
+    p.standing = null;
+    p.prevY = p.y;
+    p.invincible = Math.max(0, p.invincible - dt);
+    p.boostTimer = Math.max(0, p.boostTimer - dt);
+
+    const move = (input.right ? 1 : 0) - (input.left ? 1 : 0);
+    const maxSpeed = p.boostTimer > 0 ? 620 : (game.mapId === "sky" ? 385 : 330);
+    const acceleration = p.grounded ? 2500 : 1550;
+    const target = move * maxSpeed;
+    p.vx += clamp(target - p.vx, -acceleration * dt, acceleration * dt);
+    if (move === 0) p.vx *= Math.pow(p.grounded ? .0008 : .13, dt);
+    if (move !== 0) p.facing = Math.sign(move);
+
+    if (input.jumpPressed) p.jumpBuffer = .13;
+    else p.jumpBuffer = Math.max(0, p.jumpBuffer - dt);
+    p.coyote = p.grounded ? .11 : Math.max(0, p.coyote - dt);
+    if (p.jumpBuffer > 0 && p.coyote > 0) {
+      p.vy = game.mapId === "lava" ? -770 : -740;
+      p.grounded = false;
+      p.coyote = 0;
+      p.jumpBuffer = 0;
+      spawnBurst(p.x, p.y + p.h / 2, "rgba(255,255,255,.8)", 6);
+    }
+    if (!input.jump && p.vy < -240) p.vy += 1900 * dt;
+
+    p.vy += 2150 * dt;
+    p.vy = Math.min(p.vy, 1200);
+    p.x += p.vx * dt;
+    p.y += p.vy * dt;
+
+    const previousBottom = p.prevY + p.h / 2;
+    const currentBottom = p.y + p.h / 2;
+    p.grounded = false;
+
+    for (const platform of level.platforms) {
+      if (!platform.active || platform.kind === "hazardMove") continue;
+      const px = p.x - p.w / 2;
+      const pRight = p.x + p.w / 2;
+      const xOverlap = pRight > platform.x + 4 && px < platform.x + platform.w - 4;
+      if (!xOverlap) continue;
+      const canLand = p.vy >= -50 && previousBottom <= platform.y + 8 && currentBottom >= platform.y && currentBottom <= platform.y + platform.h + 30;
+      if (canLand) {
+        p.y = platform.y - p.h / 2;
+        p.vy = 0;
+        p.grounded = true;
+        p.standing = platform;
+
+        if (platform.kind === "checkpoint") activateCheckpoint(platform);
+        if (platform.kind === "crumble" && platform.triggerAt === 0) {
+          platform.triggerAt = time;
+          platform.reappearAt = time + 3.1;
+        }
+        if (platform.kind === "conveyor") p.vx += platform.direction * 115;
+        if (platform.kind === "speed") {
+          p.boostTimer = 1.15;
+          p.vx = platform.direction * 650;
+          spawnBurst(p.x, p.y, "#5dffad", 16);
+        }
+        if (platform.kind === "bounce") {
+          p.vy = -1030;
+          p.grounded = false;
+          spawnBurst(p.x, platform.y, "#ffec67", 18);
+        }
+        if (platform.kind === "finish") finishMap();
+        break;
+      }
+    }
+
+    const ax = p.x - p.w / 2 + 5;
+    const ay = p.y - p.h / 2 + 4;
+    const aw = p.w - 10;
+    const ah = p.h - 8;
+    for (const hazard of level.platforms) {
+      if (hazard.kind !== "hazardMove" || !hazard.active) continue;
+      if (overlaps(ax, ay, aw, ah, hazard.x, hazard.y, hazard.w, hazard.h)) {
+        respawn("hazard");
+        break;
+      }
+    }
+
+    if (level.type === "horizontal") {
+      p.x = clamp(p.x, 20, level.worldWidth - 20);
+      if (p.y > level.deathY) respawn("fall");
+      const targetX = clamp(p.x - game.viewportW * .34, 0, Math.max(0, level.worldWidth - game.viewportW));
+      game.camera.x = lerp(game.camera.x, targetX, 1 - Math.pow(.001, dt));
+      game.camera.y = 0;
+    } else {
+      p.x = clamp(p.x, 20, W - 20);
+      if (p.y > p.checkpointY + 760) respawn("fall");
+      const minY = level.finishY - 120;
+      const targetY = clamp(p.y - H * .64, minY, 0);
+      game.camera.y = lerp(game.camera.y, targetY, 1 - Math.pow(.002, dt));
+      const targetX = clamp(p.x - game.viewportW * .5, 0, Math.max(0, W - game.viewportW));
+      game.camera.x = lerp(game.camera.x, targetX, 1 - Math.pow(.002, dt));
+    }
+
+    p.trail.push({ x: p.x, y: p.y, life: 1 });
+    if (p.trail.length > (p.boostTimer > 0 ? 18 : 7)) p.trail.shift();
+    for (const t of p.trail) t.life -= dt * 4;
+    p.trail = p.trail.filter(t => t.life > 0);
+  }
+
+  function updateLobby(dt) {
+    const p = game.lobbyPlayer;
+    const move = (input.right ? 1 : 0) - (input.left ? 1 : 0);
+    const target = move * 320;
+    p.vx += clamp(target - p.vx, -2400 * dt, 2400 * dt);
+    if (move === 0) p.vx *= Math.pow(.001, dt);
+    if (move !== 0) p.facing = Math.sign(move);
+    if (input.jumpPressed && p.grounded) {
+      p.vy = -700;
+      p.grounded = false;
+    }
+    p.vy += 2050 * dt;
+    p.x += p.vx * dt;
+    p.y += p.vy * dt;
+    if (p.y + p.h / 2 >= 620) {
+      p.y = 620 - p.h / 2;
+      p.vy = 0;
+      p.grounded = true;
+    }
+    p.x = clamp(p.x, 20, W - 20);
+
+    const portals = [
+      { id: "color", x: 205, y: 365, w: 170, h: 255 },
