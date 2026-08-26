@@ -1,0 +1,104 @@
+
+    function makeBox(size, color, pos, opts = {}) {
+      const mat = new THREE.MeshStandardMaterial({ color, roughness: opts.roughness ?? 0.55, metalness: opts.metalness ?? 0.08, transparent: !!opts.transparent, opacity: opts.opacity ?? 1 });
+      const mesh = new THREE.Mesh(new THREE.BoxGeometry(size.x, size.y, size.z), mat);
+      mesh.position.copy(pos);
+      mesh.receiveShadow = opts.receiveShadow !== false;
+      mesh.castShadow = opts.castShadow !== false;
+      if (opts.rotationY) mesh.rotation.y = opts.rotationY;
+      return mesh;
+    }
+
+    function createCrackLines(w, d, y) {
+      const points = [];
+      const pathSets = [
+        [[-w * 0.35, 0, -d * 0.2], [-w * 0.1, 0, -d * 0.05], [w * 0.05, 0, d * 0.15], [w * 0.28, 0, d * 0.26]],
+        [[-w * 0.15, 0, d * 0.28], [-w * 0.04, 0, d * 0.06], [w * 0.1, 0, -d * 0.15], [w * 0.24, 0, -d * 0.28]],
+        [[-w * 0.02, 0, -d * 0.34], [w * 0.02, 0, -d * 0.16], [w * 0.09, 0, 0.02], [w * 0.16, 0, d * 0.2]]
+      ];
+      pathSets.forEach(path => {
+        for (let i = 0; i < path.length - 1; i++) {
+          points.push(new THREE.Vector3(path[i][0], y, path[i][2]), new THREE.Vector3(path[i + 1][0], y, path[i + 1][2]));
+        }
+      });
+      const geo = new THREE.BufferGeometry().setFromPoints(points);
+      const mat = new THREE.LineBasicMaterial({ color: 0x2f2434, transparent: true, opacity: 0.75 });
+      const lines = new THREE.LineSegments(geo, mat);
+      return lines;
+    }
+
+    function makePlatform(level, x, y, z, w, h, d, kind = 'solid', extra = {}) {
+      const color = extra.color ?? (kind === 'checkpoint' ? 0x49f2ff : kind === 'finish' ? 0xffe34f : 0xffffff);
+      const mesh = makeBox(new THREE.Vector3(w, h, d), color, new THREE.Vector3(x, y + h / 2, z), { roughness: 0.48 });
+      const obj = { kind, mesh, x, y, z, w, h, d, active: true, baseX: x, baseY: y, baseZ: z, phase: extra.phase || 0, speed: extra.speed || 1.5, range: extra.range || 2.5, stage: extra.stage || 0, timer: 0, respawnAt: 0, label: extra.label || '' };
+      if (kind === 'crumble') {
+        const cracks = createCrackLines(w, d, h / 2 + 0.011);
+        mesh.add(cracks);
+        obj.cracks = cracks;
+      }
+      if (kind === 'checkpoint' || kind === 'finish') {
+        const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 2.1), new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.4 }));
+        pole.position.set(0, h / 2 + 1.05, 0);
+        mesh.add(pole);
+        const flag = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.44, 0.06), new THREE.MeshStandardMaterial({ color: kind === 'finish' ? 0xfff16a : color, roughness: 0.4 }));
+        flag.position.set(0.46, h / 2 + 1.35, 0);
+        mesh.add(flag);
+      }
+      if (kind === 'hazard') {
+        mesh.material.emissive = new THREE.Color(color);
+        mesh.material.emissiveIntensity = 0.5;
+      }
+      level.platforms.push(obj);
+      level.group.add(mesh);
+      return obj;
+    }
+
+    function buildLobby() {
+      clearLevel();
+      const group = new THREE.Group();
+      const ground = makeBox(new THREE.Vector3(60, 2, 32), 0x192445, new THREE.Vector3(0, -1, 0), { roughness: 0.88 });
+      ground.receiveShadow = true;
+      group.add(ground);
+
+      for (let i = 0; i < 80; i++) {
+        const star = new THREE.Mesh(new THREE.SphereGeometry(0.08 + Math.random() * 0.04, 8, 8), new THREE.MeshBasicMaterial({ color: 0xffffff }));
+        star.position.set((Math.random() - 0.5) * 150, 18 + Math.random() * 35, (Math.random() - 0.5) * 150);
+        group.add(star);
+      }
+
+      const titleBase = makeBox(new THREE.Vector3(15, 0.8, 4), 0x24315f, new THREE.Vector3(0, 3.5, -10), { roughness: 0.8 });
+      group.add(titleBase);
+
+      const portals = [
+        { id: 'color', x: -16, color: 0xff49ae },
+        { id: 'lava', x: 0, color: 0xff6f2a },
+        { id: 'sky', x: 16, color: 0x45d9ff },
+      ];
+      const portalObjects = [];
+      portals.forEach(p => {
+        const ring = new THREE.Mesh(new THREE.TorusGeometry(2.4, 0.35, 16, 64), new THREE.MeshStandardMaterial({ color: p.color, emissive: p.color, emissiveIntensity: 0.75, roughness: 0.32 }));
+        ring.position.set(p.x, 3.6, 0);
+        ring.rotation.x = Math.PI / 2;
+        ring.castShadow = true;
+        group.add(ring);
+        const pad = makeBox(new THREE.Vector3(4.8, 0.5, 4.8), 0x202d5f, new THREE.Vector3(p.x, 0.25, 0), { roughness: 0.8 });
+        group.add(pad);
+        portalObjects.push({ id: p.id, ring, x: p.x, z: 0 });
+      });
+
+      const clouds = new THREE.Group();
+      for (let i = 0; i < 24; i++) {
+        const c = new THREE.Group();
+        const mat = new THREE.MeshStandardMaterial({ color: 0xffffff, transparent: true, opacity: 0.8 });
+        [0, 1, 2].forEach(n => {
+          const s = new THREE.Mesh(new THREE.SphereGeometry(1.1 + Math.random() * 0.9, 16, 16), mat);
+          s.position.set(n * 1.1 - 1, Math.random() * 0.4, Math.random() * 0.3);
+          c.add(s);
+        });
+        c.position.set((Math.random() - 0.5) * 90, 10 + Math.random() * 10, -16 + Math.random() * 40);
+        clouds.add(c);
+      }
+      group.add(clouds);
+
+      worldRoot.add(group);
+      state.level = { id: 'lobby', group, portals: portalObjects, platforms: [], killY: -30, spawn: new THREE.Vector3(0, 2, 10) };
