@@ -1,0 +1,27 @@
+
+    const viewBtn = document.getElementById('viewBtn');
+    const viewModeText = document.getElementById('viewModeText');
+    const CAMERA_MODES = [
+      { id: 'third', label: '3인칭', fov: 65 },
+      { id: 'close', label: '근접', fov: 69 },
+      { id: 'first', label: '1인칭', fov: 76 },
+      { id: 'top', label: '탑뷰', fov: 58 },
+    ];
+    state.cameraMode = 'third';
+
+    function setCameraMode(modeId, announce = true) {
+      const mode = CAMERA_MODES.find(item => item.id === modeId) || CAMERA_MODES[0];
+      state.cameraMode = mode.id;
+      viewModeText.textContent = mode.label;
+      viewBtn.setAttribute('aria-label', '시점 변경. 현재 ' + mode.label);
+      camera.fov = mode.fov;
+      camera.updateProjectionMatrix();
+      playerGroup.visible = mode.id !== 'first';
+      if (announce) showToast('시점: ' + mode.label, 0.75);
+    }
+
+    function cycleCameraMode() {
+      const current = CAMERA_MODES.findIndex(item => item.id === state.cameraMode);
+      const next = CAMERA_MODES[(current + 1) % CAMERA_MODES.length];
+      setCameraMode(next.id);
+    }
