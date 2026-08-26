@@ -1,0 +1,47 @@
+renderer.render(scene, camera);
+}
+function bindKey(name, pressed) {
+if (name === 'w') input.forward = pressed;
+else if (name === 's') input.back = pressed;
+else if (name === 'a') input.left = pressed;
+else if (name === 'd') input.right = pressed;
+else if (name === 'jump') {
+if (pressed && !input.jump) input.jumpPressed = true;
+input.jump = pressed;
+} else if (name === 'sprint') input.sprint = pressed;
+}
+addEventListener('keydown', e => {
+if (['KeyW','ArrowUp'].includes(e.code)) bindKey('w', true);
+if (['KeyS','ArrowDown'].includes(e.code)) bindKey('s', true);
+if (['KeyA','ArrowLeft'].includes(e.code)) bindKey('a', true);
+if (['KeyD','ArrowRight'].includes(e.code)) bindKey('d', true);
+if (e.code === 'Space') { bindKey('jump', true); e.preventDefault(); }
+if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') bindKey('sprint', true);
+if (e.code === 'KeyC' && state.mode !== 'lobby') cycleCameraMode();
+if (e.code === 'KeyR' && state.mode === 'playing') startMap(player.mapId);
+if ((e.code === 'KeyL' || e.code === 'Escape') && state.mode !== 'lobby') returnLobby();
+});
+addEventListener('keyup', e => {
+if (['KeyW','ArrowUp'].includes(e.code)) bindKey('w', false);
+if (['KeyS','ArrowDown'].includes(e.code)) bindKey('s', false);
+if (['KeyA','ArrowLeft'].includes(e.code)) bindKey('a', false);
+if (['KeyD','ArrowRight'].includes(e.code)) bindKey('d', false);
+if (e.code === 'Space') bindKey('jump', false);
+if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') bindKey('sprint', false);
+});
+addEventListener('blur', () => {
+Object.keys(input).forEach(k => input[k] = false);
+input.jumpPressed = false;
+});
+document.querySelectorAll('.portalBtn').forEach(btn => btn.addEventListener('click', () => startMap(btn.dataset.map)));
+viewBtn.addEventListener('click', cycleCameraMode);
+document.getElementById('restartBtn').addEventListener('click', () => { if (player.mapId) startMap(player.mapId); });
+document.getElementById('lobbyBtn').addEventListener('click', returnLobby);
+document.getElementById('retryFinishBtn').addEventListener('click', () => { if (player.mapId) startMap(player.mapId); });
+document.getElementById('lobbyFinishBtn').addEventListener('click', returnLobby);
+document.querySelectorAll('[data-key]').forEach(btn => {
+const key = btn.dataset.key;
+const down = e => {
+e.preventDefault();
+if (key === 'jump') bindKey('jump', true);
+else input[key] = true;
