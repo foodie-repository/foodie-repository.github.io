@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover" />
+  <meta name="theme-color" content="#10162f" />
+  <title>Triple Obby - 로비에서 3개 맵 선택</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main id="gameShell" aria-label="Triple Obby 게임">
+    <canvas id="gameCanvas" width="1280" height="720"></canvas>
+  </main>
+
+  <section id="lobbyOverlay" data-visible="true" aria-label="맵 선택 로비">
+    <div class="lobby-heading">
+      <div class="lobby-kicker">⭐ TRIPLE OBBY LOBBY</div>
+      <h1>세 개의 점프맵</h1>
+      <p>아래 포털을 누르거나 캐릭터를 포털 앞으로 움직여 입장하세요. PC와 모바일 모두 지원합니다.</p>
+    </div>
+    <div class="portal-grid">
+      <button class="portal-card" data-map="color" aria-label="컬러 점프맵 시작">
+        <span class="icon">🌈</span><h2>컬러 점프맵</h2><p>사라지는 발판과 움직이는 블록을 통과하세요.</p><span class="tag">20 STAGES</span>
+      </button>
+      <button class="portal-card" data-map="lava" aria-label="용암 타워 시작">
+        <span class="icon">🌋</span><h2>용암 타워</h2><p>뜨거운 장애물을 피하며 타워 정상까지 올라가세요.</p><span class="tag">18 STAGES</span>
+      </button>
+      <button class="portal-card" data-map="sky" aria-label="하늘섬 스피드런 시작">
+        <span class="icon">☁️</span><h2>하늘섬 스피드런</h2><p>가속·점프 패드를 이용해 최고 기록에 도전하세요.</p><span class="tag">20 STAGES</span>
+      </button>
+    </div>
+  </section>
+
+  <section id="hud" class="glass" data-visible="false" aria-live="polite">
+    <div class="hud-title"><div id="mapName">컬러 점프맵</div><div id="mapSub">체크포인트를 지나 결승점까지 이동하세요.</div></div>
+    <div class="hud-stat"><span>STAGE</span><strong id="stageText">1 / 20</strong></div>
+    <div class="hud-stat"><span>TIME</span><strong id="timerText">00:00.000</strong></div>
+    <div class="hud-stat best"><span>BEST</span><strong id="bestText">--:--.---</strong></div>
+    <div class="hud-spacer"></div>
+    <button id="restartButton" class="hud-button" type="button">재시작</button>
+    <button id="lobbyButton" class="hud-button" type="button">로비</button>
+  </section>
+
+  <section id="completeOverlay" data-visible="false">
+    <div class="complete-card glass">
+      <div class="complete-emoji">🏆</div>
+      <h2>완주 성공!</h2>
+      <p id="completeMessage">멋지게 모든 스테이지를 통과했습니다.</p>
+      <div class="result-grid">
+        <div class="result-item"><span>이번 기록</span><strong id="resultTime">00:00.000</strong></div>
+        <div class="result-item"><span>최고 기록</span><strong id="resultBest">00:00.000</strong></div>
+      </div>
+      <div class="complete-actions">
+        <button id="retryButton" class="overlay-button primary" type="button">한 번 더</button>
+        <button id="completeLobbyButton" class="overlay-button" type="button">로비로</button>
+      </div>
+    </div>
+  </section>
+
+  <div id="mobileControls" data-visible="false" aria-label="모바일 조작 버튼">
+    <div class="control-group">
+      <button class="control-button" data-control="left" aria-label="왼쪽">◀</button>
+      <button class="control-button" data-control="right" aria-label="오른쪽">▶</button>
+    </div>
+    <div class="control-group">
+      <button class="control-button jump" data-control="jump" aria-label="점프">⬆</button>
+    </div>
+  </div>
+
+  <div id="toast" data-visible="false">체크포인트!</div>
+  <div id="help">이동 A/D 또는 ←/→ · 점프 Space · 재시작 R · 로비 L</div>
+
+<script src="loader.js"></script>
+</body>
+</html>
