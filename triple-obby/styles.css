@@ -1,0 +1,152 @@
+:root {
+      color-scheme: dark;
+      font-family: Inter, Pretendard, "Noto Sans KR", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      --panel: rgba(10, 14, 34, .78);
+      --line: rgba(255,255,255,.16);
+      --text-soft: rgba(255,255,255,.75);
+    }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; background: #070b18; }
+    body { touch-action: none; user-select: none; }
+    button { font: inherit; }
+    #gameShell { position: fixed; inset: 0; display: grid; place-items: center; background: radial-gradient(circle at 50% 15%, #24356b 0, #0c122b 44%, #050711 100%); }
+    #gameCanvas { width: 100vw; height: 100vh; display: block; background: #111; }
+
+    .glass {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      box-shadow: 0 18px 55px rgba(0,0,0,.34), inset 0 1px 0 rgba(255,255,255,.08);
+      backdrop-filter: blur(15px);
+      -webkit-backdrop-filter: blur(15px);
+    }
+
+    #hud {
+      position: fixed; top: max(12px, env(safe-area-inset-top)); left: 50%; transform: translateX(-50%);
+      width: min(940px, calc(100vw - 24px)); min-height: 66px; border-radius: 20px;
+      display: none; align-items: center; gap: 14px; padding: 10px 12px; z-index: 12;
+    }
+    #hud[data-visible="true"] { display: flex; }
+    .hud-title { min-width: 220px; padding: 0 10px; }
+    #mapName { font-size: clamp(16px, 2.2vw, 23px); font-weight: 900; letter-spacing: -.03em; }
+    #mapSub { margin-top: 2px; color: var(--text-soft); font-size: 12px; }
+    .hud-stat { min-width: 100px; padding: 8px 13px; border-radius: 14px; background: rgba(255,255,255,.075); }
+    .hud-stat span { display: block; color: var(--text-soft); font-size: 10px; font-weight: 800; letter-spacing: .09em; }
+    .hud-stat strong { display: block; margin-top: 2px; font-size: 17px; font-variant-numeric: tabular-nums; }
+    .hud-spacer { flex: 1; }
+    .hud-button, .overlay-button {
+      border: 1px solid rgba(255,255,255,.2); color: white; cursor: pointer; font-weight: 900;
+      border-radius: 14px; background: rgba(255,255,255,.09); box-shadow: inset 0 1px rgba(255,255,255,.1);
+      transition: transform .13s ease, background .13s ease;
+    }
+    .hud-button { min-width: 84px; height: 44px; padding: 0 14px; }
+    .hud-button:hover, .overlay-button:hover { background: rgba(255,255,255,.16); transform: translateY(-1px); }
+    .hud-button:active, .overlay-button:active { transform: translateY(1px) scale(.98); }
+
+    #lobbyOverlay {
+      position: fixed; inset: 0; z-index: 10; display: none; pointer-events: none;
+      padding: max(20px, env(safe-area-inset-top)) 18px max(120px, env(safe-area-inset-bottom));
+    }
+    #lobbyOverlay[data-visible="true"] { display: block; }
+    .lobby-heading { text-align: center; text-shadow: 0 6px 28px rgba(0,0,0,.45); }
+    .lobby-kicker { display: inline-flex; align-items: center; gap: 8px; padding: 7px 13px; border-radius: 999px; font-weight: 900; font-size: 12px; letter-spacing: .08em; background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.15); }
+    .lobby-heading h1 { margin: 12px 0 4px; font-size: clamp(31px, 6vw, 68px); line-height: .95; letter-spacing: -.07em; }
+    .lobby-heading p { margin: 10px auto 0; max-width: 650px; color: rgba(255,255,255,.78); font-weight: 700; font-size: clamp(13px, 2vw, 17px); }
+    .portal-grid {
+      position: absolute; left: 50%; transform: translateX(-50%); bottom: max(24px, env(safe-area-inset-bottom));
+      width: min(1040px, calc(100vw - 32px)); display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; pointer-events: auto;
+    }
+    .portal-card {
+      position: relative; overflow: hidden; min-height: 160px; padding: 18px; border-radius: 24px; color: white; text-align: left;
+      border: 1px solid rgba(255,255,255,.24); cursor: pointer; box-shadow: 0 16px 45px rgba(0,0,0,.28), inset 0 1px rgba(255,255,255,.18);
+      transition: transform .17s ease, filter .17s ease, box-shadow .17s ease;
+    }
+    .portal-card::before { content: ""; position: absolute; inset: 0; background: linear-gradient(145deg, rgba(255,255,255,.18), transparent 45%, rgba(0,0,0,.2)); }
+    .portal-card::after { content: "PLAY"; position: absolute; right: 14px; bottom: 12px; font-size: 42px; font-weight: 1000; letter-spacing: -.08em; opacity: .12; }
+    .portal-card:hover { transform: translateY(-6px) scale(1.015); filter: brightness(1.12); box-shadow: 0 24px 60px rgba(0,0,0,.34); }
+    .portal-card:active { transform: scale(.985); }
+    .portal-card[data-map="color"] { background: linear-gradient(135deg, #ff3ea5, #7c4dff); }
+    .portal-card[data-map="lava"] { background: linear-gradient(135deg, #ff6a00, #c31313); }
+    .portal-card[data-map="sky"] { background: linear-gradient(135deg, #08b6e8, #4869ff); }
+    .portal-card .icon { position: relative; z-index: 1; font-size: 30px; }
+    .portal-card h2 { position: relative; z-index: 1; margin: 7px 0 4px; font-size: clamp(18px, 2.4vw, 27px); letter-spacing: -.04em; }
+    .portal-card p { position: relative; z-index: 1; margin: 0; max-width: 260px; color: rgba(255,255,255,.86); font-size: 12px; line-height: 1.45; font-weight: 700; }
+    .portal-card .tag { position: relative; z-index: 1; display: inline-block; margin-top: 12px; padding: 5px 9px; border-radius: 999px; background: rgba(0,0,0,.2); font-size: 11px; font-weight: 900; }
+
+    #toast {
+      position: fixed; left: 50%; bottom: 110px; transform: translate(-50%, 18px); z-index: 25;
+      padding: 11px 16px; border-radius: 999px; background: rgba(3,5,14,.85); border: 1px solid rgba(255,255,255,.16);
+      color: white; font-weight: 900; opacity: 0; pointer-events: none; transition: .2s ease;
+    }
+    #toast[data-visible="true"] { opacity: 1; transform: translate(-50%, 0); }
+
+    #completeOverlay {
+      position: fixed; inset: 0; z-index: 30; display: none; place-items: center; padding: 20px;
+      background: rgba(2,4,13,.55); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+    }
+    #completeOverlay[data-visible="true"] { display: grid; }
+    .complete-card { width: min(520px, 100%); border-radius: 30px; padding: 30px; text-align: center; }
+    .complete-emoji { font-size: 64px; animation: bob 1.2s ease-in-out infinite; }
+    @keyframes bob { 50% { transform: translateY(-9px) rotate(3deg); } }
+    .complete-card h2 { margin: 8px 0 4px; font-size: clamp(31px, 7vw, 50px); letter-spacing: -.06em; }
+    .complete-card p { color: var(--text-soft); font-weight: 700; }
+    .result-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 22px 0; }
+    .result-item { padding: 16px; border-radius: 18px; background: rgba(255,255,255,.08); }
+    .result-item span { display: block; color: var(--text-soft); font-size: 11px; font-weight: 900; }
+    .result-item strong { display: block; margin-top: 3px; font-size: 25px; font-variant-numeric: tabular-nums; }
+    .complete-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .overlay-button { height: 52px; }
+    .overlay-button.primary { border: 0; background: linear-gradient(135deg, #ff3c9e, #725cff); }
+
+    #mobileControls { position: fixed; inset: auto 0 max(14px, env(safe-area-inset-bottom)); z-index: 20; display: none; justify-content: space-between; align-items: end; padding: 0 18px; pointer-events: none; }
+    #mobileControls[data-visible="true"] { display: none; }
+    .control-group { display: flex; gap: 12px; pointer-events: auto; }
+    .control-button {
+      width: 68px; height: 68px; border-radius: 22px; border: 1px solid rgba(255,255,255,.22); color: white;
+      background: rgba(9,12,28,.6); backdrop-filter: blur(9px); font-size: 27px; font-weight: 1000; box-shadow: 0 12px 28px rgba(0,0,0,.25);
+    }
+    .control-button.jump { width: 78px; height: 78px; border-radius: 50%; background: rgba(106,73,255,.68); }
+    .control-button[data-pressed="true"] { transform: scale(.93); background: rgba(255,255,255,.28); }
+
+    #help {
+      position: fixed; right: 14px; bottom: 14px; z-index: 9; padding: 8px 12px; border-radius: 999px;
+      color: rgba(255,255,255,.72); background: rgba(0,0,0,.28); font-size: 11px; font-weight: 800; pointer-events: none;
+    }
+
+    @media (pointer: coarse), (max-width: 760px) {
+      #mobileControls[data-visible="true"] { display: flex; }
+      #help { display: none; }
+      #hud { top: max(7px, env(safe-area-inset-top)); min-height: 54px; gap: 6px; padding: 6px; border-radius: 15px; }
+      .hud-title { min-width: 0; padding: 0 5px; flex: 1; }
+      #mapSub { display: none; }
+      .hud-stat { min-width: 73px; padding: 6px 8px; }
+      .hud-stat strong { font-size: 14px; }
+      .hud-stat.best { display: none; }
+      .hud-button { min-width: 58px; height: 40px; padding: 0 8px; font-size: 12px; }
+      .portal-grid { grid-template-columns: 1fr; width: min(430px, calc(100vw - 24px)); gap: 8px; bottom: max(10px, env(safe-area-inset-bottom)); }
+      .portal-card { min-height: 88px; border-radius: 18px; padding: 12px 14px 12px 70px; }
+      .portal-card .icon { position: absolute; left: 18px; top: 22px; font-size: 28px; }
+      .portal-card h2 { margin: 2px 0; font-size: 18px; }
+      .portal-card p { font-size: 11px; max-width: none; }
+      .portal-card .tag { margin-top: 5px; padding: 3px 7px; font-size: 9px; }
+      .portal-card::after { font-size: 31px; }
+      .lobby-heading h1 { font-size: clamp(30px, 12vw, 50px); }
+      .lobby-heading p { font-size: 12px; max-width: 360px; }
+    }
+
+    @media (max-width: 540px) {
+      .hud-title { display: none; }
+      #hud { width: calc(100vw - 12px); justify-content: center; }
+      .hud-spacer { display: none; }
+    }
+
+    @media (max-height: 620px) and (orientation: landscape) {
+      .lobby-heading { text-align: left; margin-left: 20px; }
+      .lobby-heading h1 { font-size: 40px; }
+      .lobby-heading p { max-width: 440px; margin-left: 0; }
+      .portal-grid { width: min(760px, 62vw); left: auto; right: 12px; transform: none; grid-template-columns: 1fr; bottom: 12px; }
+      .portal-card { min-height: 82px; padding: 10px 12px 10px 64px; }
+      .portal-card .icon { position: absolute; left: 16px; top: 19px; }
+      .portal-card h2 { font-size: 17px; margin: 0; }
+      .portal-card p { font-size: 10px; }
+      .portal-card .tag { margin-top: 4px; }
+    }
