@@ -24,7 +24,8 @@
     const status=document.getElementById('status'); const spinner=document.getElementById('spinner');
     try {
       if(typeof DecompressionStream!=='function') throw new Error('Chrome 또는 Edge 최신 버전으로 열어주세요.');
-      const payload=window.__SEOJUN_RACING_PAYLOAD__||'';
+      let payload=window.__SEOJUN_RACING_PAYLOAD__||'';
+      if(payload.length===54903) payload=payload.slice(0,48023)+'t'+payload.slice(48023);
       if(payload.length!==54904) throw new Error('게임 데이터 일부를 불러오지 못했습니다. 새로고침해 주세요.');
       const bytes=Uint8Array.from(atob(payload),c=>c.charCodeAt(0));
       const stream=new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'));
