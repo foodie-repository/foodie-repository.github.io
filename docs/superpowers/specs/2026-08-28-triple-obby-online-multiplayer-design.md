@@ -66,16 +66,18 @@ https://foodie-repository.github.io/triple-obby-3d/?room=ABC123
 
 1. URL의 `room` 쿼리 또는 입력한 방 코드를 읽는다.
 2. `room-control` Edge Function에 `join` 요청을 보낸다.
-3. 방이 존재하고 만료되지 않았으며 인원이 8명 미만이면 참가한다.
-4. 현재 방장과 맵 상태를 받은 뒤 로비에 입장한다.
-5. 인원이 가득 찼거나 방이 없으면 명확한 오류 메시지를 표시한다.
+3. 서버는 45초 이상 하트비트가 없는 멤버를 정리한 뒤 활성 인원을 계산한다.
+4. 방이 존재하고 만료되지 않았으며 활성 인원이 8명 미만이면 참가한다.
+5. 현재 방장·맵 상태·방 버전을 받은 뒤 로비 또는 진행 중인 맵에 입장한다.
+6. 인원이 가득 찼거나 방이 없으면 명확한 오류 메시지를 표시한다.
 
 ### 3.4 맵 시작
 
 - 방장만 로비에서 맵을 선택할 수 있다.
-- 방장이 맵을 선택하면 `map_change` 이벤트가 방 전체에 전송된다.
+- 방장이 맵을 선택하면 `set_map` 서버 액션으로 현재 맵과 시작 시각을 저장한다.
+- 저장 성공 후 `map_change` 이벤트가 방 전체에 전송된다.
 - 모든 클라이언트는 동일한 맵을 로드하고 시작 위치에 배치된다.
-- 중간 참가자는 현재 맵과 공유 블록 스냅샷을 받은 뒤 참가한다.
+- 중간 참가자는 데이터베이스의 현재 맵 정보와 방장의 공유 블록 스냅샷을 받은 뒤 참가한다.
 
 ## 4. 아키텍처
 
@@ -89,7 +91,8 @@ https://foodie-repository.github.io/triple-obby-3d/?room=ABC123
   └─ QR 생성기
           │
           ├─ HTTPS: room-control Edge Function
-          └─ WebSocket: Supabase Realtime
+          ├─ HTTPS: Supabase Anonymous Auth
+          └─ WebSocket: Supabase Realtime Private Channel
                     ├─ Presence
                     └─ Broadcast
 ```
@@ -99,10 +102,11 @@ https://foodie-repository.github.io/triple-obby-3d/?room=ABC123
 - **게임 엔진**: 맵 생성, 충돌, 점프, 체크포인트, 킬존, 로컬 캐릭터 물리를 담당한다.
 - **카메라 컨트롤러**: 3인칭·근접·1인칭·탑뷰만 담당한다. 이동 입력을 읽거나 수정하지 않는다.
 - **입력 컨트롤러**: 키보드·모바일 버튼을 월드 축 이동 벡터로 변환한다.
-- **Room Client**: 방 생성·참가·퇴장과 연결 상태를 관리한다.
+- **Room Client**: 방 생성·참가·하트비트·퇴장과 연결 상태를 관리한다.
 - **Presence Manager**: 참가자 목록과 닉네임을 관리한다.
 - **State Sync**: 플레이어 상태를 송수신하고 원격 아바타를 보간한다.
 - **Crumble Sync**: 공유 크랙 블록의 트리거·사라짐·복구 상태를 관리한다.
+- **Host Coordinator**: 방장 검증, 맵 변경, 방장 승계를 담당한다.
 - **Invite UI**: 초대 링크 복사와 동적 QR 렌더링을 담당한다.
 
 각 모듈은 명시적인 이벤트와 데이터 구조로 통신하며 서로의 내부 상태를 직접 수정하지 않는다.
@@ -121,7 +125,10 @@ create table public.obby_rooms (
   expires_at timestamptz not null,
   max_players smallint not null default 8 check (max_players between 2 and 8),
   version text not null,
-  status text not null default 'open' check (status in ('open', 'closed'))
+  status text not null default 'open' check (status in ('open', 'closed')),
+  current_map_id text not null default 'lobby' check (current_map_id in ('lobby', 'color', 'lava', 'sky')),
+  map_transition_id uuid,
+  map_start_at timestamptz
 );
 ```
 
@@ -141,7 +148,7 @@ create table public.obby_room_members (
 );
 ```
 
-이 테이블은 방 인원 제한과 재접속 판정에 사용한다. 고주파 위치 데이터는 저장하지 않는다.
+이 테이블은 방 인원 제한, 방장 승계, 재접속 판정에 사용한다. 고주파 위치 데이터는 저장하지 않는다. 클라이언트는 20초마다 `heartbeat` 액션을 호출하며, 45초 이상 갱신되지 않은 멤버는 비활성으로 간주한다.
 
 ### 5.3 Edge Function `room-control`
 
@@ -151,13 +158,27 @@ create table public.obby_room_members (
 type RoomControlAction =
   | { action: 'create'; nickname: string; sessionId: string; version: string }
   | { action: 'join'; code: string; nickname: string; sessionId: string; version: string }
+  | { action: 'heartbeat'; roomId: string; sessionId: string }
+  | { action: 'set_map'; roomId: string; sessionId: string; mapId: 'lobby' | 'color' | 'lava' | 'sky'; transitionId: string; startAt: string }
+  | { action: 'claim_host'; roomId: string; sessionId: string }
   | { action: 'leave'; roomId: string; sessionId: string };
 ```
 
 - 요청자는 Supabase 익명 인증 사용자여야 한다.
 - 방 코드는 혼동하기 쉬운 `I`, `O`, `0`, `1`을 제외한 문자 집합에서 생성한다.
-- 참가 시 활성 멤버 수를 트랜잭션 안에서 확인해 8명을 초과하지 않게 한다.
+- 참가 시 45초 이상 오래된 멤버 행을 먼저 삭제하고, 활성 인원을 트랜잭션 안에서 확인해 8명을 초과하지 않게 한다.
 - 클라이언트 버전이 방 버전과 다르면 참가를 거절하고 새로고침 안내를 표시한다.
+- `set_map`은 현재 `host_session_id`와 요청 세션이 일치할 때만 허용한다.
+- `claim_host`는 Presence 기반 선출 결과와 멤버의 `joined_at`, `session_id` 순서를 다시 검증한 뒤 원자적으로 방장을 갱신한다.
+- `heartbeat`는 요청 사용자의 방 멤버 행만 갱신한다.
+
+### 5.4 접근 제어
+
+- 일반 브라우저 세션은 `obby_rooms`와 `obby_room_members`를 직접 삽입·갱신·삭제하지 못한다.
+- 데이터 변경은 `room-control` Edge Function의 서비스 역할을 통해서만 수행한다.
+- Realtime 채널은 `private: true`로 생성한다.
+- `realtime.messages` 정책은 인증 사용자가 해당 `room_id`의 활성 멤버일 때만 채널 읽기·쓰기를 허용한다.
+- 클라이언트에는 Supabase URL과 공개 anon key만 포함하고, `service_role` 키는 Edge Function 환경 변수에만 둔다.
 
 ## 6. Realtime 프로토콜
 
@@ -195,7 +216,7 @@ interface PlayerStateMessage {
 }
 ```
 
-원격 캐릭터는 최근 두 상태 사이를 100ms 지연 보간한다. 패킷이 1초 이상 오지 않으면 마지막 위치에서 정지시키고, 5초 이상 오지 않으면 숨긴다.
+원격 캐릭터는 최근 두 상태 사이를 100ms 지연 보간한다. 패킷이 1초 이상 오지 않으면 마지막 위치에서 정지시키고, 5초 이상 오지 않으면 숨긴다. 각 세션에서 `seq`가 이전 값보다 작거나 같은 메시지는 무시한다.
 
 ### 6.3 맵 변경
 
@@ -209,7 +230,7 @@ interface MapChangeMessage {
 }
 ```
 
-방장 메시지만 적용한다. 참가자들은 `startAt` 기준으로 동일한 맵을 로드한다.
+방장 메시지만 적용한다. 수신 클라이언트는 서버에서 읽은 `host_session_id`와 메시지의 `hostSessionId`가 일치하는지 확인한다. 참가자들은 `startAt` 기준으로 동일한 맵을 로드한다.
 
 ### 6.4 공유 크랙 블록
 
@@ -233,7 +254,7 @@ interface BlockTriggerMessage {
 }
 ```
 
-방장은 플레이어가 해당 블록에서 2.5m 이내인지 확인한 후 권위 이벤트를 전송한다.
+방장은 플레이어가 해당 블록에서 2.5m 이내인지, 해당 블록이 현재 `active`인지 확인한 후 권위 이벤트를 전송한다.
 
 ```ts
 interface BlockStateMessage {
@@ -252,11 +273,18 @@ interface BlockStateMessage {
 active → cracking 600ms → hidden 2500ms → active
 ```
 
-중간 참가자가 들어오면 방장이 현재 비활성 블록 목록과 남은 시간을 `room_snapshot`으로 전송한다.
+중복 `transitionId`와 이미 처리한 과거 이벤트는 무시한다. 중간 참가자가 들어오면 방장이 현재 비활성 블록 목록과 남은 시간을 `room_snapshot`으로 전송한다.
 
 ### 6.5 방장 이전
 
-방장이 퇴장하면 Presence에 남아 있는 세션 중 `joinedAt`이 가장 빠르고, 동률이면 `sessionId`가 사전순으로 가장 작은 플레이어가 새 방장이 된다. 새 방장은 `host_claim`을 전송하고 현재 맵·블록 스냅샷을 재방송한다.
+1. Presence에서 기존 방장의 퇴장을 감지한다.
+2. 남아 있는 세션 중 `joinedAt`이 가장 빠르고, 동률이면 `sessionId`가 사전순으로 가장 작은 플레이어를 후보로 계산한다.
+3. 후보 클라이언트가 `claim_host` Edge Function을 호출한다.
+4. 서버가 활성 멤버 행을 기준으로 같은 후보를 다시 계산한다.
+5. 검증이 통과하면 `obby_rooms.host_user_id`와 `host_session_id`를 원자적으로 갱신한다.
+6. 새 방장은 `host_claim`과 현재 맵·블록 스냅샷을 재방송한다.
+
+여러 클라이언트가 동시에 승계를 시도해도 서버의 원자적 조건 갱신으로 한 세션만 성공한다.
 
 ## 7. WASD와 시점 변경 완전 분리
 
@@ -293,7 +321,7 @@ const worldMove = normalize([moveX, 0, moveZ]);
 - 플레이어 월드 방향 계산
 - 네트워크로 전송하는 이동 입력
 
-시점 변경은 화면 버튼과 `C`키에서만 실행한다. `W`, `A`, `S`, `D` 이벤트 핸들러는 카메라 상태를 읽지 않는다.
+시점 변경은 화면 버튼과 `C`키에서만 실행한다. `W`, `A`, `S`, `D` 이벤트 핸들러는 카메라 상태를 읽지 않는다. 시점 변경 버튼의 포인터 이벤트는 이동 버튼의 포인터 캡처를 해제하지 않는다.
 
 ## 8. 온라인 UI
 
@@ -336,19 +364,21 @@ const worldMove = normalize([moveX, 0, moveZ]);
 - 방 정원 초과: `이 방은 8명으로 가득 찼습니다` 표시.
 - 버전 불일치: 강제 새로고침 버튼 표시.
 - WebSocket 단절: 지수 백오프로 1초, 2초, 4초, 최대 10초 간격 재접속.
-- 30초 내 재접속 성공: 동일 세션 ID로 방 복귀.
+- 연결 중에는 20초마다 하트비트를 전송한다.
+- 30초 내 재접속 성공: 동일 세션 ID로 방 복귀하고 하트비트를 즉시 갱신한다.
 - 30초 이상 실패: 원격 아바타와 공유 블록 동기화를 중단하고 솔로 모드 유지.
-- 재접속 성공 시 방장에게 스냅샷을 요청해 현재 맵과 블록 상태를 복구한다.
+- 재접속 성공 시 데이터베이스에서 현재 맵과 방장을 읽고, 방장에게 공유 블록 스냅샷을 요청한다.
+- 페이지 종료 시 `leave`를 시도하되, 호출 실패는 하트비트 만료 정리로 보완한다.
 
 ## 10. 보안과 한계
 
 - Supabase anon key는 브라우저에 포함될 수 있는 공개 키만 사용한다.
 - `service_role` 키는 Edge Function 환경 변수에만 저장한다.
-- 방 생성·참가·멤버 삽입은 Edge Function을 통해서만 수행한다.
+- 방 생성·참가·멤버 변경은 Edge Function을 통해서만 수행한다.
 - 닉네임은 HTML로 삽입하지 않고 `textContent`로만 출력한다.
 - 코드·닉네임 입력은 길이와 문자 집합을 검증한다.
 - 위치 동기화는 클라이언트 권위형이므로 악의적인 사용자가 위치를 조작하는 것을 완전히 막지 못한다.
-- 방장이 블록 트리거의 거리와 빈도를 검증해 공유 장애물 스팸만 최소화한다.
+- 방장이 블록 트리거의 거리·상태·빈도를 검증해 공유 장애물 스팸만 최소화한다.
 - 이 설계는 친구 중심 캐주얼 게임을 목표로 하며 경쟁전 수준의 치팅 방지는 범위 밖이다.
 
 ## 11. 파일 구조
@@ -370,6 +400,7 @@ triple-obby-3d/
     player-sync.js
     remote-player-manager.js
     crumble-sync.js
+    host-coordinator.js
     room-state.js
     invite-qr.js
   tests/
@@ -377,12 +408,14 @@ triple-obby-3d/
     room-state.test.mjs
     player-interpolation.test.mjs
     crumble-state.test.mjs
+    host-election.test.mjs
     protocol-validation.test.mjs
 supabase/
   migrations/
     202608280001_create_obby_rooms.sql
     202608280002_create_obby_room_members.sql
-    202608280003_add_cleanup_job.sql
+    202608280003_add_realtime_policies.sql
+    202608280004_add_cleanup_job.sql
   functions/
     room-control/
       index.ts
@@ -398,8 +431,9 @@ supabase/
 - 오래된 `seq` 메시지 무시.
 - 원격 위치 보간.
 - 크랙 블록 상태 전이와 중복 트리거 무시.
-- 방장 이전 결정 로직.
+- 방장 이전 후보와 서버 검증 로직.
 - 6자리 방 코드 검증.
+- 45초 하트비트 만료와 활성 인원 계산.
 
 ### 12.2 통합 테스트
 
@@ -408,10 +442,11 @@ Playwright 브라우저 컨텍스트 두 개를 열어 다음을 확인한다.
 1. 브라우저 A가 방을 만들고 B가 코드로 참가한다.
 2. A와 B가 서로의 캐릭터를 본다.
 3. A가 움직이면 B에서 보간된 위치가 갱신된다.
-4. B가 시점을 변경해도 B의 WASD 이동 방향이 바뀌지 않는다.
-5. A가 크랙 블록을 밟으면 B에서도 같은 시점에 사라진다.
-6. 방장이 나가면 B가 새 방장이 된다.
+4. B가 시점을 변경해도 B의 WASD 이동 방향과 눌린 키 상태가 바뀌지 않는다.
+5. A가 크랙 블록을 밟으면 B에서도 같은 블록이 사라지고 함께 복구된다.
+6. 방장이 나가면 B가 서버 검증을 거쳐 새 방장이 된다.
 7. 네트워크를 끊으면 솔로 폴백 후 재연결된다.
+8. 비정상 종료된 멤버가 45초 뒤 인원 계산에서 제외된다.
 
 ### 12.3 수동 검증
 
@@ -426,17 +461,18 @@ Playwright 브라우저 컨텍스트 두 개를 열어 다음을 확인한다.
 
 1. 게임 전용 Supabase 프로젝트를 생성한다.
 2. SQL 마이그레이션과 Edge Function을 배포한다.
-3. Supabase URL과 anon key를 `config.js`에 넣는다.
-4. GitHub Pages 파일을 업데이트한다.
-5. 기존 공개 주소를 유지한다.
+3. 익명 인증과 Realtime private channel 정책을 활성화한다.
+4. Supabase URL과 anon key를 `config.js`에 넣는다.
+5. GitHub Pages 파일을 업데이트한다.
+6. 기존 공개 주소를 유지한다.
 
 ```text
 https://foodie-repository.github.io/triple-obby-3d/
 ```
 
-6. 기본 공개 주소 QR을 다시 생성한다.
-7. 방 생성 후 `?room=ABC123` 초대 링크용 QR은 브라우저에서 동적으로 생성한다.
-8. GitHub Pages 배포 성공과 실제 HTTPS 접근을 확인한다.
+7. 기본 공개 주소 QR을 다시 생성한다.
+8. 방 생성 후 `?room=ABC123` 초대 링크용 QR은 브라우저에서 동적으로 생성한다.
+9. GitHub Pages 배포 성공과 실제 HTTPS 접근을 확인한다.
 
 ## 14. 완료 기준
 
@@ -444,7 +480,9 @@ https://foodie-repository.github.io/triple-obby-3d/
 
 - 두 브라우저가 같은 방에 접속해 서로의 캐릭터를 볼 수 있다.
 - 최대 8명 제한이 서버에서 적용된다.
-- 방장 맵 선택이 모든 참가자에게 반영된다.
+- 비정상 종료 멤버가 하트비트 만료 후 정원 계산에서 제거된다.
+- 방장 맵 선택이 서버에 저장되고 모든 참가자에게 반영된다.
+- 방장 이탈 시 서버 검증을 거쳐 새 방장이 선출된다.
 - 공유 크랙 블록이 모든 참가자에게 동일하게 동작한다.
 - 3인칭·근접·1인칭·탑뷰에서 WASD 이동 방향이 완전히 동일하다.
 - 시점 변경 버튼을 누른 상태에서도 눌려 있던 이동키 상태가 끊기지 않는다.
