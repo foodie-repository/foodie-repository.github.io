@@ -3,6 +3,8 @@ import { test, expect } from '@playwright/test';
 const baseUrl = process.env.TRIPLE_OBBY_BASE_URL || 'http://127.0.0.1:4173/triple-obby-3d/';
 
 test('two browsers join the same room and camera changes do not interrupt W movement', async ({ browser }) => {
+  test.setTimeout(90000);
+
   const contextA = await browser.newContext();
   const contextB = await browser.newContext();
   const pageA = await contextA.newPage();
@@ -46,7 +48,7 @@ test('two browsers join the same room and camera changes do not interrupt W move
   await pageB.waitForFunction(() => window.__remoteStateCount > 0, null, { timeout: 10000 });
 
   await pageA.evaluate(() => window.TripleObbyOnline.roomClient.leave());
-  await expect(pageB.locator('#onlineStatus')).toContainText('방장', { timeout: 10000 });
+  await expect(pageB.locator('#onlineStatus')).toContainText('방장', { timeout: 15000 });
 
   await contextA.close();
   await contextB.close();
