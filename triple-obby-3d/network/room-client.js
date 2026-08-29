@@ -294,10 +294,9 @@
       this.reconnectTimer = null;
       const previousRoom = this.room;
       const previousToken = this.memberToken;
-      if (this.channel) {
-        try { await this.supabase.removeChannel(this.channel); } catch {}
-        this.channel = null;
-      }
+      const previousChannel = this.channel;
+      this.channel = null;
+
       if (previousRoom && previousToken) {
         try {
           await this.call('leave', {
@@ -309,6 +308,11 @@
           if (!silent) console.warn('leave failed', error);
         }
       }
+
+      if (previousChannel) {
+        this.supabase.removeChannel(previousChannel).catch(error => console.warn('channel cleanup failed', error));
+      }
+
       this.room = null;
       this.members = [];
       this.memberToken = null;
