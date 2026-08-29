@@ -1,0 +1,43 @@
+#onlinePanel {
+  margin: 16px auto 0;
+  max-width: 980px;
+  padding: 14px;
+  border-radius: 20px;
+  background: rgba(3, 7, 20, .46);
+  border: 1px solid rgba(255,255,255,.13);
+}
+.onlineRow { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.onlineRow + .onlineRow { margin-top: 10px; }
+.onlineInput {
+  min-height: 44px; border-radius: 13px; border: 1px solid rgba(255,255,255,.18);
+  background: rgba(255,255,255,.08); color: white; padding: 0 13px; font: inherit; font-weight: 700;
+}
+#nicknameInput { flex: 1 1 180px; }
+#roomCodeInput { width: 116px; text-transform: uppercase; letter-spacing: .18em; text-align: center; font-weight: 900; }
+.onlinePrimary { background: linear-gradient(135deg, #6954ff, #11bfe7); border-color: transparent; }
+.onlineSolo { background: rgba(255,255,255,.12); }
+#roomInfo { display: none; align-items: center; gap: 12px; flex-wrap: wrap; }
+#roomInfo[data-visible="true"] { display: flex; }
+.roomCodeBadge { padding: 8px 12px; border-radius: 12px; background: rgba(255,255,255,.1); font-weight: 1000; letter-spacing: .16em; }
+#onlineStatus { color: rgba(255,255,255,.8); font-size: 12px; font-weight: 800; }
+#memberList { display: flex; gap: 6px; flex-wrap: wrap; margin: 0; padding: 0; list-style: none; }
+#memberList li { padding: 5px 8px; border-radius: 999px; background: rgba(255,255,255,.09); font-size: 11px; font-weight: 800; }
+#inviteQrWrap { display: none; position: fixed; inset: 0; z-index: 45; place-items: center; background: rgba(2,4,14,.68); padding: 20px; }
+#inviteQrWrap[data-visible="true"] { display: grid; }
+.inviteCard { width: min(360px, 100%); padding: 22px; border-radius: 24px; color: white; text-align: center; }
+#inviteQrCanvas { width: 220px; height: 220px; background: white; border-radius: 14px; margin: 14px auto; }
+#gameOnlineBar {
+  position: fixed; left: 12px; top: 94px; z-index: 18; display: none; align-items: center; gap: 8px;
+  padding: 8px 10px; border-radius: 14px; color: white; font-size: 11px; font-weight: 900;
+  background: rgba(8,12,28,.76); border: 1px solid rgba(255,255,255,.15); backdrop-filter: blur(10px);
+}
+#gameOnlineBar[data-visible="true"] { display: flex; }
+.onlineDot { width: 8px; height: 8px; border-radius: 50%; background: #55f09a; box-shadow: 0 0 10px #55f09a; }
+.onlineDot.offline { background: #ffb34f; box-shadow: 0 0 10px #ffb34f; }
+.portalBtn[data-locked="true"] { opacity: .48; cursor: not-allowed; filter: grayscale(.35); }
+@media (max-width: 800px), (pointer: coarse) {
+  #onlinePanel { padding: 10px; margin-top: 10px; }
+  .onlineRow { gap: 7px; }
+  .onlineInput { min-height: 40px; font-size: 12px; }
+  #gameOnlineBar { top: 66px; left: 8px; }
+}
