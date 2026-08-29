@@ -3,6 +3,8 @@
   "type": "module",
   "scripts": {
     "test": "node --test triple-obby-3d/tests/*.test.mjs",
+    "test:edge": "node triple-obby-3d/tests/edge-room-smoke.mjs",
+    "test:e2e": "playwright test triple-obby-3d/tests/online-room.spec.mjs",
     "check": "node --check triple-obby-3d/network/*.js && node --check triple-obby-3d/*.js"
   },
   "devDependencies": {
