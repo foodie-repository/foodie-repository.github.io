@@ -57,7 +57,7 @@
       lastBroadcastSnapshot = snapshot;
       lastBroadcastAt = now;
       onlineClient.broadcast('player_state', snapshot);
-    }, 100);
+    }, 200);
 
     function assignCrumbleIds() {
       if (!state.level || !player.mapId) return;
