@@ -1,0 +1,306 @@
+
+    // ---- Online multiplayer bridge ----
+    const onlineClient = window.TripleObbyOnline?.roomClient;
+    const RemotePlayerManager = window.TripleObbyOnline?.RemotePlayerManager;
+    const remotePlayers = onlineClient && RemotePlayerManager ? new RemotePlayerManager(THREE, worldRoot) : null;
+    const remoteLastState = new Map();
+    let localSeq = 0;
+    let networkApplyingMap = false;
+    let lastBroadcastSnapshot = null;
+    let lastBroadcastAt = 0;
+
+    function onlineModeActive() {
+      return Boolean(onlineClient?.room && window.TripleObbyOnline?.uiState?.mode === 'online');
+    }
+
+    function animationForLocalPlayer() {
+      if (!player.grounded) return player.vel.y > 0.4 ? 'jump' : 'fall';
+      if (Math.hypot(player.vel.x, player.vel.z) > 0.25) return 'run';
+      return 'idle';
+    }
+
+    function localPlayerSnapshot() {
+      return {
+        type: 'player_state',
+        sessionId: onlineClient?.sessionId || 'solo',
+        seq: ++localSeq,
+        sentAt: Date.now(),
+        mapId: state.mode === 'lobby' ? 'lobby' : (player.mapId || 'lobby'),
+        position: [player.pos.x, player.pos.y, player.pos.z],
+        velocity: [player.vel.x, player.vel.y, player.vel.z],
+        yaw: player.yaw,
+        grounded: player.grounded,
+        stage: Math.max(1, Math.min(20, player.stage || 1)),
+        animation: animationForLocalPlayer(),
+      };
+    }
+
+    function shouldBroadcastSnapshot(next, now) {
+      if (!lastBroadcastSnapshot) return true;
+      if (now - lastBroadcastAt >= 500) return true;
+      if (next.mapId !== lastBroadcastSnapshot.mapId || next.stage !== lastBroadcastSnapshot.stage || next.animation !== lastBroadcastSnapshot.animation) return true;
+      const dx = next.position[0] - lastBroadcastSnapshot.position[0];
+      const dy = next.position[1] - lastBroadcastSnapshot.position[1];
+      const dz = next.position[2] - lastBroadcastSnapshot.position[2];
+      if (Math.hypot(dx, dy, dz) >= 0.02) return true;
+      let yawDelta = next.yaw - lastBroadcastSnapshot.yaw;
+      while (yawDelta > Math.PI) yawDelta -= Math.PI * 2;
+      while (yawDelta < -Math.PI) yawDelta += Math.PI * 2;
+      return Math.abs(yawDelta) >= 0.02;
+    }
+
+    setInterval(() => {
+      if (!onlineModeActive() || !onlineClient.online) return;
+      const now = Date.now();
+      const snapshot = localPlayerSnapshot();
+      if (!shouldBroadcastSnapshot(snapshot, now)) return;
+      lastBroadcastSnapshot = snapshot;
+      lastBroadcastAt = now;
+      onlineClient.broadcast('player_state', snapshot);
+    }, 100);
+
+    function assignCrumbleIds() {
+      if (!state.level || !player.mapId) return;
+      let stageNo = 1;
+      let ordinal = 0;
+      for (const platform of state.level.platforms) {
+        if (platform.kind === 'checkpoint' && platform.stage) {
+          stageNo = Math.max(1, Math.min(20, platform.stage));
+          ordinal = 0;
+        }
+        if (platform.kind === 'crumble') {
+          ordinal += 1;
+          platform.networkId = `${player.mapId}:crumble:${String(stageNo).padStart(2, '0')}:${String(ordinal).padStart(2, '0')}`;
+          platform._pendingTriggerUntil = 0;
+          platform._networkTransition = null;
+        }
+      }
+    }
+
+    function findCrumble(blockId) {
+      return state.level?.platforms?.find(platform => platform.kind === 'crumble' && platform.networkId === blockId) || null;
+    }
+
+    function broadcastCrumble(platform) {
+      if (!onlineModeActive() || !onlineClient.isHost || !platform?.networkId) return;
+      const effectiveAt = Date.now();
+      const message = {
+        blockId: platform.networkId,
+        state: 'cracking',
+        transitionId: crypto.randomUUID(),
+        effectiveAt,
+        respawnAt: effectiveAt + 3100,
+        hostSessionId: onlineClient.sessionId,
+      };
+      platform._networkTransition = message.transitionId;
+      onlineClient.broadcast('block_state', message);
+    }
+
+    function restoreCrumbleVisual(platform) {
+      platform.active = true;
+      platform.mesh.visible = true;
+      platform.mesh.material.transparent = false;
+      platform.mesh.material.opacity = 1;
+      if (platform.cracks) {
+        platform.cracks.visible = true;
+        platform.cracks.material.opacity = 0.75;
+      }
+    }
+
+    function applyNetworkBlockState(message) {
+      if (!message?.blockId || !state.level || message.hostSessionId !== onlineClient?.room?.host_session_id) return;
+      const platform = findCrumble(message.blockId);
+      if (!platform) return;
+      if (platform._networkTransition === message.transitionId) return;
+      platform._networkTransition = message.transitionId;
+      const now = Date.now();
+      if (message.state === 'active' || now >= Number(message.respawnAt || 0)) {
+        platform.timer = 0;
+        platform.respawnAt = 0;
+        restoreCrumbleVisual(platform);
+        return;
+      }
+      const remainingToHide = Math.max(0, Number(message.effectiveAt) + 600 - now);
+      const remainingToRespawn = Math.max(0, Number(message.respawnAt) - now);
+      platform.respawnAt = state.elapsed + remainingToRespawn / 1000;
+      if (remainingToHide > 0 && message.state !== 'hidden') {
+        platform.active = true;
+        platform.mesh.visible = true;
+        platform.timer = remainingToHide / 1000;
+      } else {
+        platform.timer = 0;
+        platform.active = false;
+        platform.mesh.visible = false;
+      }
+    }
+
+    const originalStartMap = startMap;
+    startMap = function onlineAwareStartMap(mapId) {
+      if (onlineModeActive() && !networkApplyingMap) {
+        if (!onlineClient.isHost) {
+          showToast('방장이 맵을 선택할 때까지 기다려 주세요.', 1);
+          return;
+        }
+        onlineClient.setMap(mapId).catch(error => showToast(error.message || '맵 변경 실패', 1));
+        return;
+      }
+      const result = originalStartMap(mapId);
+      assignCrumbleIds();
+      remotePlayers?.clear();
+      if (onlineModeActive()) remotePlayers?.syncMembers(onlineClient.members, onlineClient.sessionId);
+      return result;
+    };
+
+    const originalReturnLobby = returnLobby;
+    returnLobby = function onlineAwareReturnLobby() {
+      if (onlineModeActive() && !networkApplyingMap) {
+        if (!onlineClient.isHost) {
+          showToast('방장이 로비로 이동할 수 있습니다.', 1);
+          return;
+        }
+        onlineClient.setMap('lobby').catch(error => showToast(error.message || '로비 이동 실패', 1));
+        return;
+      }
+      remotePlayers?.clear();
+      return originalReturnLobby();
+    };
+
+    const originalUpdatePlayer = updatePlayer;
+    updatePlayer = function onlineAwareUpdatePlayer(dt) {
+      const before = new Map();
+      if (onlineModeActive() && state.level) {
+        for (const platform of state.level.platforms) {
+          if (platform.kind === 'crumble') before.set(platform, platform.timer || 0);
+        }
+      }
+      originalUpdatePlayer(dt);
+      if (!onlineModeActive() || !state.level) return;
+      const now = performance.now();
+      for (const platform of state.level.platforms) {
+        if (platform.kind !== 'crumble' || !platform.networkId) continue;
+        const previousTimer = before.get(platform) || 0;
+        if (previousTimer <= 0 && platform.timer > 0) {
+          if (onlineClient.isHost) {
+            broadcastCrumble(platform);
+          } else {
+            platform.timer = 0;
+            restoreCrumbleVisual(platform);
+            if (now >= platform._pendingTriggerUntil) {
+              platform._pendingTriggerUntil = now + 550;
+              onlineClient.broadcast('block_trigger', {
+                blockId: platform.networkId,
+                sessionId: onlineClient.sessionId,
+                position: [player.pos.x, player.pos.y, player.pos.z],
+                seq: localSeq,
+              });
+            }
+          }
+        }
+      }
+    };
+
+    window.addEventListener('obby:members', event => {
+      if (!remotePlayers) return;
+      remotePlayers.syncMembers(event.detail?.members || [], onlineClient.sessionId);
+    });
+
+    window.addEventListener('obby:player-state', event => {
+      const message = event.detail;
+      if (!message?.sessionId || message.sessionId === onlineClient?.sessionId) return;
+      remoteLastState.set(message.sessionId, message);
+      if (message.mapId !== (state.mode === 'lobby' ? 'lobby' : player.mapId)) return;
+      remotePlayers?.pushState(message);
+    });
+
+    window.addEventListener('obby:map-change', event => {
+      const message = event.detail;
+      if (!message?.mapId || !onlineClient?.room) return;
+      if (message.hostSessionId !== onlineClient.room.host_session_id) return;
+      networkApplyingMap = true;
+      try {
+        if (message.mapId === 'lobby') originalReturnLobby();
+        else originalStartMap(message.mapId);
+        assignCrumbleIds();
+        remotePlayers?.clear();
+        remotePlayers?.syncMembers(onlineClient.members, onlineClient.sessionId);
+      } finally {
+        networkApplyingMap = false;
+      }
+    });
+
+    window.addEventListener('obby:block-trigger', event => {
+      if (!onlineModeActive() || !onlineClient.isHost) return;
+      const message = event.detail;
+      const platform = findCrumble(message?.blockId);
+      if (!platform || !platform.active || platform.timer > 0) return;
+      const remote = remoteLastState.get(message.sessionId);
+      const position = remote?.position || message.position;
+      if (!Array.isArray(position) || position.length !== 3) return;
+      const dx = Number(position[0]) - platform.mesh.position.x;
+      const dz = Number(position[2]) - platform.mesh.position.z;
+      if (!Number.isFinite(dx) || !Number.isFinite(dz) || Math.hypot(dx, dz) > 2.5) return;
+      platform.timer = 0.6;
+      broadcastCrumble(platform);
+    });
+
+    window.addEventListener('obby:block-state', event => applyNetworkBlockState(event.detail));
+
+    window.addEventListener('obby:snapshot-request', () => {
+      if (!onlineModeActive() || !onlineClient.isHost || !state.level) return;
+      const now = Date.now();
+      const blocks = [];
+      for (const platform of state.level.platforms) {
+        if (platform.kind !== 'crumble' || !platform.networkId) continue;
+        if (platform.timer > 0) {
+          const remainingHide = platform.timer * 1000;
+          blocks.push({
+            blockId: platform.networkId,
+            state: 'cracking',
+            transitionId: platform._networkTransition || crypto.randomUUID(),
+            effectiveAt: now - Math.max(0, 600 - remainingHide),
+            respawnAt: now + Math.max(0, (platform.respawnAt - state.elapsed) * 1000),
+            hostSessionId: onlineClient.sessionId,
+          });
+        } else if (!platform.active) {
+          blocks.push({
+            blockId: platform.networkId,
+            state: 'hidden',
+            transitionId: platform._networkTransition || crypto.randomUUID(),
+            effectiveAt: now - 600,
+            respawnAt: now + Math.max(0, (platform.respawnAt - state.elapsed) * 1000),
+            hostSessionId: onlineClient.sessionId,
+          });
+        }
+      }
+      onlineClient.broadcast('room_snapshot', {
+        mapId: state.mode === 'lobby' ? 'lobby' : player.mapId,
+        hostSessionId: onlineClient.sessionId,
+        blocks,
+      });
+    });
+
+    window.addEventListener('obby:room-snapshot', event => {
+      const snapshot = event.detail;
+      if (!snapshot || snapshot.hostSessionId !== onlineClient?.room?.host_session_id) return;
+      for (const block of snapshot.blocks || []) applyNetworkBlockState(block);
+    });
+
+    window.addEventListener('obby:request-lobby', () => {
+      networkApplyingMap = true;
+      try { originalReturnLobby(); } finally { networkApplyingMap = false; }
+    });
+
+    (function remoteRenderLoop() {
+      remotePlayers?.update(performance.now());
+      requestAnimationFrame(remoteRenderLoop);
+    })();
+
+    window.__TRIPLE_OBBY_RUNTIME__ = {
+      getLocalPlayerSnapshot: localPlayerSnapshot,
+      getMapId: () => state.mode === 'lobby' ? 'lobby' : player.mapId,
+      startMapFromNetwork: mapId => {
+        networkApplyingMap = true;
+        try { mapId === 'lobby' ? originalReturnLobby() : originalStartMap(mapId); assignCrumbleIds(); }
+        finally { networkApplyingMap = false; }
+      },
+    };
