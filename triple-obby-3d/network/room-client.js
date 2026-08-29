@@ -4,13 +4,12 @@
   if (!window.supabase?.createClient) throw new Error('Supabase client library is missing');
 
   const dispatch = (name, detail) => window.dispatchEvent(new CustomEvent(name, { detail }));
-  const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 
   class RoomClient {
     constructor() {
       this.supabase = window.supabase.createClient(config.supabaseUrl, config.supabasePublishableKey, {
         auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
-        realtime: { params: { eventsPerSecond: 20 } },
+        realtime: { params: { eventsPerSecond: 10 } },
       });
       this.room = null;
       this.members = [];
