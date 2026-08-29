@@ -3,15 +3,16 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-  <title>Triple Obby 3D - 친구와 공유하는 점프맵</title>
-  <meta name="description" content="3D 컬러 점프맵, 용암 타워, 하늘섬 리메이크를 로비에서 골라 플레이하세요." />
+  <title>Triple Obby 3D Online</title>
+  <meta name="description" content="친구들과 같은 방에 들어가 3D 컬러 점프맵, 용암 타워, 하늘섬 리메이크를 온라인으로 플레이하세요." />
   <meta name="theme-color" content="#101a48" />
-  <meta property="og:title" content="Triple Obby 3D" />
-  <meta property="og:description" content="3개의 3D 점프맵과 시점 변경 기능을 친구들과 공유하세요." />
+  <meta property="og:title" content="Triple Obby 3D Online" />
+  <meta property="og:description" content="6자리 방 코드로 최대 8명이 함께 즐기는 3D 점프맵." />
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://foodie-repository.github.io/triple-obby-3d/" />
-  <link rel="stylesheet" href="styles.css?v=3d-20260826-1" />
-  <link rel="stylesheet" href="camera.css?v=3d-20260826-2" />
+  <link rel="stylesheet" href="styles.css?v=online-1.0.0" />
+  <link rel="stylesheet" href="camera.css?v=online-1.0.0" />
+  <link rel="stylesheet" href="online.css?v=online-1.0.0" />
 </head>
 <body>
   <div id="hud" class="glass" data-visible="false">
@@ -28,20 +29,52 @@
   </div>
 
   <button id="viewBtn" data-visible="false" aria-label="시점 변경"><span class="viewLabel">시점: </span><span id="viewModeText">3인칭</span></button>
+  <div id="gameOnlineBar" data-visible="false"><span id="onlineDot" class="onlineDot"></span><span id="gameOnlineText">온라인</span></div>
 
   <section id="lobbyOverlay" data-visible="true">
     <div class="lobbyCard glass">
       <div class="lobbyHead">
-        <h1>TRIPLE OBBY 3D</h1>
-        <p>3D로 리메이크한 점프맵입니다. 로비에서 세 가지 맵을 선택할 수 있고, 모든 맵 바닥에는 킬 영역이 있습니다. 하늘섬은 구조와 분위기를 전면 리메이크했습니다.</p>
+        <h1>TRIPLE OBBY 3D ONLINE</h1>
+        <p>친구들과 같은 방에서 서로의 캐릭터를 보며 플레이하세요. 모든 맵 바닥에는 킬존이 있고, 금 간 블록은 방 전체에서 함께 사라집니다.</p>
       </div>
+
+      <div id="onlinePanel">
+        <div class="onlineRow">
+          <input id="nicknameInput" class="onlineInput" maxlength="12" autocomplete="nickname" placeholder="닉네임 (2~12자)" aria-label="닉네임" />
+          <button id="soloBtn" class="onlineSolo">혼자 하기</button>
+          <button id="createRoomBtn" class="onlinePrimary">방 만들기</button>
+          <input id="roomCodeInput" class="onlineInput" maxlength="6" inputmode="text" placeholder="ABC234" aria-label="6자리 방 코드" />
+          <button id="joinRoomBtn" class="onlinePrimary">방 참가</button>
+        </div>
+        <div class="onlineRow">
+          <span id="onlineStatus" aria-live="polite">온라인 연결 준비 중…</span>
+        </div>
+        <div id="roomInfo" class="onlineRow" data-visible="false">
+          <span>방 코드</span><strong id="roomCodeBadge" class="roomCodeBadge">------</strong>
+          <span id="memberCount">1 / 8</span>
+          <button id="copyInviteBtn">초대 링크 복사</button>
+          <button id="showQrBtn">QR 보기</button>
+          <button id="leaveRoomBtn">방 나가기</button>
+          <ul id="memberList" aria-label="참가자 목록"></ul>
+        </div>
+      </div>
+
       <div class="portalGrid">
-        <button class="portalBtn color" data-map="color"><div>🌈</div><h2>컬러 점프맵 3D</h2><p>기본 점프, 체크포인트, 움직이는 발판, 금 간 사라지는 블록.</p><span class="tag">20 STAGES</span></button>
-        <button class="portalBtn lava" data-map="lava"><div>🌋</div><h2>용암 타워 3D</h2><p>타워를 올라가며 용암 바닥과 장애물을 피하는 수직 맵.</p><span class="tag">18 STAGES</span></button>
-        <button class="portalBtn sky" data-map="sky"><div>☁️</div><h2>하늘섬 리메이크 3D</h2><p>구름, 공중섬, 대형 점프, 크랙 블록과 가속 패드가 추가된 리메이크 버전.</p><span class="tag">20 STAGES</span></button>
+        <button class="portalBtn color" data-map="color"><div>🌈</div><h2>컬러 점프맵 3D</h2><p>체크포인트, 컬러 발판, 금 간 사라지는 블록.</p><span class="tag">20 STAGES</span></button>
+        <button class="portalBtn lava" data-map="lava"><div>🌋</div><h2>용암 타워 3D</h2><p>용암 킬 바닥 위를 오르는 수직 점프맵.</p><span class="tag">18 STAGES</span></button>
+        <button class="portalBtn sky" data-map="sky"><div>☁️</div><h2>하늘섬 리메이크 3D</h2><p>공중섬, 구름, 크랙 블록, 가속 패드가 있는 리메이크 버전.</p><span class="tag">20 STAGES</span></button>
       </div>
     </div>
   </section>
+
+  <div id="inviteQrWrap" data-visible="false">
+    <div class="inviteCard glass">
+      <h2>친구 초대</h2>
+      <canvas id="inviteQrCanvas" width="220" height="220"></canvas>
+      <div id="inviteUrlText" style="font-size:11px;word-break:break-all;color:rgba(255,255,255,.72)"></div>
+      <button id="closeQrBtn" style="margin-top:14px">닫기</button>
+    </div>
+  </div>
 
   <div id="toast">체크포인트!</div>
 
@@ -63,22 +96,22 @@
 
   <div id="mobileControls" data-visible="false">
     <div class="dpad">
-      <div class="blank"></div>
-      <div class="mBtn" data-key="forward">▲</div>
-      <div class="blank"></div>
-      <div class="mBtn" data-key="left">◀</div>
-      <div class="blank"></div>
-      <div class="mBtn" data-key="right">▶</div>
-      <div class="blank"></div>
-      <div class="mBtn" data-key="back">▼</div>
-      <div class="blank"></div>
+      <div class="blank"></div><div class="mBtn" data-key="forward">▲</div><div class="blank"></div>
+      <div class="mBtn" data-key="left">◀</div><div class="blank"></div><div class="mBtn" data-key="right">▶</div>
+      <div class="blank"></div><div class="mBtn" data-key="back">▼</div><div class="blank"></div>
     </div>
-    <div class="actions">
-      <div class="mBtn big" data-key="jump">⬆</div>
-    </div>
+    <div class="actions"><div class="mBtn big" data-key="jump">⬆</div></div>
   </div>
   <div id="help">WASD 이동 · Space 점프 · Shift 달리기 · C 시점 변경 · R 재시작 · L 로비</div>
+
   <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
-  <script src="loader-camera.js?v=3d-20260826-2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/dist/umd/supabase.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.4/build/qrcode.min.js"></script>
+  <script src="config.js?v=online-1.0.0"></script>
+  <script src="network/room-client.js?v=online-1.0.0"></script>
+  <script src="network/invite-qr.js?v=online-1.0.0"></script>
+  <script src="network/remote-player-manager.js?v=online-1.0.0"></script>
+  <script src="network/online-ui.js?v=online-1.0.0"></script>
+  <script src="loader-camera.js?v=online-1.0.0"></script>
 </body>
 </html>
