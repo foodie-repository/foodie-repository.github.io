@@ -1,14 +1,15 @@
 (() => {
   const parts = [
-    "game-01.part?v=3d-20260826-2",
-    "camera-prelude.part?v=3d-20260826-2",
-    "game-02.part?v=3d-20260826-1",
-    "game-03.part?v=3d-20260826-1",
-    "game-04.part?v=3d-20260826-1",
-    "game-05.part?v=3d-20260826-1",
-    "camera-tail-01.part?v=3d-20260826-2",
-    "camera-tail-02.part?v=3d-20260826-2",
-    "camera-tail-03.part?v=3d-20260826-2"
+    "game-01.part?v=online-1.0.0",
+    "camera-prelude.part?v=online-1.0.0",
+    "game-02.part?v=online-1.0.0",
+    "game-03.part?v=online-1.0.0",
+    "game-04.part?v=online-1.0.0",
+    "game-05.part?v=online-1.0.0",
+    "online-game-bridge.part?v=online-1.0.0",
+    "camera-tail-01.part?v=online-1.0.0",
+    "camera-tail-02.part?v=online-1.0.0",
+    "camera-tail-03.part?v=online-1.0.0"
   ];
   Promise.all(parts.map(path => fetch(path).then(response => {
     if (!response.ok) throw new Error(`게임 파일을 불러오지 못했습니다: ${path}`);
