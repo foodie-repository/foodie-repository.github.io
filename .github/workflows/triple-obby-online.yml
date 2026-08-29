@@ -43,7 +43,9 @@ jobs:
       - name: Two-browser online test
         env:
           TRIPLE_OBBY_BASE_URL: http://127.0.0.1:4173/triple-obby-3d/
-        run: npm run test:e2e
+        run: |
+          set -o pipefail
+          npm run test:e2e 2>&1 | tee /tmp/playwright.log
       - name: Upload browser artifacts
         if: failure()
         uses: actions/upload-artifact@v4
@@ -53,3 +55,4 @@ jobs:
             playwright-report
             test-results
             /tmp/triple-obby-http.log
+            /tmp/playwright.log
