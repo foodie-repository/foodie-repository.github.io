@@ -14,9 +14,10 @@
 (async()=>{
  try{
   if(!('DecompressionStream' in window))throw new Error('이 브라우저는 게임 압축 해제를 지원하지 않습니다. Chrome 또는 Edge에서 열어 주세요.');
-  const count=1;
+  const count=4;
   const encoded=(await Promise.all(Array.from({length:count},(_,i)=>fetch(`parts/${String(i).padStart(3,'0')}.txt`,{cache:'no-store'}).then(r=>{if(!r.ok)throw new Error(`게임 데이터 ${i+1}을 불러오지 못했습니다.`);return r.text()})))).join('');
-  const bytes=Uint8Array.from(atob(encoded),c=>c.charCodeAt(0));
+  const clean=encoded.replace(/\s+/g,'');
+  const bytes=Uint8Array.from(atob(clean),c=>c.charCodeAt(0));
   const stream=new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'));
   const html=await new Response(stream).text();
   const frame=document.getElementById('game');
