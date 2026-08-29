@@ -9,8 +9,9 @@ test('room leave reaches the server before waiting for realtime channel cleanup'
   assert.notEqual(leaveStart, -1);
   const leaveSource = source.slice(leaveStart);
   const serverLeave = leaveSource.indexOf("await this.call('leave'");
-  const channelCleanup = leaveSource.indexOf('removeChannel(this.channel)');
+  const channelCleanupMatch = leaveSource.match(/removeChannel\((?:this\.channel|previousChannel)\)/);
   assert.ok(serverLeave >= 0, 'leave must call the server');
-  assert.ok(channelCleanup >= 0, 'leave must clean up the realtime channel');
+  assert.ok(channelCleanupMatch, 'leave must clean up the realtime channel');
+  const channelCleanup = channelCleanupMatch.index;
   assert.ok(serverLeave < channelCleanup, 'server leave must happen before realtime cleanup');
 });
