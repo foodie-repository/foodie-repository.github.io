@@ -4,7 +4,8 @@
   if (!window.supabase?.createClient) throw new Error('Supabase client library is missing');
   const reconcileServerRoom = window.TripleObbyOnline?.reconcileServerRoom;
   const reconcileMapMessage = window.TripleObbyOnline?.reconcileMapMessage;
-  if (typeof reconcileServerRoom !== 'function' || typeof reconcileMapMessage !== 'function') {
+  const mapRequestDisposition = window.TripleObbyOnline?.mapRequestDisposition;
+  if (typeof reconcileServerRoom !== 'function' || typeof reconcileMapMessage !== 'function' || typeof mapRequestDisposition !== 'function') {
     throw new Error('Room reconciliation helper is missing');
   }
 
@@ -38,6 +39,7 @@
       this.reconnectStartedAt = 0;
       this.reconnectAttempt = 0;
       this.lastSeqBySession = new Map();
+      this.pendingMapRequest = null;
     }
 
     get isHost() {
@@ -238,21 +240,42 @@
       }
     }
 
-    async setMap(mapId) {
+    async setMap(mapId, { force = false } = {}) {
       if (!this.room || !this.isHost) throw new Error('방장만 맵을 선택할 수 있습니다.');
-      const transitionId = crypto.randomUUID();
-      const startAt = new Date(Date.now() + 250).toISOString();
-      const data = await this.call('set_map', this.authPayload({ mapId, transitionId, startAt }));
-      this.room = data.room;
-      const message = {
-        mapId,
-        hostSessionId: this.sessionId,
-        transitionId,
-        startAt: Date.parse(startAt),
-      };
-      dispatch('obby:map-change', message);
-      await this.broadcast('map_change', message);
-      return message;
+      const disposition = mapRequestDisposition(this.room, mapId, this.pendingMapRequest?.mapId || null, force);
+      if (disposition === 'pending') return this.pendingMapRequest.promise;
+      if (disposition === 'same') {
+        return {
+          mapId,
+          hostSessionId: this.sessionId,
+          transitionId: this.room.map_transition_id,
+          startAt: Date.parse(this.room.map_start_at || '') || Date.now(),
+          reused: true,
+        };
+      }
+
+      const request = (async () => {
+        const transitionId = crypto.randomUUID();
+        const startAt = new Date(Date.now() + 250).toISOString();
+        const data = await this.call('set_map', this.authPayload({ mapId, transitionId, startAt }));
+        this.room = data.room;
+        const message = {
+          mapId,
+          hostSessionId: this.sessionId,
+          transitionId,
+          startAt: Date.parse(startAt),
+        };
+        dispatch('obby:map-change', message);
+        await this.broadcast('map_change', message);
+        return message;
+      })();
+
+      this.pendingMapRequest = { mapId, promise: request };
+      try {
+        return await request;
+      } finally {
+        if (this.pendingMapRequest?.promise === request) this.pendingMapRequest = null;
+      }
     }
 
     async heartbeat() {
@@ -331,6 +354,7 @@
       const previousToken = this.memberToken;
       const previousChannel = this.channel;
       this.channel = null;
+      this.pendingMapRequest = null;
 
       if (previousRoom && previousToken) {
         this.call('leave', {
