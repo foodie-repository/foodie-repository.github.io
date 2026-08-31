@@ -8,6 +8,7 @@ const context = vm.createContext({ window: { TripleObbyOnline: {} }, Date });
 vm.runInContext(source, context);
 const reconcile = context.window.TripleObbyOnline.reconcileServerRoom;
 const reconcileMapMessage = context.window.TripleObbyOnline.reconcileMapMessage;
+const mapRequestDisposition = context.window.TripleObbyOnline.mapRequestDisposition;
 
 test('heartbeat reconciliation emits a map change when the persisted transition changes', () => {
   const previous = {
@@ -72,4 +73,17 @@ test('a genuinely new broadcast is applied exactly once', () => {
   assert.equal(result.mapChange.mapId, 'sky');
   assert.equal(result.room.current_map_id, 'sky');
   assert.equal(result.room.map_transition_id, 'transition-8');
+});
+
+test('ordinary map selection ignores same-map and same-map in-flight requests', () => {
+  assert.equal(typeof mapRequestDisposition, 'function');
+  const room = { current_map_id: 'color' };
+  assert.equal(mapRequestDisposition(room, 'color', null, false), 'same');
+  assert.equal(mapRequestDisposition({ current_map_id: 'lobby' }, 'color', 'color', false), 'pending');
+  assert.equal(mapRequestDisposition({ current_map_id: 'lobby' }, 'color', null, false), 'new');
+});
+
+test('explicit restart can force a new transition for the current map', () => {
+  assert.equal(typeof mapRequestDisposition, 'function');
+  assert.equal(mapRequestDisposition({ current_map_id: 'color' }, 'color', null, true), 'force');
 });
