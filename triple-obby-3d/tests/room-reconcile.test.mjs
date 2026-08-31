@@ -7,6 +7,7 @@ const source = await readFile(new URL('../network/room-reconcile.js', import.met
 const context = vm.createContext({ window: { TripleObbyOnline: {} }, Date });
 vm.runInContext(source, context);
 const reconcile = context.window.TripleObbyOnline.reconcileServerRoom;
+const reconcileMapMessage = context.window.TripleObbyOnline.reconcileMapMessage;
 
 test('heartbeat reconciliation emits a map change when the persisted transition changes', () => {
   const previous = {
@@ -40,4 +41,35 @@ test('reconciliation reports host handoff independently of map state', () => {
   const result = reconcile(previous, next);
   assert.equal(result.hostChanged, true);
   assert.equal(result.mapChange, null);
+});
+
+test('a delayed duplicate broadcast is ignored after heartbeat already applied the transition', () => {
+  assert.equal(typeof reconcileMapMessage, 'function');
+  const room = {
+    id: 'room-1', host_session_id: 'host', current_map_id: 'color',
+    map_transition_id: 'transition-7', map_start_at: '2026-08-31T03:45:00.000Z',
+  };
+  const result = reconcileMapMessage(room, {
+    mapId: 'color', hostSessionId: 'host', transitionId: 'transition-7',
+    startAt: Date.parse('2026-08-31T03:45:00.000Z'),
+  });
+  assert.equal(result.mapChange, null);
+  assert.equal(result.duplicate, true);
+  assert.equal(result.room.map_transition_id, 'transition-7');
+});
+
+test('a genuinely new broadcast is applied exactly once', () => {
+  assert.equal(typeof reconcileMapMessage, 'function');
+  const room = {
+    id: 'room-1', host_session_id: 'host', current_map_id: 'lobby',
+    map_transition_id: null, map_start_at: null,
+  };
+  const result = reconcileMapMessage(room, {
+    mapId: 'sky', hostSessionId: 'host', transitionId: 'transition-8',
+    startAt: Date.parse('2026-08-31T03:46:00.000Z'),
+  });
+  assert.equal(result.duplicate, false);
+  assert.equal(result.mapChange.mapId, 'sky');
+  assert.equal(result.room.current_map_id, 'sky');
+  assert.equal(result.room.map_transition_id, 'transition-8');
 });
