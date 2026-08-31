@@ -3,7 +3,10 @@
   if (!config) throw new Error('TRIPLE_OBBY_CONFIG is missing');
   if (!window.supabase?.createClient) throw new Error('Supabase client library is missing');
   const reconcileServerRoom = window.TripleObbyOnline?.reconcileServerRoom;
-  if (typeof reconcileServerRoom !== 'function') throw new Error('Room reconciliation helper is missing');
+  const reconcileMapMessage = window.TripleObbyOnline?.reconcileMapMessage;
+  if (typeof reconcileServerRoom !== 'function' || typeof reconcileMapMessage !== 'function') {
+    throw new Error('Room reconciliation helper is missing');
+  }
 
   const dispatch = (name, detail) => window.dispatchEvent(new CustomEvent(name, { detail }));
 
@@ -191,13 +194,11 @@
         if (!Number.isInteger(payload.seq) || payload.seq <= last) return;
         this.lastSeqBySession.set(payload.sessionId, payload.seq);
       }
-      if (event === 'map_change' && this.room && payload.hostSessionId === this.room.host_session_id) {
-        this.room = {
-          ...this.room,
-          current_map_id: payload.mapId,
-          map_transition_id: payload.transitionId,
-          map_start_at: Number.isFinite(payload.startAt) ? new Date(payload.startAt).toISOString() : this.room.map_start_at,
-        };
+      if (event === 'map_change') {
+        const reconciled = reconcileMapMessage(this.room, payload);
+        this.room = reconciled.room;
+        if (reconciled.mapChange) dispatch('obby:map-change', reconciled.mapChange);
+        return;
       }
       if (event === 'host_claim' && payload.hostSessionId) {
         if (this.room) this.room.host_session_id = payload.hostSessionId;
