@@ -3,8 +3,6 @@ import { test, expect } from '@playwright/test';
 const baseUrl = process.env.TRIPLE_OBBY_BASE_URL || 'http://127.0.0.1:4173/triple-obby-3d/';
 
 test('two browsers join the same room and camera changes do not interrupt W movement', async ({ browser }) => {
-  // Live Supabase calls can take several seconds each on the free tier. This timeout
-  // protects the behavior contract without confusing infrastructure latency for a bug.
   test.setTimeout(180000);
 
   const contextA = await browser.newContext();
@@ -22,7 +20,16 @@ test('two browsers join the same room and camera changes do not interrupt W move
   await pageB.goto(`${baseUrl}?room=${roomCode}`, { waitUntil: 'networkidle' });
   await pageB.evaluate(() => {
     window.__remoteStateCount = 0;
+    window.__inputEvents = [];
     window.addEventListener('obby:player-state', () => { window.__remoteStateCount += 1; });
+    window.addEventListener('keydown', event => {
+      if (event.code === 'KeyW') window.__inputEvents.push({ type: 'keydown', code: event.code, at: performance.now() });
+    }, true);
+    window.addEventListener('keyup', event => {
+      if (event.code === 'KeyW') window.__inputEvents.push({ type: 'keyup', code: event.code, at: performance.now() });
+    }, true);
+    window.addEventListener('blur', () => window.__inputEvents.push({ type: 'window-blur', at: performance.now() }));
+    document.addEventListener('visibilitychange', () => window.__inputEvents.push({ type: `visibility:${document.visibilityState}`, at: performance.now() }));
   });
   await pageB.fill('#nicknameInput', 'Guest');
   await pageB.click('#joinRoomBtn');
@@ -42,11 +49,17 @@ test('two browsers join the same room and camera changes do not interrupt W move
   await pageB.locator('#viewBtn').click();
   await expect(pageB.locator('#viewModeText')).not.toHaveText(cameraBefore || '', { timeout: 5000 });
   await pageB.waitForTimeout(220);
-  const zAfterCamera = await pageB.evaluate(() => window.__TRIPLE_OBBY_RUNTIME__.getLocalPlayerSnapshot().position[2]);
+  const diagnostic = await pageB.evaluate(() => ({
+    z: window.__TRIPLE_OBBY_RUNTIME__.getLocalPlayerSnapshot().position[2],
+    events: window.__inputEvents,
+    hasFocus: document.hasFocus(),
+    activeElement: document.activeElement?.id || document.activeElement?.tagName || null,
+    visibility: document.visibilityState,
+  }));
   await pageB.keyboard.up('KeyW');
-  // The exact displacement depends on landing/collision state. The important contract is
-  // that W continues to move the player toward world -Z after the camera mode changes.
-  expect(zAfterCamera).toBeLessThan(zBeforeCamera - 0.02);
+  if (!(diagnostic.z < zBeforeCamera - 0.02)) {
+    throw new Error(`W stopped after camera switch: before=${zBeforeCamera}, after=${diagnostic.z}, diagnostic=${JSON.stringify(diagnostic)}`);
+  }
 
   await pageA.keyboard.down('KeyD');
   await pageA.waitForTimeout(300);
