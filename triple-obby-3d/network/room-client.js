@@ -10,6 +10,15 @@
 
   const dispatch = (name, detail) => window.dispatchEvent(new CustomEvent(name, { detail }));
 
+  function makeTimeoutSignal(timeoutMs) {
+    if (typeof AbortSignal !== 'undefined' && typeof AbortSignal.timeout === 'function') {
+      return AbortSignal.timeout(timeoutMs);
+    }
+    const controller = new AbortController();
+    setTimeout(() => controller.abort(), timeoutMs);
+    return controller.signal;
+  }
+
   class RoomClient {
     constructor() {
       this.supabase = window.supabase.createClient(config.supabaseUrl, config.supabasePublishableKey, {
@@ -39,15 +48,27 @@
       return this.room?.code ?? null;
     }
 
-    async call(action, payload = {}) {
-      const response = await fetch(`${config.supabaseUrl}/functions/v1/room-control`, {
-        method: 'POST',
-        headers: {
-          'content-type': 'application/json',
-          apikey: config.supabasePublishableKey,
-        },
-        body: JSON.stringify({ action, ...payload }),
-      });
+    async call(action, payload = {}, timeoutMs = 15000) {
+      let response;
+      try {
+        response = await fetch(`${config.supabaseUrl}/functions/v1/room-control`, {
+          method: 'POST',
+          headers: {
+            'content-type': 'application/json',
+            apikey: config.supabasePublishableKey,
+          },
+          body: JSON.stringify({ action, ...payload }),
+          signal: makeTimeoutSignal(timeoutMs),
+          keepalive: action === 'leave',
+        });
+      } catch (cause) {
+        const timedOut = cause?.name === 'TimeoutError' || cause?.name === 'AbortError';
+        const error = new Error(timedOut ? '온라인 서버 응답 시간이 초과되었습니다.' : '온라인 서버에 연결할 수 없습니다.');
+        error.code = timedOut ? 'REQUEST_TIMEOUT' : 'NETWORK_ERROR';
+        error.cause = cause;
+        throw error;
+      }
+
       const body = await response.json().catch(() => null);
       if (!response.ok || !body?.ok) {
         const error = new Error(body?.error?.message || `온라인 요청 실패 (${response.status})`);
@@ -312,15 +333,13 @@
       this.channel = null;
 
       if (previousRoom && previousToken) {
-        try {
-          await this.call('leave', {
-            roomId: previousRoom.id,
-            sessionId: this.sessionId,
-            memberToken: previousToken,
-          });
-        } catch (error) {
+        this.call('leave', {
+          roomId: previousRoom.id,
+          sessionId: this.sessionId,
+          memberToken: previousToken,
+        }, 12000).catch(error => {
           if (!silent) console.warn('leave failed', error);
-        }
+        });
       }
 
       if (previousChannel) {
