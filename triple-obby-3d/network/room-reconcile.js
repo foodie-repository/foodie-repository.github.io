@@ -69,8 +69,8 @@
   }
 
   function mapRequestDisposition(room, mapId, pendingMapId = null, force = false) {
-    if (force) return 'force';
     if (pendingMapId === mapId) return 'pending';
+    if (force) return 'force';
     if (room?.current_map_id === mapId) return 'same';
     return 'new';
   }
