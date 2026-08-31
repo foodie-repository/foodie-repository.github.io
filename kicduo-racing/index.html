@@ -31,8 +31,11 @@
       const bytes=Uint8Array.from(atob(payload),c=>c.charCodeAt(0));
       const stream=new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'));
       const sourceHtml=await new Response(stream).text();
-      if(typeof window.applySeojunRoadmapPatch!=='function') throw new Error('로드맵 모듈을 불러오지 못했습니다.');
-      const html=window.applySeojunRoadmapPatch(sourceHtml);
+      let html=sourceHtml;
+      if(typeof window.applySeojunRoadmapPatch==='function') {
+        try { html=window.applySeojunRoadmapPatch(sourceHtml); }
+        catch(patchError) { console.warn('로드맵 비활성화:', patchError); }
+      }
       document.open(); document.write(html); document.close();
     } catch(error) { spinner.hidden=true; status.className='error'; status.textContent='게임을 불러오지 못했습니다.\n'+(error?.message||error); console.error(error); }
   })();
