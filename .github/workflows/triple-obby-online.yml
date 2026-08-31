@@ -16,6 +16,10 @@ on:
       - 'package.json'
       - '.github/workflows/triple-obby-online.yml'
 
+concurrency:
+  group: triple-obby-online-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   test:
     runs-on: ubuntu-latest
