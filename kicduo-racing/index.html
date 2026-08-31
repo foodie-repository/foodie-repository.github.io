@@ -19,6 +19,7 @@
   <script src="./payload-5.js"></script>
   <script src="./payload-6.js"></script>
   <script src="./payload-7.js"></script>
+  <script src="./roadmap-patch.js"></script>
   <script>
   (async function(){
     const status=document.getElementById('status'); const spinner=document.getElementById('spinner');
@@ -29,7 +30,9 @@
       if(payload.length!==54904) throw new Error('게임 데이터 일부를 불러오지 못했습니다. 새로고침해 주세요.');
       const bytes=Uint8Array.from(atob(payload),c=>c.charCodeAt(0));
       const stream=new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'));
-      const html=await new Response(stream).text();
+      const sourceHtml=await new Response(stream).text();
+      if(typeof window.applySeojunRoadmapPatch!=='function') throw new Error('로드맵 모듈을 불러오지 못했습니다.');
+      const html=window.applySeojunRoadmapPatch(sourceHtml);
       document.open(); document.write(html); document.close();
     } catch(error) { spinner.hidden=true; status.className='error'; status.textContent='게임을 불러오지 못했습니다.\n'+(error?.message||error); console.error(error); }
   })();
