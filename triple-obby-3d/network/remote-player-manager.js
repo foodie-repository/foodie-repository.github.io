@@ -91,9 +91,13 @@
         group = this.createAvatar(meta);
         this.players.set(id, group);
       }
+      const velocity = Array.isArray(message.velocity) && message.velocity.length === 3
+        ? message.velocity.map(value => Number.isFinite(Number(value)) ? Number(value) : 0)
+        : [0, 0, 0];
       const sample = {
         t: Number(message.sentAt) || Date.now(),
         position: [...message.position],
+        velocity,
         yaw: Number(message.yaw) || 0,
         animation: message.animation || 'idle',
       };
@@ -113,27 +117,46 @@
     }
 
     update(nowMs) {
-      const renderAt = Date.now() - 100;
+      const renderAt = Date.now() - 120;
       for (const group of this.players.values()) {
         const samples = group.userData.samples;
         if (samples.length === 0) continue;
         let from = samples[0];
         let to = samples.at(-1);
-        for (let i = 0; i < samples.length - 1; i += 1) {
-          if (renderAt >= samples[i].t && renderAt <= samples[i + 1].t) {
-            from = samples[i];
-            to = samples[i + 1];
-            break;
+        let position;
+        let yaw = to.yaw;
+
+        if (samples.length >= 2 && renderAt <= to.t) {
+          for (let i = 0; i < samples.length - 1; i += 1) {
+            if (renderAt >= samples[i].t && renderAt <= samples[i + 1].t) {
+              from = samples[i];
+              to = samples[i + 1];
+              break;
+            }
           }
+          const span = Math.max(1, to.t - from.t);
+          const t = Math.max(0, Math.min(1, (renderAt - from.t) / span));
+          position = [
+            from.position[0] + (to.position[0] - from.position[0]) * t,
+            from.position[1] + (to.position[1] - from.position[1]) * t,
+            from.position[2] + (to.position[2] - from.position[2]) * t,
+          ];
+          yaw = this.lerpAngle(from.yaw, to.yaw, t);
+        } else {
+          // With 1Hz network snapshots, predict for at most 850ms using the last
+          // reported velocity. New packets continuously correct any prediction drift.
+          const newest = samples.at(-1);
+          const seconds = Math.max(0, Math.min(0.85, (renderAt - newest.t) / 1000));
+          position = [
+            newest.position[0] + newest.velocity[0] * seconds,
+            newest.position[1] + newest.velocity[1] * seconds,
+            newest.position[2] + newest.velocity[2] * seconds,
+          ];
+          yaw = newest.yaw;
         }
-        const span = Math.max(1, to.t - from.t);
-        const t = Math.max(0, Math.min(1, (renderAt - from.t) / span));
-        group.position.set(
-          from.position[0] + (to.position[0] - from.position[0]) * t,
-          from.position[1] + (to.position[1] - from.position[1]) * t,
-          from.position[2] + (to.position[2] - from.position[2]) * t,
-        );
-        group.rotation.y = this.lerpAngle(from.yaw, to.yaw, t);
+
+        group.position.set(position[0], position[1], position[2]);
+        group.rotation.y = yaw;
         const silentFor = nowMs - group.userData.lastPacketAt;
         group.visible = silentFor < 5000;
         const moving = group.userData.animation === 'run';
