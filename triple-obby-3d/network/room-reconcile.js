@@ -33,6 +33,42 @@
     return { room, mapChange, hostChanged };
   }
 
+  function reconcileMapMessage(previousRoom, message) {
+    const previous = previousRoom && typeof previousRoom === 'object' ? previousRoom : null;
+    if (!previous || !message || typeof message !== 'object') {
+      return { room: previous, mapChange: null, duplicate: false, ignored: true };
+    }
+    if (!message.mapId || !message.transitionId || message.hostSessionId !== previous.host_session_id) {
+      return { room: { ...previous }, mapChange: null, duplicate: false, ignored: true };
+    }
+
+    const duplicate = previous.current_map_id === message.mapId && previous.map_transition_id === message.transitionId;
+    if (duplicate) {
+      return { room: { ...previous }, mapChange: null, duplicate: true, ignored: false };
+    }
+
+    const startAt = normalizeStartAt(message.startAt);
+    const room = {
+      ...previous,
+      current_map_id: message.mapId,
+      map_transition_id: message.transitionId,
+      map_start_at: new Date(startAt).toISOString(),
+    };
+    return {
+      room,
+      mapChange: {
+        mapId: message.mapId,
+        hostSessionId: message.hostSessionId,
+        transitionId: message.transitionId,
+        startAt,
+        fromServer: false,
+      },
+      duplicate: false,
+      ignored: false,
+    };
+  }
+
   window.TripleObbyOnline = window.TripleObbyOnline || {};
   window.TripleObbyOnline.reconcileServerRoom = reconcileServerRoom;
+  window.TripleObbyOnline.reconcileMapMessage = reconcileMapMessage;
 })();
