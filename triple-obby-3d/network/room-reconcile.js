@@ -68,7 +68,15 @@
     };
   }
 
+  function mapRequestDisposition(room, mapId, pendingMapId = null, force = false) {
+    if (force) return 'force';
+    if (pendingMapId === mapId) return 'pending';
+    if (room?.current_map_id === mapId) return 'same';
+    return 'new';
+  }
+
   window.TripleObbyOnline = window.TripleObbyOnline || {};
   window.TripleObbyOnline.reconcileServerRoom = reconcileServerRoom;
   window.TripleObbyOnline.reconcileMapMessage = reconcileMapMessage;
+  window.TripleObbyOnline.mapRequestDisposition = mapRequestDisposition;
 })();
