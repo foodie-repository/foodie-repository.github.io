@@ -43,7 +43,7 @@
     }
 
     function buildLavaMap() {
-      const level = { id: 'lava', platforms: [], group: new THREE.Group(), spawn: new THREE.Vector3(0, 4, 0), killY: -4.05 };
+      const level = { id: 'lava', platforms: [], obstacles: [], group: new THREE.Group(), spawn: new THREE.Vector3(0, 4, 0), killY: -4.05 };
       scene.background = new THREE.Color(0x2b0c0c);
       scene.fog.color.set(0x2b0c0c);
       const base = makeBox(new THREE.Vector3(14, 1.5, 14), 0x3a2530, new THREE.Vector3(0, -1.5, 0), { roughness: 0.9 });
@@ -63,10 +63,21 @@
       lava.material.emissive = new THREE.Color(0xff4f1f);
       lava.material.emissiveIntensity = 1.1;
       level.group.add(lava);
-      for (let i = 0; i < 14; i++) {
-        const spike = makeBox(new THREE.Vector3(1.5, 3 + Math.random() * 6, 1.5), 0x2f2430, new THREE.Vector3(-10 + Math.random() * 20, -2, -10 + Math.random() * 20), { roughness: 0.85 });
+
+      // Deterministic solid pillars: every online client sees the same obstacles,
+      // and they participate in collision instead of being visual-only meshes.
+      const obstacleLayout = [
+        [-8.5, -8.0, 4.2], [8.5, -8.0, 5.4], [-8.5, 8.0, 6.2], [8.5, 8.0, 4.8],
+        [-12.0, -2.0, 5.8], [12.0, 2.0, 6.6], [-11.0, 6.0, 4.4], [11.0, -6.0, 5.2],
+        [-6.0, -12.0, 6.0], [6.0, 12.0, 5.0], [0.0, -13.0, 7.0], [0.0, 13.0, 4.6],
+        [-13.0, 10.0, 5.6], [13.0, -10.0, 6.4],
+      ];
+      obstacleLayout.forEach(([x, z, h]) => {
+        const y = -4.15 + h / 2;
+        const spike = makeBox(new THREE.Vector3(1.5, h, 1.5), 0x2f2430, new THREE.Vector3(x, y, z), { roughness: 0.85 });
         level.group.add(spike);
-      }
+        level.obstacles.push({ mesh: spike, w: 1.5, h, d: 1.5, active: true });
+      });
       return level;
     }
 
