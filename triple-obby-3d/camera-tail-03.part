@@ -3,7 +3,7 @@ if (btn.setPointerCapture && e.pointerId !== undefined) btn.setPointerCapture(e.
 const up = e => {
 e.preventDefault();
 if (key === 'jump') bindKey('jump', false);
-else input[key] = false;
+else bindArrow(key, false);
 };
 btn.addEventListener('pointerdown', down, { passive: false });
 btn.addEventListener('pointerup', up, { passive: false });
