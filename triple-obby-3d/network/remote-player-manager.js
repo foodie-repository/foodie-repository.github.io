@@ -143,8 +143,6 @@
           ];
           yaw = this.lerpAngle(from.yaw, to.yaw, t);
         } else {
-          // With 1Hz network snapshots, predict for at most 850ms using the last
-          // reported velocity. New packets continuously correct any prediction drift.
           const newest = samples.at(-1);
           const seconds = Math.max(0, Math.min(0.85, (renderAt - newest.t) / 1000));
           position = [
@@ -156,7 +154,10 @@
         }
 
         group.position.set(position[0], position[1], position[2]);
-        group.rotation.y = yaw;
+        const visualYaw = globalThis.TripleObbyControls?.modelYawForFacing
+          ? globalThis.TripleObbyControls.modelYawForFacing(yaw)
+          : yaw + Math.PI;
+        group.rotation.y = visualYaw;
         const silentFor = nowMs - group.userData.lastPacketAt;
         group.visible = silentFor < 5000;
         const moving = group.userData.animation === 'run';

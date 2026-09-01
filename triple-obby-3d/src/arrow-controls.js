@@ -19,8 +19,15 @@
     });
   }
 
+  // Three.js avatars are modeled with their visual front toward local -Z.
+  // Gameplay yaw uses +Z as logical forward, so rendering needs a 180° offset.
+  function modelYawForFacing(yaw) {
+    return normalizeYaw((Number.isFinite(yaw) ? yaw : 0) + Math.PI);
+  }
+
   globalThis.TripleObbyControls = Object.freeze({
     ...(globalThis.TripleObbyControls || {}),
     stepArrowControls,
+    modelYawForFacing,
   });
 })();
