@@ -1,0 +1,62 @@
+name: Triple Obby Online
+
+on:
+  push:
+    branches:
+      - feature/triple-obby-online
+    paths:
+      - 'triple-obby-3d/**'
+      - 'supabase/**'
+      - 'package.json'
+      - '.github/workflows/triple-obby-online.yml'
+  pull_request:
+    paths:
+      - 'triple-obby-3d/**'
+      - 'supabase/**'
+      - 'package.json'
+      - '.github/workflows/triple-obby-online.yml'
+
+concurrency:
+  group: triple-obby-online-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+      - name: Unit tests
+        run: npm test
+      - name: JavaScript syntax checks
+        run: npm run check
+      - name: Live Edge Function smoke test
+        run: npm run test:edge
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Start static server
+        run: |
+          python3 -m http.server 4173 --bind 127.0.0.1 > /tmp/triple-obby-http.log 2>&1 &
+          echo $! > /tmp/triple-obby-http.pid
+          sleep 2
+      - name: Two-browser online test
+        env:
+          TRIPLE_OBBY_BASE_URL: http://127.0.0.1:4173/triple-obby-3d/
+        run: |
+          set -o pipefail
+          npm run test:e2e 2>&1 | tee /tmp/playwright.log
+      - name: Upload browser artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: triple-obby-playwright-report
+          path: |
+            playwright-report
+            test-results
+            /tmp/triple-obby-http.log
+            /tmp/playwright.log
