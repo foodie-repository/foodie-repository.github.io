@@ -1,5 +1,7 @@
 renderer.render(scene, camera);
 }
+const arrowInput = { forward: false, back: false, left: false, right: false };
+let arrowFacingMode = false;
 function bindKey(name, pressed) {
 if (name === 'w') input.forward = pressed;
 else if (name === 's') input.back = pressed;
@@ -10,11 +12,20 @@ if (pressed && !input.jump) input.jumpPressed = true;
 input.jump = pressed;
 } else if (name === 'sprint') input.sprint = pressed;
 }
+function bindArrow(name, pressed) {
+if (!Object.hasOwn(arrowInput, name)) return;
+arrowInput[name] = pressed;
+if (pressed) arrowFacingMode = true;
+}
 addEventListener('keydown', e => {
-if (['KeyW','ArrowUp'].includes(e.code)) bindKey('w', true);
-if (['KeyS','ArrowDown'].includes(e.code)) bindKey('s', true);
-if (['KeyA','ArrowLeft'].includes(e.code)) bindKey('a', true);
-if (['KeyD','ArrowRight'].includes(e.code)) bindKey('d', true);
+if (e.code === 'KeyW') { bindKey('w', true); arrowFacingMode = false; }
+if (e.code === 'KeyS') { bindKey('s', true); arrowFacingMode = false; }
+if (e.code === 'KeyA') { bindKey('a', true); arrowFacingMode = false; }
+if (e.code === 'KeyD') { bindKey('d', true); arrowFacingMode = false; }
+if (e.code === 'ArrowUp') { bindArrow('forward', true); e.preventDefault(); }
+if (e.code === 'ArrowDown') { bindArrow('back', true); e.preventDefault(); }
+if (e.code === 'ArrowLeft') { bindArrow('left', true); e.preventDefault(); }
+if (e.code === 'ArrowRight') { bindArrow('right', true); e.preventDefault(); }
 if (e.code === 'Space') { bindKey('jump', true); e.preventDefault(); }
 if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') bindKey('sprint', true);
 if (e.code === 'KeyC' && state.mode !== 'lobby') cycleCameraMode();
@@ -22,15 +33,21 @@ if (e.code === 'KeyR' && state.mode === 'playing') startMap(player.mapId);
 if ((e.code === 'KeyL' || e.code === 'Escape') && state.mode !== 'lobby') returnLobby();
 });
 addEventListener('keyup', e => {
-if (['KeyW','ArrowUp'].includes(e.code)) bindKey('w', false);
-if (['KeyS','ArrowDown'].includes(e.code)) bindKey('s', false);
-if (['KeyA','ArrowLeft'].includes(e.code)) bindKey('a', false);
-if (['KeyD','ArrowRight'].includes(e.code)) bindKey('d', false);
+if (e.code === 'KeyW') bindKey('w', false);
+if (e.code === 'KeyS') bindKey('s', false);
+if (e.code === 'KeyA') bindKey('a', false);
+if (e.code === 'KeyD') bindKey('d', false);
+if (e.code === 'ArrowUp') { bindArrow('forward', false); e.preventDefault(); }
+if (e.code === 'ArrowDown') { bindArrow('back', false); e.preventDefault(); }
+if (e.code === 'ArrowLeft') { bindArrow('left', false); e.preventDefault(); }
+if (e.code === 'ArrowRight') { bindArrow('right', false); e.preventDefault(); }
 if (e.code === 'Space') bindKey('jump', false);
 if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') bindKey('sprint', false);
 });
 addEventListener('blur', () => {
 Object.keys(input).forEach(k => input[k] = false);
+Object.keys(arrowInput).forEach(k => arrowInput[k] = false);
+arrowFacingMode = false;
 input.jumpPressed = false;
 });
 document.querySelectorAll('.portalBtn').forEach(btn => btn.addEventListener('click', () => startMap(btn.dataset.map)));
@@ -45,4 +62,4 @@ const key = btn.dataset.key;
 const down = e => {
 e.preventDefault();
 if (key === 'jump') bindKey('jump', true);
-else input[key] = true;
+else bindArrow(key, true);

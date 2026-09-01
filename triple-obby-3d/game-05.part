@@ -33,12 +33,26 @@
       return x + radius > p.mesh.position.x - p.w / 2 && x - radius < p.mesh.position.x + p.w / 2 && z + radius > p.mesh.position.z - p.d / 2 && z - radius < p.mesh.position.z + p.d / 2;
     }
 
+    function movementVector(dt) {
+      const worldMove = new THREE.Vector3(
+        (input.right ? 1 : 0) - (input.left ? 1 : 0),
+        0,
+        (input.back ? 1 : 0) - (input.forward ? 1 : 0),
+      );
+      if (worldMove.lengthSq() > 0) worldMove.normalize();
+
+      const relative = globalThis.TripleObbyControls.stepArrowControls(arrowInput, player.yaw, dt);
+      player.yaw = relative.yaw;
+      const move = worldMove.add(new THREE.Vector3(relative.moveX, 0, relative.moveZ));
+      if (move.lengthSq() > 1) move.normalize();
+      return move;
+    }
+
     function updatePlayer(dt) {
       if (!state.level) return;
       const level = state.level;
       const prevPos = player.pos.clone();
-      const move = new THREE.Vector3((input.right ? 1 : 0) - (input.left ? 1 : 0), 0, (input.back ? 1 : 0) - (input.forward ? 1 : 0));
-      if (move.lengthSq() > 0) move.normalize();
+      const move = movementVector(dt);
       let speed = input.sprint ? 9.8 : 7.2;
       if (player.boost > 0) speed = 13.5;
       const target = move.multiplyScalar(speed);
@@ -85,7 +99,7 @@
 
       if (player.pos.y < level.killY) respawn('바닥 킬존에 떨어졌습니다');
       playerGroup.position.set(player.pos.x, player.pos.y, player.pos.z);
-      if (player.vel.x || player.vel.z) {
+      if (!arrowFacingMode && (player.vel.x || player.vel.z)) {
         player.yaw = Math.atan2(player.vel.x, player.vel.z);
       }
       playerGroup.rotation.y = player.yaw;
@@ -100,8 +114,7 @@
 
     function updateLobby(dt, t) {
       const portals = state.level.portals;
-      const move = new THREE.Vector3((input.right ? 1 : 0) - (input.left ? 1 : 0), 0, (input.back ? 1 : 0) - (input.forward ? 1 : 0));
-      if (move.lengthSq() > 0) move.normalize();
+      const move = movementVector(dt);
       player.vel.x += (move.x * 7 - player.vel.x) * Math.min(1, dt * 10);
       player.vel.z += (move.z * 7 - player.vel.z) * Math.min(1, dt * 10);
       if (move.lengthSq() === 0) { player.vel.x *= Math.max(0, 1 - dt * 8); player.vel.z *= Math.max(0, 1 - dt * 8); }
@@ -112,5 +125,5 @@
       player.pos.addScaledVector(player.vel, dt);
       if (player.pos.y <= 0) { player.pos.y = 0; player.vel.y = 0; player.grounded = true; }
       playerGroup.position.set(player.pos.x, player.pos.y, player.pos.z);
-      if (player.vel.x || player.vel.z) player.yaw = Math.atan2(player.vel.x, player.vel.z);
+      if (!arrowFacingMode && (player.vel.x || player.vel.z)) player.yaw = Math.atan2(player.vel.x, player.vel.z);
       playerGroup.rotation.y = player.yaw;
