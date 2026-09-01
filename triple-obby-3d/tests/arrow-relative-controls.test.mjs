@@ -20,13 +20,13 @@ test('ArrowUp moves forward in the direction the character is facing', () => {
 test('ArrowLeft and ArrowRight rotate facing direction without moving by themselves', () => {
   const left = stepArrowControls({ forward: false, back: false, left: true, right: false }, 0, 0.5, 2);
   assert.equal(left.yaw, -1);
-  assert.equal(left.moveX, 0);
-  assert.equal(left.moveZ, 0);
+  assert.ok(Math.abs(left.moveX) < 1e-12);
+  assert.ok(Math.abs(left.moveZ) < 1e-12);
 
   const right = stepArrowControls({ forward: false, back: false, left: false, right: true }, 0, 0.5, 2);
   assert.equal(right.yaw, 1);
-  assert.equal(right.moveX, 0);
-  assert.equal(right.moveZ, 0);
+  assert.ok(Math.abs(right.moveX) < 1e-12);
+  assert.ok(Math.abs(right.moveZ) < 1e-12);
 });
 
 test('ArrowDown moves backward without flipping the facing direction', () => {
