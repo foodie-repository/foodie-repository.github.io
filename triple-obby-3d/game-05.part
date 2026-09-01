@@ -33,6 +33,46 @@
       return x + radius > p.mesh.position.x - p.w / 2 && x - radius < p.mesh.position.x + p.w / 2 && z + radius > p.mesh.position.z - p.d / 2 && z - radius < p.mesh.position.z + p.d / 2;
     }
 
+    function resolveHorizontalObstacle(prevPos, nextPos, obstacle, radius = player.radius, height = player.height) {
+      if (!obstacle?.mesh || obstacle.active === false) {
+        return { x: nextPos.x, z: nextPos.z, blockedX: false, blockedZ: false };
+      }
+      const minY = obstacle.mesh.position.y - obstacle.h / 2;
+      const maxY = obstacle.mesh.position.y + obstacle.h / 2;
+      if (nextPos.y + height <= minY || nextPos.y >= maxY) {
+        return { x: nextPos.x, z: nextPos.z, blockedX: false, blockedZ: false };
+      }
+
+      const minX = obstacle.mesh.position.x - obstacle.w / 2 - radius;
+      const maxX = obstacle.mesh.position.x + obstacle.w / 2 + radius;
+      const minZ = obstacle.mesh.position.z - obstacle.d / 2 - radius;
+      const maxZ = obstacle.mesh.position.z + obstacle.d / 2 + radius;
+      if (nextPos.x <= minX || nextPos.x >= maxX || nextPos.z <= minZ || nextPos.z >= maxZ) {
+        return { x: nextPos.x, z: nextPos.z, blockedX: false, blockedZ: false };
+      }
+
+      let x = nextPos.x;
+      let z = nextPos.z;
+      let blockedX = false;
+      let blockedZ = false;
+      if (prevPos.x <= minX) { x = minX; blockedX = true; }
+      else if (prevPos.x >= maxX) { x = maxX; blockedX = true; }
+      else if (prevPos.z <= minZ) { z = minZ; blockedZ = true; }
+      else if (prevPos.z >= maxZ) { z = maxZ; blockedZ = true; }
+      else {
+        const choices = [
+          { axis: 'x', value: minX, depth: Math.abs(nextPos.x - minX) },
+          { axis: 'x', value: maxX, depth: Math.abs(maxX - nextPos.x) },
+          { axis: 'z', value: minZ, depth: Math.abs(nextPos.z - minZ) },
+          { axis: 'z', value: maxZ, depth: Math.abs(maxZ - nextPos.z) },
+        ].sort((a, b) => a.depth - b.depth);
+        const nearest = choices[0];
+        if (nearest.axis === 'x') { x = nearest.value; blockedX = true; }
+        else { z = nearest.value; blockedZ = true; }
+      }
+      return { x, z, blockedX, blockedZ };
+    }
+
     function movementVector(dt) {
       const worldMove = new THREE.Vector3(
         (input.right ? 1 : 0) - (input.left ? 1 : 0),
@@ -80,6 +120,14 @@
       player.pos.y += player.vel.y * dt;
       player.grounded = false;
 
+      (level.obstacles || []).forEach(obstacle => {
+        const resolved = resolveHorizontalObstacle(prevPos, player.pos, obstacle);
+        player.pos.x = resolved.x;
+        player.pos.z = resolved.z;
+        if (resolved.blockedX) player.vel.x = 0;
+        if (resolved.blockedZ) player.vel.z = 0;
+      });
+
       level.platforms.forEach(p => {
         if (!p.active) return;
         const top = p.mesh.position.y + p.h / 2;
@@ -102,7 +150,7 @@
       if (!arrowFacingMode && (player.vel.x || player.vel.z)) {
         player.yaw = Math.atan2(player.vel.x, player.vel.z);
       }
-      playerGroup.rotation.y = player.yaw;
+      playerGroup.rotation.y = globalThis.TripleObbyControls.modelYawForFacing(player.yaw);
       const swing = state.elapsed * 10;
       const amp = player.grounded && (Math.abs(player.vel.x) + Math.abs(player.vel.z)) > 0.2 ? 0.55 : 0;
       leg1.rotation.x = Math.sin(swing) * amp;
@@ -126,4 +174,4 @@
       if (player.pos.y <= 0) { player.pos.y = 0; player.vel.y = 0; player.grounded = true; }
       playerGroup.position.set(player.pos.x, player.pos.y, player.pos.z);
       if (!arrowFacingMode && (player.vel.x || player.vel.z)) player.yaw = Math.atan2(player.vel.x, player.vel.z);
-      playerGroup.rotation.y = player.yaw;
+      playerGroup.rotation.y = globalThis.TripleObbyControls.modelYawForFacing(player.yaw);
