@@ -19,7 +19,7 @@
     <div class="hudTop">
       <div class="brand glass">
         <strong>NEON DEADLINE 3D</strong>
-        <span>F키 공격 · 5종 무기 · 7종 좀비 · PC/모바일</span>
+        <span>F키 공격 · 발사/재장전 모션 · 5종 무기 · 7종 좀비 · PC/모바일</span>
       </div>
       <div class="stats glass">
         <div class="stat"><small>웨이브</small><b id="wave">1</b></div>
@@ -58,11 +58,11 @@
   <div id="startOverlay" class="overlay">
     <div class="panel">
       <h1>3D 좀비 생존게임</h1>
-      <p>PC에서는 <strong>F키</strong>로 공격하고, 모바일에서는 FIRE 버튼으로 사격합니다.</p>
+      <p>PC에서는 <strong>F키</strong>로 공격하고, 모바일에서는 FIRE 버튼으로 사격합니다. 총기별 <strong>발사 반동과 재장전 모션</strong>이 적용됩니다.</p>
       <div class="featureGrid">
         <div class="feature"><b>5종 무기</b><span>권총·기관단총·산탄총·돌격소총·저격총. 숫자키 1~5 또는 화면 무기 칸으로 선택합니다.</span></div>
+        <div class="feature"><b>총기 모션</b><span>권총 슬라이드, 산탄총 펌프액션, 저격총 볼트액션, 머즐 플래시와 탄창 재장전 모션을 지원합니다.</span></div>
         <div class="feature"><b>7종 좀비</b><span>워커·러너·크롤러·탱커·스피터·폭발 좀비·보스가 웨이브에 따라 출현합니다.</span></div>
-        <div class="feature"><b>PC 조작</b><span>WASD 이동, 마우스 조준, F 공격, R 재장전, Shift 질주, Q/E 무기 전환.</span></div>
         <div class="feature"><b>모바일 조작</b><span>왼쪽 조이스틱 이동, 오른쪽 화면 드래그 조준, FIRE·R·RUN·NEXT 버튼과 전체화면을 지원합니다.</span></div>
       </div>
       <div class="buttonRow"><button id="startBtn" class="mainButton">게임 시작</button></div>
@@ -93,6 +93,6 @@
   </div>
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/0.160.1/three.min.js"></script>
-<script src="./app.js"></script>
+<script src="./app.js?v=5.0-weapon-motion"></script>
 </body>
 </html>
