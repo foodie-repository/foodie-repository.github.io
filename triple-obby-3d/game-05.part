@@ -88,6 +88,14 @@
       return move;
     }
 
+    function handlePlatformLanding(p) {
+      player.grounded = true;
+      if (p.kind === 'checkpoint') activateCheckpoint(p);
+      if (p.kind === 'finish' && player.finishCooldown <= 0) { player.finishCooldown = 1; finishMap(); }
+      if (p.kind === 'crumble' && p.timer <= 0) p.timer = 0.6;
+      if (p.kind === 'boost') { player.boost = 1.2; showToast('가속 패드!', 0.55); }
+    }
+
     function updatePlayer(dt) {
       if (!state.level) return;
       const level = state.level;
@@ -130,6 +138,30 @@
 
       level.platforms.forEach(p => {
         if (!p.active) return;
+
+        if (level.id === 'lava') {
+          const resolved = globalThis.TripleObbyPhysics.resolveSolidPlatformCollision(
+            prevPos,
+            player.pos,
+            {
+              x: p.mesh.position.x,
+              y: p.mesh.position.y,
+              z: p.mesh.position.z,
+              w: p.w,
+              h: p.h,
+              d: p.d,
+              active: p.active,
+            },
+            { radius: player.radius, height: player.height, velocityY: player.vel.y },
+          );
+          player.pos.set(resolved.x, resolved.y, resolved.z);
+          player.vel.y = resolved.velocityY;
+          if (resolved.blockedX) player.vel.x = 0;
+          if (resolved.blockedZ) player.vel.z = 0;
+          if (resolved.hitTop) handlePlatformLanding(p);
+          return;
+        }
+
         const top = p.mesh.position.y + p.h / 2;
         const prevBottom = prevPos.y;
         const nowBottom = player.pos.y;
@@ -137,11 +169,7 @@
         if (inside && prevBottom >= top && nowBottom <= top && player.vel.y <= 0) {
           player.pos.y = top;
           player.vel.y = 0;
-          player.grounded = true;
-          if (p.kind === 'checkpoint') activateCheckpoint(p);
-          if (p.kind === 'finish' && player.finishCooldown <= 0) { player.finishCooldown = 1; finishMap(); }
-          if (p.kind === 'crumble' && p.timer <= 0) p.timer = 0.6;
-          if (p.kind === 'boost') { player.boost = 1.2; showToast('가속 패드!', 0.55); }
+          handlePlatformLanding(p);
         }
       });
 
