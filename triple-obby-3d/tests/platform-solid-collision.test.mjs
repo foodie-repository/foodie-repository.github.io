@@ -10,8 +10,8 @@ const platform = Object.freeze({ x: 0, y: 2, z: 0, w: 6, h: 1, d: 6, active: tru
 test('jumping upward into a platform underside stops below the block', () => {
   assert.equal(typeof resolveSolidPlatformCollision, 'function');
   const result = resolveSolidPlatformCollision(
-    { x: 0, y: 0.1, z: 0 },
-    { x: 0, y: 1.2, z: 0 },
+    { x: 0, y: -0.5, z: 0 },
+    { x: 0, y: 0.0, z: 0 },
     platform,
     { radius: 0.38, height: 1.8, velocityY: 8 },
   );
