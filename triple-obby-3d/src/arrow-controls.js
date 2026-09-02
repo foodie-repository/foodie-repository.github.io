@@ -8,7 +8,7 @@
 
   function stepArrowControls(input, yaw, dt, turnSpeed = 2.6) {
     const safeDt = Math.max(0, Number.isFinite(dt) ? dt : 0);
-    const turn = Number(Boolean(input?.right)) - Number(Boolean(input?.left));
+    const turn = Number(Boolean(input?.left)) - Number(Boolean(input?.right));
     const nextYaw = normalizeYaw(yaw + turn * turnSpeed * safeDt);
     const drive = Number(Boolean(input?.forward)) - Number(Boolean(input?.back));
 
