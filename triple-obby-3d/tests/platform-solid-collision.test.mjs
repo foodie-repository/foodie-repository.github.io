@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs/promises';
 
 await import('../src/platform-collision.js');
 
@@ -41,4 +42,9 @@ test('falling onto the platform still lands on its top', () => {
   assert.equal(result.grounded, true);
   assert.ok(Math.abs(result.y - 2.5) < 1e-9);
   assert.equal(result.velocityY, 0);
+});
+
+test('runtime uses solid collision for active platforms', async () => {
+  const runtime = await fs.readFile(new URL('../game-05.part', import.meta.url), 'utf8');
+  assert.match(runtime, /TripleObbyPhysics\.resolveSolidPlatformCollision/);
 });
