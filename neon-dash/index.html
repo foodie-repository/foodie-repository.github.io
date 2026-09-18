@@ -1,0 +1,1058 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+  <meta name="theme-color" content="#07091a" />
+  <title>Neon Dash</title>
+  <style>:root{color-scheme:dark;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#050612;color:#f8fafc;--cyan:#67e8f9;--cyan2:#22d3ee;--violet:#8b5cf6;--pink:#f472b6;--yellow:#fde047;--panel:rgba(8,11,35,.86);--line:rgba(148,163,184,.18)}*{box-sizing:border-box}html,body{margin:0;min-height:100%;background:radial-gradient(circle at 50% -10%,rgba(79,70,229,.32),transparent 42rem),linear-gradient(#050612,#090b22);overscroll-behavior:none}body{min-height:100dvh;padding:max(10px,env(safe-area-inset-top)) max(8px,env(safe-area-inset-right)) max(12px,env(safe-area-inset-bottom)) max(8px,env(safe-area-inset-left))}button,input,select,textarea{font:inherit}button{color:inherit}.app-shell{width:min(1180px,100%);margin:auto}.app-header{display:flex;align-items:center;gap:12px;min-height:58px;padding:8px 4px}.brand-wrap{flex:1}.brand{font-weight:950;letter-spacing:.12em;font-size:clamp(16px,2.3vw,24px);text-shadow:0 0 20px rgba(34,211,238,.4)}.brand span{color:var(--cyan2)}.subtitle{margin-top:2px;color:#94a3b8;font-size:10px;font-weight:800;letter-spacing:.14em}.icon-btn,.secondary,.primary,.menu-card{border:1px solid var(--line);cursor:pointer;transition:.16s transform,.16s background,.16s border-color;touch-action:manipulation}.icon-btn:hover,.secondary:hover,.primary:hover,.menu-card:hover{transform:translateY(-1px)}.icon-btn{min-width:44px;height:44px;border-radius:13px;background:rgba(255,255,255,.06)}.screen{display:none}.screen.active{display:block}.hidden{display:none!important}.hero-card,.form-card,.level-list,.editor-top,.verify-strip,.canvas-wrap,.pan-controls,.palette,.editor-status,.play-head,.progress,.empty-card{border:1px solid var(--line);background:var(--panel);box-shadow:0 28px 90px rgba(0,0,0,.28)}.hero-card{width:min(760px,100%);margin:4vh auto;padding:clamp(24px,5vw,54px);border-radius:28px;text-align:center;backdrop-filter:blur(18px)}.eyebrow{color:var(--cyan);font-size:11px;font-weight:950;letter-spacing:.17em}.hero-card h1{margin:8px 0 10px;font-size:clamp(52px,10vw,94px);line-height:.92;letter-spacing:-.055em;background:linear-gradient(105deg,var(--cyan),#a78bfa,var(--pink));-webkit-background-clip:text;color:transparent}.hero-card p,.form-card p{color:#cbd5e1;line-height:1.65}.primary,.secondary{min-height:44px;padding:0 18px;border-radius:13px;font-weight:900}.primary{border-color:rgba(103,232,249,.42);background:linear-gradient(100deg,#0891b2,#6d28d9 65%,#be185d);box-shadow:0 0 28px rgba(34,211,238,.15)}.secondary{background:rgba(255,255,255,.065)}.primary:disabled,.secondary:disabled{opacity:.38;cursor:not-allowed;transform:none}.huge{min-height:64px;font-size:20px;width:min(360px,100%);margin:18px auto}.wide{width:min(460px,100%)}.compact{min-height:38px;padding:0 12px;font-size:13px}.menu-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:12px 0}.menu-card{min-height:105px;border-radius:18px;background:linear-gradient(135deg,rgba(103,232,249,.08),rgba(139,92,246,.08));padding:18px;text-align:left}.menu-card b,.menu-card span{display:block}.menu-card b{font-size:17px;margin-bottom:8px}.menu-card span{color:#94a3b8;font-size:12px}.menu-stats{display:flex;justify-content:center;gap:10px;margin-top:22px;color:#94a3b8;font-size:12px}.menu-stats strong{color:var(--cyan)}.section-heading{display:flex;justify-content:space-between;align-items:end;gap:12px;margin:8px 0 14px}.section-heading h2,.form-card h2{margin:4px 0;font-size:clamp(25px,4vw,38px)}.level-list{display:grid;gap:10px;padding:12px;border-radius:20px}.level-card{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;padding:15px;border-radius:15px;background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.07)}.level-info{min-width:0}.level-info b,.level-info span{display:block}.level-info b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.level-info span{margin-top:5px;color:#94a3b8;font-size:11px}.level-actions{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:6px}.level-actions button{min-height:34px;padding:0 9px;border:1px solid var(--line);border-radius:10px;background:rgba(255,255,255,.06);font-size:11px;cursor:pointer}.status-dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:5px;background:#f59e0b}.status-dot.ok{background:#22c55e}.empty-card{padding:42px;border-radius:20px;text-align:center}.empty-card b,.empty-card span{display:block}.empty-card span{color:#94a3b8;margin-top:7px}.form-card{margin:6vh auto;padding:clamp(20px,4vw,38px);border-radius:22px}.narrow{width:min(720px,100%)}textarea,input,select{border:1px solid rgba(148,163,184,.22);border-radius:11px;background:#080b22;color:#f8fafc;outline:none}textarea:focus,input:focus,select:focus{border-color:var(--cyan2);box-shadow:0 0 0 3px rgba(34,211,238,.08)}textarea{width:100%;padding:13px;resize:vertical}.button-row{display:flex;justify-content:flex-end;gap:8px;margin-top:12px}.import-preview{margin-top:12px;padding:13px;border-radius:12px;background:rgba(34,211,238,.07);color:#dbeafe;font-size:13px}.error-text{margin-top:10px;color:#fda4af;font-size:13px}.play-head,.editor-top,.verify-strip,.pan-controls,.palette,.editor-status{border-radius:15px}.play-head{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;margin-bottom:8px}.play-head strong,.play-head span{display:block}.play-head span{color:#94a3b8;font-size:11px;margin-top:3px}.progress{height:20px;position:relative;overflow:hidden;border-radius:999px;margin-bottom:8px}.progress-fill{position:absolute;inset:0 auto 0 0;width:0;background:linear-gradient(90deg,var(--cyan2),var(--violet),var(--pink));box-shadow:0 0 20px rgba(34,211,238,.5)}.progress span{position:absolute;inset:0;display:grid;place-items:center;font-size:11px;font-weight:900}.canvas-wrap{position:relative;overflow:hidden;border-radius:18px;background:#080b20;touch-action:none;user-select:none}.game-wrap{aspect-ratio:16/9}.editor-wrap{aspect-ratio:960/520}.canvas-wrap canvas{display:block;width:100%;height:100%;touch-action:none}.game-message{position:absolute;inset:0;display:grid;place-items:center;pointer-events:none;background:rgba(2,4,18,.18)}.game-message>div{padding:20px 28px;border-radius:16px;text-align:center;background:rgba(5,7,24,.88);border:1px solid var(--line)}.game-message strong,.game-message span{display:block}.game-message strong{font-size:clamp(27px,6vw,48px)}.game-message span{margin-top:4px;color:#cbd5e1}.play-footer{display:flex;gap:14px;justify-content:space-between;padding:9px 4px;color:#94a3b8;font-size:11px;font-weight:800}.editor-top{display:flex;justify-content:space-between;gap:12px;padding:10px;margin-bottom:8px}.editor-fields,.editor-actions{display:flex;gap:8px;align-items:end;flex-wrap:wrap}.editor-fields label{font-size:10px;color:#94a3b8;font-weight:800}.editor-fields input,.editor-fields select{display:block;height:38px;margin-top:4px;padding:0 10px}.editor-fields input{width:min(260px,45vw)}.verify-strip{display:flex;align-items:center;gap:9px;padding:8px 10px;margin-bottom:8px;font-size:11px;color:#cbd5e1}.verify-strip>span:nth-child(2){flex:1}.verify-badge{padding:5px 8px;border-radius:999px;font-weight:950}.verify-badge.unverified{background:rgba(245,158,11,.14);color:#fbbf24}.verify-badge.verified{background:rgba(34,197,94,.14);color:#4ade80}.pan-controls{display:flex;align-items:center;gap:8px;padding:8px;margin-top:8px}.pan-controls input{flex:1;accent-color:#22d3ee}.palette{display:flex;gap:7px;padding:8px;margin-top:8px;overflow-x:auto}.tool{min-width:88px;min-height:67px;border:1px solid rgba(148,163,184,.16);border-radius:12px;background:rgba(255,255,255,.045);color:#e2e8f0;cursor:pointer}.tool.active{border-color:var(--cyan2);background:rgba(34,211,238,.12);box-shadow:inset 0 0 20px rgba(34,211,238,.06)}.tool-icon{display:grid;place-items:center;height:26px;margin:auto;font-size:22px}.block-icon{width:24px;height:24px;background:linear-gradient(135deg,var(--cyan),var(--violet));border:2px solid #fff3}.spike-icon{color:var(--pink)}.pad-icon{width:30px;height:8px;border-radius:5px;background:var(--yellow)}.orb-icon{color:var(--yellow);text-shadow:0 0 10px var(--yellow)}.portal-icon.ship{color:var(--cyan)}.portal-icon.cube{color:var(--pink)}.tool b{font-size:10px}.editor-status{display:flex;justify-content:space-between;gap:12px;padding:7px 10px;margin-top:8px;color:#94a3b8;font-size:10px}.modal{position:fixed;z-index:30;inset:0;display:grid;place-items:center;padding:12px;background:rgba(2,4,16,.76);backdrop-filter:blur(8px)}.modal-card{width:min(650px,100%);padding:22px;border-radius:20px;background:#0a0d28;border:1px solid rgba(255,255,255,.16);box-shadow:0 30px 100px #0008}.modal-card h3{margin:0 0 8px}.modal-card p{color:#cbd5e1;line-height:1.55}.modal-card textarea{margin-top:8px}.toast{position:fixed;z-index:40;left:50%;bottom:max(20px,env(safe-area-inset-bottom));transform:translateX(-50%);padding:11px 16px;border-radius:999px;background:#111636;border:1px solid rgba(103,232,249,.28);box-shadow:0 10px 40px #0009;font-size:12px;font-weight:800}.danger{color:#fda4af!important}@media(max-width:760px){body{padding-left:5px;padding-right:5px}.app-header{min-height:52px}.hero-card{margin:1.5vh auto;padding:25px 14px;border-radius:20px}.hero-card h1{font-size:clamp(48px,17vw,76px)}.menu-grid{grid-template-columns:1fr}.menu-card{min-height:82px}.editor-top{display:block}.editor-actions{margin-top:8px}.editor-actions button{flex:1}.editor-fields{display:grid;grid-template-columns:1fr 1fr}.editor-fields input{width:100%}.verify-strip{flex-wrap:wrap}.verify-strip>span:nth-child(2){order:3;flex-basis:100%}.play-footer span:last-child{display:none}.level-card{grid-template-columns:1fr}.level-actions{justify-content:flex-start}.palette{padding-bottom:10px}.tool{min-width:78px}.editor-status span:last-child{display:none}.section-heading{align-items:center}}@media(max-width:430px){.subtitle{display:none}.primary,.secondary{font-size:12px}.pan-controls .icon-btn{min-width:38px;width:38px;height:38px}.editor-fields{grid-template-columns:1fr}.play-head{padding:7px 8px}}
+</style>
+</head>
+<body>
+  <main id="app" class="app-shell">
+    <header class="app-header">
+      <button id="homeBtn" class="icon-btn hidden" type="button" aria-label="메인으로">←</button>
+      <div class="brand-wrap">
+        <div class="brand"><span>◆</span> NEON DASH</div>
+        <div id="screenSubtitle" class="subtitle">CREATE · PLAY · SHARE</div>
+      </div>
+      <button id="muteBtn" class="icon-btn" type="button" aria-label="소리 끄기">🔊</button>
+    </header>
+
+    <section id="screen-menu" class="screen active" data-screen="menu">
+      <div class="hero-card">
+        <div class="eyebrow">ORIGINAL NEON RHYTHM RUNNER</div>
+        <h1>NEON DASH</h1>
+        <p>공식 맵을 플레이하거나 직접 맵을 만들고, 클리어한 맵을 코드로 친구와 공유하세요.</p>
+        <button id="playOfficialBtn" class="primary huge" type="button">게임 시작</button>
+        <div class="menu-grid">
+          <button id="createMapBtn" class="menu-card" type="button"><b>✦ 맵 만들기</b><span>격자 편집기로 나만의 맵 제작</span></button>
+          <button id="myMapsBtn" class="menu-card" type="button"><b>▦ 내가 만든 맵</b><span>저장한 맵 플레이 · 수정 · 공유</span></button>
+        </div>
+        <button id="importMapBtn" class="secondary wide" type="button">맵 코드 불러오기</button>
+        <div class="menu-stats"><span>공식 맵 최고 기록</span><strong id="menuBest">0%</strong></div>
+      </div>
+    </section>
+
+    <section id="screen-play" class="screen" data-screen="play">
+      <div class="play-head">
+        <div><strong id="playLevelName">Neon Dash</strong><span id="playModeLabel">공식 맵</span></div>
+        <button id="restartBtn" class="secondary compact" type="button">↻ 재시작</button>
+      </div>
+      <div class="progress"><div id="progressFill" class="progress-fill"></div><span id="progressText">0%</span></div>
+      <div class="canvas-wrap game-wrap">
+        <canvas id="gameCanvas" width="960" height="540" aria-label="Neon Dash 플레이 화면"></canvas>
+        <div id="gameMessage" class="game-message hidden"><div><strong id="gameMessageTitle"></strong><span id="gameMessageText"></span></div></div>
+      </div>
+      <div class="play-footer"><span id="attemptText">ATTEMPT 1</span><span id="bestText">BEST 0%</span><span>큐브: 길게 누르면 연속점프 · 비행: 누르면 상승</span></div>
+    </section>
+
+    <section id="screen-levels" class="screen" data-screen="levels">
+      <div class="section-heading"><div><span class="eyebrow">LOCAL LEVELS</span><h2>내가 만든 맵</h2></div><button id="levelsCreateBtn" class="primary compact" type="button">+ 새 맵</button></div>
+      <div id="levelList" class="level-list"></div>
+      <div id="emptyLevels" class="empty-card hidden"><b>아직 만든 맵이 없습니다.</b><span>맵 만들기를 눌러 첫 맵을 제작해 보세요.</span></div>
+    </section>
+
+    <section id="screen-import" class="screen" data-screen="import">
+      <div class="form-card narrow">
+        <span class="eyebrow">MAP CODE</span><h2>맵 코드 불러오기</h2>
+        <p>친구가 보낸 <code>ND1:</code> 코드 전체를 붙여넣으세요. 불러온 맵은 이 기기에서 다시 클리어해야 공유할 수 있습니다.</p>
+        <textarea id="importCodeInput" rows="7" spellcheck="false" placeholder="ND1:..."></textarea>
+        <div id="importPreview" class="import-preview hidden"></div>
+        <div id="importError" class="error-text hidden"></div>
+        <div class="button-row"><button id="previewImportBtn" class="secondary" type="button">코드 확인</button><button id="confirmImportBtn" class="primary hidden" type="button">저장하고 열기</button></div>
+      </div>
+    </section>
+
+    <section id="screen-editor" class="screen" data-screen="editor">
+      <div class="editor-top">
+        <div class="editor-fields"><label>맵 이름<input id="mapNameInput" maxlength="40" value="새 맵" /></label><label>음악<select id="musicSelect"><option value="neon-rush">Neon Rush</option><option value="hyper-drive">Hyper Drive</option><option value="dark-pulse">Dark Pulse</option></select></label></div>
+        <div class="editor-actions"><button id="undoBtn" class="secondary compact" type="button">↶ 실행취소</button><button id="redoBtn" class="secondary compact" type="button">↷ 다시실행</button><button id="saveMapBtn" class="secondary compact" type="button">저장</button><button id="testMapBtn" class="primary compact" type="button">▶ 테스트</button></div>
+      </div>
+      <div class="verify-strip"><span id="verifyBadge" class="verify-badge unverified">미클리어</span><span id="verifyText">이 버전을 직접 클리어하면 맵 코드를 만들 수 있습니다.</span><button id="shareEditorBtn" class="secondary compact" type="button" disabled>맵 코드</button></div>
+      <div class="canvas-wrap editor-wrap"><canvas id="editorCanvas" width="960" height="520" aria-label="맵 편집 화면"></canvas></div>
+      <div class="pan-controls"><button id="panLeftBtn" type="button" class="icon-btn">◀</button><input id="panRange" type="range" min="0" max="0" value="0" aria-label="맵 좌우 이동"/><button id="panRightBtn" type="button" class="icon-btn">▶</button><button id="extendBtn" class="primary compact" type="button">+ 구간 추가</button></div>
+      <div id="palette" class="palette" aria-label="맵 도구">
+        <button class="tool active" data-tool="block" type="button"><span class="tool-icon block-icon"></span><b>블록</b></button>
+        <button class="tool" data-tool="spike" type="button"><span class="tool-icon spike-icon">▲</span><b>가시</b></button>
+        <button class="tool" data-tool="pad" type="button"><span class="tool-icon pad-icon"></span><b>점프패드</b></button>
+        <button class="tool" data-tool="orb" type="button"><span class="tool-icon orb-icon">●</span><b>점프링</b></button>
+        <button class="tool" data-tool="portal-ship" type="button"><span class="tool-icon portal-icon ship">◯</span><b>비행 포털</b></button>
+        <button class="tool" data-tool="portal-cube" type="button"><span class="tool-icon portal-icon cube">◯</span><b>큐브 포털</b></button>
+        <button class="tool" data-tool="eraser" type="button"><span class="tool-icon">⌫</span><b>지우개</b></button>
+      </div>
+      <div class="editor-status"><span id="editorPosition">1 / 80칸</span><span>격자를 누르거나 드래그해서 배치 · 아래 슬라이더로 좌우 이동</span></div>
+    </section>
+
+    <div id="modal" class="modal hidden" role="dialog" aria-modal="true"><div class="modal-card"><h3 id="modalTitle"></h3><p id="modalText"></p><textarea id="modalCode" class="hidden" rows="8" readonly></textarea><div class="button-row"><button id="modalCancel" class="secondary" type="button">닫기</button><button id="modalConfirm" class="primary hidden" type="button">확인</button></div></div></div>
+    <div id="toast" class="toast hidden" aria-live="polite"></div>
+  </main>
+  <script>
+const TRACK_IDS = ['neon-rush', 'hyper-drive', 'dark-pulse'];
+const OBJECT_TYPES = ['block','spike','pad','orb','portal-ship','portal-cube'];
+const SCHEMA_VERSION = 1;
+const CELL_SIZE = 40;
+const INITIAL_LENGTH_CELLS = 80;
+const SECTION_CELLS = 40;
+const MIN_LENGTH_CELLS = 40;
+const MAX_LENGTH_CELLS = 2000;
+const MAX_OBJECTS = 5000;
+const MAX_ROW = 10;
+const STORAGE_KEY = 'neonDash:levels:v1';
+const CUSTOM_ORIGIN_X = 240;
+const CUSTOM_GROUND_Y = 430;
+
+function rectsOverlap(a, b) {
+  return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+}
+function jumpVelocity() { return -760; }
+function padVelocity() { return -980; }
+function progressPercent(distance, totalDistance) {
+  if (totalDistance <= 0) return 0;
+  return Math.max(0, Math.min(100, distance / totalDistance * 100));
+}
+function speedForProgress(progress01) {
+  const t = Math.max(0, Math.min(1, progress01));
+  return 320 + 140 * t;
+}
+function flightVerticalVelocity(currentVy, held, dt) {
+  const acceleration = held ? -1500 : 1650;
+  return Math.max(-480, Math.min(540, currentVy + acceleration * dt));
+}
+function crossedPortal(previousX, currentX, portalX) {
+  return previousX < portalX && currentX >= portalX;
+}
+function shouldAutoJump(mode, grounded, inputHeld) {
+  return mode === 'cube' && grounded && inputHeld;
+}
+
+function nowIso() { return new Date().toISOString(); }
+
+function makeId(prefix = 'lvl') {
+  if (globalThis.crypto?.randomUUID) return `${prefix}-${globalThis.crypto.randomUUID()}`;
+  return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2,10)}`;
+}
+
+function plainObject(value) {
+  return value && typeof value === 'object' && !Array.isArray(value);
+}
+
+function createLevel(overrides = {}) {
+  const stamp = nowIso();
+  return normalizeLevel({
+    schemaVersion: SCHEMA_VERSION,
+    id: makeId('level'),
+    name: '새 맵',
+    lengthCells: INITIAL_LENGTH_CELLS,
+    cellSize: CELL_SIZE,
+    music: 'neon-rush',
+    objects: [],
+    createdAt: stamp,
+    updatedAt: stamp,
+    verifiedFingerprint: null,
+    ...overrides,
+  });
+}
+
+function normalizeLevel(input) {
+  const obj = plainObject(input) ? input : {};
+  const stamp = nowIso();
+  const objects = Array.isArray(obj.objects) ? obj.objects.map((o, i) => ({
+    id: typeof o?.id === 'string' && o.id ? o.id : `obj-${i}-${makeId('o')}`,
+    type: o?.type,
+    x: Number(o?.x),
+    y: Number(o?.y),
+    ...(o?.orientation ? {orientation: String(o.orientation)} : {}),
+  })) : [];
+  return {
+    schemaVersion: Number(obj.schemaVersion ?? SCHEMA_VERSION),
+    id: typeof obj.id === 'string' && obj.id ? obj.id : makeId('level'),
+    name: String(obj.name ?? '새 맵').slice(0, 40) || '새 맵',
+    lengthCells: Number(obj.lengthCells ?? INITIAL_LENGTH_CELLS),
+    cellSize: Number(obj.cellSize ?? CELL_SIZE),
+    music: String(obj.music ?? 'neon-rush'),
+    objects,
+    createdAt: typeof obj.createdAt === 'string' ? obj.createdAt : stamp,
+    updatedAt: typeof obj.updatedAt === 'string' ? obj.updatedAt : stamp,
+    verifiedFingerprint: typeof obj.verifiedFingerprint === 'string' ? obj.verifiedFingerprint : null,
+  };
+}
+
+function validateLevel(level) {
+  if (!plainObject(level)) return {ok:false, error:'맵 데이터 형식이 올바르지 않습니다.'};
+  if (Number(level.schemaVersion) !== SCHEMA_VERSION) return {ok:false, error:'지원하지 않는 맵 코드 버전입니다.'};
+  if (typeof level.id !== 'string' || !level.id || level.id.length > 120) return {ok:false, error:'맵 ID가 올바르지 않습니다.'};
+  if (typeof level.name !== 'string' || !level.name.trim() || level.name.length > 40) return {ok:false, error:'맵 이름이 올바르지 않습니다.'};
+  if (!Number.isInteger(level.lengthCells) || level.lengthCells < MIN_LENGTH_CELLS || level.lengthCells > MAX_LENGTH_CELLS) return {ok:false, error:'맵 길이가 허용 범위를 벗어났습니다.'};
+  if (Number(level.cellSize) !== CELL_SIZE) return {ok:false, error:'지원하지 않는 격자 크기입니다.'};
+  if (!TRACK_IDS.includes(level.music)) return {ok:false, error:'지원하지 않는 음악입니다.'};
+  if (!Array.isArray(level.objects)) return {ok:false, error:'오브젝트 목록이 올바르지 않습니다.'};
+  if (level.objects.length > MAX_OBJECTS) return {ok:false, error:'오브젝트가 너무 많습니다.'};
+  const ids = new Set();
+  const cells = new Set();
+  for (const o of level.objects) {
+    if (!plainObject(o)) return {ok:false, error:'오브젝트 형식이 올바르지 않습니다.'};
+    if (typeof o.id !== 'string' || !o.id || ids.has(o.id)) return {ok:false, error:'오브젝트 ID가 올바르지 않습니다.'};
+    ids.add(o.id);
+    if (!OBJECT_TYPES.includes(o.type)) return {ok:false, error:'지원하지 않는 오브젝트가 포함되어 있습니다.'};
+    if (!Number.isInteger(o.x) || o.x < 0 || o.x >= level.lengthCells) return {ok:false, error:'오브젝트 X 좌표가 맵 범위를 벗어났습니다.'};
+    if (!Number.isInteger(o.y) || o.y < 0 || o.y > MAX_ROW) return {ok:false, error:'오브젝트 Y 좌표가 맵 범위를 벗어났습니다.'};
+    const key = `${o.x}:${o.y}`;
+    if (cells.has(key)) return {ok:false, error:'한 격자에 여러 오브젝트가 겹쳐 있습니다.'};
+    cells.add(key);
+  }
+  return {ok:true, error:null};
+}
+
+function canonicalGameplay(level) {
+  const l = normalizeLevel(level);
+  return {
+    schemaVersion: SCHEMA_VERSION,
+    lengthCells: l.lengthCells,
+    cellSize: CELL_SIZE,
+    objects: l.objects
+      .map(o => ({type:o.type, x:o.x, y:o.y, ...(o.orientation ? {orientation:o.orientation} : {})}))
+      .sort((a,b) => a.x-b.x || a.y-b.y || a.type.localeCompare(b.type) || String(a.orientation??'').localeCompare(String(b.orientation??''))),
+  };
+}
+
+function fnv1a(text) {
+  let hash = 0x811c9dc5;
+  for (let i = 0; i < text.length; i++) {
+    hash ^= text.charCodeAt(i);
+    hash = Math.imul(hash, 0x01000193) >>> 0;
+  }
+  return hash.toString(16).padStart(8, '0');
+}
+
+function gameplayFingerprint(level) {
+  return `g1-${fnv1a(JSON.stringify(canonicalGameplay(level)))}`;
+}
+
+function isLevelVerified(level) {
+  return typeof level?.verifiedFingerprint === 'string' && level.verifiedFingerprint === gameplayFingerprint(level);
+}
+
+function markLevelVerified(level) {
+  const copy = normalizeLevel(level);
+  copy.verifiedFingerprint = gameplayFingerprint(copy);
+  copy.updatedAt = nowIso();
+  return copy;
+}
+
+function utf8ToBase64Url(text) {
+  if (typeof Buffer !== 'undefined') return Buffer.from(text, 'utf8').toString('base64url');
+  const bytes = new TextEncoder().encode(text);
+  let binary = '';
+  for (const b of bytes) binary += String.fromCharCode(b);
+  return btoa(binary).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+}
+
+function base64UrlToUtf8(encoded) {
+  if (typeof Buffer !== 'undefined') return Buffer.from(encoded, 'base64url').toString('utf8');
+  const padded = encoded.replace(/-/g,'+').replace(/_/g,'/') + '==='.slice((encoded.length + 3) % 4);
+  const binary = atob(padded);
+  const bytes = Uint8Array.from(binary, ch => ch.charCodeAt(0));
+  return new TextDecoder().decode(bytes);
+}
+
+function encodeLevelCode(level) {
+  const normalized = normalizeLevel(level);
+  const check = validateLevel(normalized);
+  if (!check.ok) throw new Error(check.error);
+  const payload = {
+    schemaVersion: SCHEMA_VERSION,
+    id: normalized.id,
+    name: normalized.name,
+    lengthCells: normalized.lengthCells,
+    cellSize: CELL_SIZE,
+    music: normalized.music,
+    objects: normalized.objects.map(o => ({id:o.id,type:o.type,x:o.x,y:o.y,...(o.orientation?{orientation:o.orientation}:{})})),
+  };
+  return `ND1:${utf8ToBase64Url(JSON.stringify(payload))}`;
+}
+
+function decodeLevelCode(code) {
+  if (typeof code !== 'string' || !code.trim().startsWith('ND')) throw new Error('올바른 Neon Dash 맵 코드가 아닙니다.');
+  const trimmed = code.trim();
+  if (!trimmed.startsWith('ND1:')) throw new Error('지원하지 않는 맵 코드 버전입니다.');
+  const encoded = trimmed.slice(4);
+  if (!encoded || !/^[A-Za-z0-9_-]+$/.test(encoded)) throw new Error('맵 코드 형식이 올바르지 않습니다.');
+  let raw;
+  try { raw = JSON.parse(base64UrlToUtf8(encoded)); }
+  catch { throw new Error('맵 코드를 해석할 수 없습니다.'); }
+  const check = validateLevel(raw);
+  if (!check.ok) throw new Error(check.error);
+  const normalized = normalizeLevel(raw);
+  normalized.verifiedFingerprint = null;
+  return normalized;
+}
+
+function deepClone(value) { return JSON.parse(JSON.stringify(value)); }
+
+class EditorModel {
+  constructor(level, historyLimit = 60) {
+    this.level = normalizeLevel(level);
+    const check = validateLevel(this.level);
+    if (!check.ok) throw new Error(check.error);
+    this.historyLimit = historyLimit;
+    this.undoStack = [];
+    this.redoStack = [];
+  }
+
+  _snapshot() { return deepClone(this.level); }
+  _pushUndo() {
+    this.undoStack.push(this._snapshot());
+    if (this.undoStack.length > this.historyLimit) this.undoStack.shift();
+    this.redoStack = [];
+  }
+  _touch(gameplay = false) {
+    this.level.updatedAt = nowIso();
+    if (gameplay) this.level.verifiedFingerprint = null;
+  }
+  _cellValid(x,y) { return Number.isInteger(x) && x >= 0 && x < this.level.lengthCells && Number.isInteger(y) && y >= 0 && y <= MAX_ROW; }
+
+  place(type, x, y) {
+    if (!OBJECT_TYPES.includes(type)) throw new Error('지원하지 않는 도구입니다.');
+    if (!this._cellValid(x,y)) return false;
+    const existing = this.level.objects.find(o => o.x === x && o.y === y);
+    if (existing?.type === type) return false;
+    this._pushUndo();
+    this.level.objects = this.level.objects.filter(o => !(o.x === x && o.y === y));
+    this.level.objects.push({id:makeId('obj'), type, x, y});
+    this._touch(true);
+    return true;
+  }
+
+  remove(x, y) {
+    const index = this.level.objects.findIndex(o => o.x === x && o.y === y);
+    if (index < 0) return false;
+    this._pushUndo();
+    this.level.objects.splice(index,1);
+    this._touch(true);
+    return true;
+  }
+
+  extendSection() {
+    if (this.level.lengthCells >= MAX_LENGTH_CELLS) return false;
+    this._pushUndo();
+    this.level.lengthCells = Math.min(MAX_LENGTH_CELLS, this.level.lengthCells + SECTION_CELLS);
+    this._touch(true);
+    return true;
+  }
+
+  setName(name) {
+    const next = String(name ?? '').trim().slice(0,40) || '새 맵';
+    if (next === this.level.name) return false;
+    this.level.name = next;
+    this._touch(false);
+    return true;
+  }
+
+  setMusic(music) {
+    if (!TRACK_IDS.includes(music)) throw new Error('지원하지 않는 음악입니다.');
+    if (music === this.level.music) return false;
+    this.level.music = music;
+    this._touch(false);
+    return true;
+  }
+
+  undo() {
+    if (!this.undoStack.length) return false;
+    this.redoStack.push(this._snapshot());
+    this.level = this.undoStack.pop();
+    return true;
+  }
+
+  redo() {
+    if (!this.redoStack.length) return false;
+    this.undoStack.push(this._snapshot());
+    this.level = this.redoStack.pop();
+    return true;
+  }
+}
+
+class LevelStore {
+  constructor(storage = globalThis.localStorage) {
+    this.storage = storage;
+    if (!storage) throw new Error('저장소를 사용할 수 없습니다.');
+  }
+
+  _read() {
+    let parsed = [];
+    try {
+      const raw = this.storage.getItem(STORAGE_KEY);
+      parsed = raw ? JSON.parse(raw) : [];
+    } catch { parsed = []; }
+    if (!Array.isArray(parsed)) return [];
+    return parsed.flatMap(item => {
+      try {
+        const level = normalizeLevel(item);
+        return validateLevel(level).ok ? [level] : [];
+      } catch { return []; }
+    });
+  }
+
+  _write(levels) {
+    this.storage.setItem(STORAGE_KEY, JSON.stringify(levels));
+  }
+
+  list() { return this._read().sort((a,b) => String(b.updatedAt).localeCompare(String(a.updatedAt))); }
+  get(id) { return this._read().find(l => l.id === id) ?? null; }
+
+  save(level) {
+    const normalized = normalizeLevel(level);
+    const check = validateLevel(normalized);
+    if (!check.ok) throw new Error(check.error);
+    const levels = this._read();
+    const i = levels.findIndex(l => l.id === normalized.id);
+    normalized.updatedAt = nowIso();
+    if (i >= 0) normalized.createdAt = levels[i].createdAt || normalized.createdAt;
+    else normalized.createdAt = normalized.createdAt || normalized.updatedAt;
+    if (i >= 0) levels[i] = normalized; else levels.push(normalized);
+    this._write(levels);
+    return deepClone(normalized);
+  }
+
+  delete(id) {
+    const levels = this._read();
+    const next = levels.filter(l => l.id !== id);
+    if (next.length === levels.length) return false;
+    this._write(next);
+    return true;
+  }
+
+  duplicate(id) {
+    const source = this.get(id);
+    if (!source) throw new Error('맵을 찾을 수 없습니다.');
+    const stamp = nowIso();
+    const copy = normalizeLevel({
+      ...source,
+      id: makeId('level'),
+      name: `${source.name} 복사본`.slice(0,40),
+      createdAt: stamp,
+      updatedAt: stamp,
+      verifiedFingerprint: null,
+      objects: source.objects.map(o => ({...o, id:makeId('obj')})),
+    });
+    return this.save(copy);
+  }
+
+  importCode(code) {
+    const decoded = decodeLevelCode(code);
+    const stamp = nowIso();
+    decoded.id = makeId('level');
+    decoded.createdAt = stamp;
+    decoded.updatedAt = stamp;
+    decoded.verifiedFingerprint = null;
+    decoded.objects = decoded.objects.map(o => ({...o,id:makeId('obj')}));
+    return this.save(decoded);
+  }
+}
+
+function runtimeFromCustomLevel(level) {
+  const l = normalizeLevel(level);
+  const check = validateLevel(l);
+  if (!check.ok) throw new Error(check.error);
+  const levelEnd = CUSTOM_ORIGIN_X + l.lengthCells * CELL_SIZE;
+  const floors = [{id:'custom-floor',x:-300,y:CUSTOM_GROUND_Y,w:levelEnd+900,h:230,kind:'floor'}];
+  const blocks = [];
+  const spikes = [];
+  const pads = [];
+  const orbs = [];
+  const portals = [];
+  for (const o of l.objects) {
+    const x = CUSTOM_ORIGIN_X + o.x * CELL_SIZE;
+    const surfaceY = CUSTOM_GROUND_Y - o.y * CELL_SIZE;
+    if (o.type === 'block') blocks.push({id:o.id,x,y:surfaceY-CELL_SIZE,w:CELL_SIZE,h:CELL_SIZE,kind:'block'});
+    else if (o.type === 'spike') spikes.push({id:o.id,x:x+2,y:surfaceY-38,w:36,h:38});
+    else if (o.type === 'pad') pads.push({id:o.id,x:x+2,y:surfaceY-12,w:36,h:12,power:padVelocity()});
+    else if (o.type === 'orb') orbs.push({id:o.id,x:x+CELL_SIZE/2,y:CUSTOM_GROUND_Y-(o.y+.5)*CELL_SIZE,r:18,power:-880});
+    else if (o.type === 'portal-ship') portals.push({id:o.id,x:x+CELL_SIZE/2,y:112,w:22,h:286,type:'ship'});
+    else if (o.type === 'portal-cube') portals.push({id:o.id,x:x+CELL_SIZE/2,y:112,w:22,h:286,type:'cube'});
+  }
+  return {
+    id:l.id,
+    name:l.name,
+    music:l.music,
+    levelEnd,
+    startX:180,
+    floors,
+    blocks,
+    spikes,
+    pads,
+    orbs,
+    portals:portals.sort((a,b)=>a.x-b.x),
+    flightObstacles:[],
+    isCustom:true,
+    fingerprint:gameplayFingerprint(l),
+    sourceLevel:l,
+  };
+}
+
+
+const OFFICIAL_H = 540;
+const OFFICIAL_GROUND_Y = 430;
+const OFFICIAL_FLIGHT_TOP = 58;
+const OFFICIAL_FLIGHT_BOTTOM = OFFICIAL_GROUND_Y;
+
+function createOfficialRuntime() {
+  const floors = [
+    [-300, 1550],
+    [1430, 1170],
+    [2780, 1270],
+    [4250, 1300],
+    [5830, 1370],
+    [7380, 1520],
+    [9140, 2710],
+    [11680, 10920],
+  ].map(([x, w], i) => ({ id: `floor-${i}`, x, y: OFFICIAL_GROUND_Y, w, h: OFFICIAL_H - OFFICIAL_GROUND_Y + 120, kind: 'floor' }));
+
+  const blocks = [
+    {id:'b1',x:1040,y:360,w:90,h:70},
+    {id:'b2',x:2050,y:350,w:105,h:80},
+    {id:'b3',x:3260,y:365,w:86,h:65},
+    {id:'b4',x:3525,y:330,w:100,h:100},
+    {id:'b5',x:4720,y:360,w:90,h:70},
+    {id:'b6',x:6320,y:370,w:80,h:60},
+    {id:'b7',x:7760,y:375,w:75,h:55},
+    {id:'b8',x:7835,y:330,w:75,h:100},
+    {id:'b9',x:7910,y:285,w:82,h:145},
+    {id:'b10',x:9850,y:360,w:105,h:70},
+    {id:'b11',x:10420,y:335,w:105,h:95},
+    {id:'b12',x:11080,y:370,w:70,h:60},
+    {id:'b13',x:14880,y:360,w:100,h:70},
+    {id:'b14',x:15420,y:335,w:105,h:95},
+    {id:'b15',x:16030,y:370,w:80,h:60},
+    {id:'b16',x:19820,y:355,w:105,h:75},
+    {id:'b17',x:20480,y:330,w:105,h:100},
+    {id:'b18',x:21140,y:365,w:90,h:65},
+    {id:'b19',x:21740,y:345,w:110,h:85},
+  ].map(b => ({...b, kind:'block'}));
+
+  const spikes = [
+    [560, OFFICIAL_GROUND_Y-38], [865, OFFICIAL_GROUND_Y-38], [900, OFFICIAL_GROUND_Y-38],
+    [1660, OFFICIAL_GROUND_Y-38], [1855, OFFICIAL_GROUND_Y-38], [1890, OFFICIAL_GROUND_Y-38],
+    [2400, OFFICIAL_GROUND_Y-38], [2860, OFFICIAL_GROUND_Y-38],
+    [3650, OFFICIAL_GROUND_Y-38], [3685, OFFICIAL_GROUND_Y-38],
+    [4450, OFFICIAL_GROUND_Y-38], [4880, OFFICIAL_GROUND_Y-38], [4915, OFFICIAL_GROUND_Y-38],
+    [6190, OFFICIAL_GROUND_Y-38], [6570, OFFICIAL_GROUND_Y-38], [6605, OFFICIAL_GROUND_Y-38], [6640, OFFICIAL_GROUND_Y-38],
+    [7520, OFFICIAL_GROUND_Y-38], [8120, OFFICIAL_GROUND_Y-38], [8155, OFFICIAL_GROUND_Y-38],
+    [8490, OFFICIAL_GROUND_Y-38], [8525, OFFICIAL_GROUND_Y-38],
+    [9350, OFFICIAL_GROUND_Y-38], [9550, OFFICIAL_GROUND_Y-38],
+    [10080, OFFICIAL_GROUND_Y-38], [10115, OFFICIAL_GROUND_Y-38], [10620, OFFICIAL_GROUND_Y-38],
+    [10820, OFFICIAL_GROUND_Y-38], [10855, OFFICIAL_GROUND_Y-38], [11320, OFFICIAL_GROUND_Y-38], [11355, OFFICIAL_GROUND_Y-38], [11390, OFFICIAL_GROUND_Y-38],
+    [14620, OFFICIAL_GROUND_Y-38], [15180, OFFICIAL_GROUND_Y-38], [15215, OFFICIAL_GROUND_Y-38],
+    [15720, OFFICIAL_GROUND_Y-38], [16280, OFFICIAL_GROUND_Y-38], [16315, OFFICIAL_GROUND_Y-38],
+    [19620, OFFICIAL_GROUND_Y-38], [20170, OFFICIAL_GROUND_Y-38], [20205, OFFICIAL_GROUND_Y-38],
+    [20820, OFFICIAL_GROUND_Y-38], [21460, OFFICIAL_GROUND_Y-38], [21495, OFFICIAL_GROUND_Y-38], [22020, OFFICIAL_GROUND_Y-38],
+  ].map(([x,y], i) => ({id:`s${i}`,x,y,w:36,h:38}));
+  spikes.push({id:'ts3', x:9877, y:322, w:36, h:38});
+
+  const pads = [
+    {id:'p1',x:5350,y:OFFICIAL_GROUND_Y-12,w:72,h:12,power:-980},
+    {id:'p2',x:8790,y:OFFICIAL_GROUND_Y-12,w:72,h:12,power:-1060},
+  ];
+
+  const orbs = [
+    {id:'o1',x:3070,y:315,r:19,power:-880},
+    {id:'o2',x:5710,y:294,r:19,power:-920},
+    {id:'o3',x:8980,y:300,r:19,power:-970},
+    {id:'o4',x:10260,y:300,r:19,power:-900},
+  ];
+
+  const portals = [
+    {id:'portal-ship-1', x:11920, y:112, w:22, h:286, type:'ship'},
+    {id:'portal-cube-1', x:14320, y:112, w:22, h:286, type:'cube'},
+    {id:'portal-ship-2', x:16700, y:112, w:22, h:286, type:'ship'},
+    {id:'portal-cube-2', x:19350, y:112, w:22, h:286, type:'cube'},
+  ];
+
+  const flightObstacles = [
+    {id:'fo1', x:12430, y:OFFICIAL_FLIGHT_TOP, w:120, h:148},
+    {id:'fo2', x:12860, y:310, w:130, h:OFFICIAL_FLIGHT_BOTTOM-310},
+    {id:'fo3', x:13310, y:OFFICIAL_FLIGHT_TOP, w:135, h:188},
+    {id:'fo4', x:13810, y:285, w:145, h:OFFICIAL_FLIGHT_BOTTOM-285},
+    {id:'fo5', x:17120, y:300, w:125, h:OFFICIAL_FLIGHT_BOTTOM-300},
+    {id:'fo6', x:17570, y:OFFICIAL_FLIGHT_TOP, w:140, h:188},
+    {id:'fo7', x:18040, y:278, w:135, h:OFFICIAL_FLIGHT_BOTTOM-278},
+    {id:'fo8', x:18520, y:OFFICIAL_FLIGHT_TOP, w:145, h:158},
+    {id:'fo9', x:18960, y:305, w:135, h:OFFICIAL_FLIGHT_BOTTOM-305},
+  ];
+
+  return {
+    id:'official-neon-dash',
+    name:'Neon Dash',
+    music:'neon-rush',
+    levelEnd:22400,
+    startX:180,
+    floors,
+    blocks,
+    spikes,
+    pads,
+    orbs,
+    portals,
+    flightObstacles,
+    isCustom:false,
+    fingerprint:null,
+    sourceLevel:null,
+  };
+}
+
+
+const $ = id => document.getElementById(id);
+const screens = [...document.querySelectorAll('.screen')];
+const homeBtn = $('homeBtn');
+const muteBtn = $('muteBtn');
+const screenSubtitle = $('screenSubtitle');
+const menuBest = $('menuBest');
+const playOfficialBtn = $('playOfficialBtn');
+const createMapBtn = $('createMapBtn');
+const myMapsBtn = $('myMapsBtn');
+const importMapBtn = $('importMapBtn');
+const levelsCreateBtn = $('levelsCreateBtn');
+const levelList = $('levelList');
+const emptyLevels = $('emptyLevels');
+const importCodeInput = $('importCodeInput');
+const previewImportBtn = $('previewImportBtn');
+const confirmImportBtn = $('confirmImportBtn');
+const importPreview = $('importPreview');
+const importError = $('importError');
+const mapNameInput = $('mapNameInput');
+const musicSelect = $('musicSelect');
+const undoBtn = $('undoBtn');
+const redoBtn = $('redoBtn');
+const saveMapBtn = $('saveMapBtn');
+const testMapBtn = $('testMapBtn');
+const shareEditorBtn = $('shareEditorBtn');
+const verifyBadge = $('verifyBadge');
+const verifyText = $('verifyText');
+const editorCanvas = $('editorCanvas');
+const ectx = editorCanvas.getContext('2d');
+const panRange = $('panRange');
+const panLeftBtn = $('panLeftBtn');
+const panRightBtn = $('panRightBtn');
+const extendBtn = $('extendBtn');
+const palette = $('palette');
+const editorPosition = $('editorPosition');
+const gameCanvas = $('gameCanvas');
+const ctx = gameCanvas.getContext('2d');
+const progressFill = $('progressFill');
+const progressText = $('progressText');
+const restartBtn = $('restartBtn');
+const playLevelName = $('playLevelName');
+const playModeLabel = $('playModeLabel');
+const attemptText = $('attemptText');
+const bestText = $('bestText');
+const gameMessage = $('gameMessage');
+const gameMessageTitle = $('gameMessageTitle');
+const gameMessageText = $('gameMessageText');
+const modal = $('modal');
+const modalTitle = $('modalTitle');
+const modalText = $('modalText');
+const modalCode = $('modalCode');
+const modalCancel = $('modalCancel');
+const modalConfirm = $('modalConfirm');
+const toast = $('toast');
+
+class MemoryStorage {
+  constructor(){ this.map = new Map(); }
+  getItem(k){ return this.map.has(k) ? this.map.get(k) : null; }
+  setItem(k,v){ this.map.set(k,String(v)); }
+  removeItem(k){ this.map.delete(k); }
+}
+
+function getSafeStorage() {
+  try {
+    const s = window.localStorage;
+    const key = '__neon_dash_storage_test__';
+    s.setItem(key,'1'); s.removeItem(key);
+    return s;
+  } catch { return new MemoryStorage(); }
+}
+
+const storage = getSafeStorage();
+const store = new LevelStore(storage);
+const BEST_KEY = 'neonDashBest';
+const MUTED_KEY = 'neonDashMuted';
+let currentScreen = 'menu';
+let editorModel = null;
+let editorCameraCell = 0;
+let editorTool = 'block';
+let editorPointerDown = false;
+let editorLastPaintKey = '';
+let pendingImportCode = null;
+let toastTimer = null;
+let returnToEditorTimer = null;
+
+function toastMessage(text) {
+  toast.textContent = text;
+  toast.classList.remove('hidden');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toast.classList.add('hidden'), 1800);
+}
+
+function setScreen(name) {
+  currentScreen = name;
+  for (const screen of screens) screen.classList.toggle('active', screen.dataset.screen === name);
+  homeBtn.classList.toggle('hidden', name === 'menu');
+  const subtitles = {
+    menu:'CREATE · PLAY · SHARE', play:'PLAY MODE', levels:'LOCAL LEVELS', import:'MAP CODE', editor:'GRID EDITOR'
+  };
+  screenSubtitle.textContent = subtitles[name] || 'NEON DASH';
+  audio.setMusicActive(name === 'play');
+  if (name !== 'play') stopGameInput();
+  if (name === 'menu') updateMenuStats();
+  if (name === 'levels') renderLevelList();
+  if (name === 'editor') {
+    requestAnimationFrame(() => { syncEditorUI(); drawEditor(); });
+  }
+}
+
+function updateMenuStats() {
+  const best = Number(storage.getItem(BEST_KEY) || 0);
+  menuBest.textContent = `${Math.floor(best)}%`;
+}
+
+function showModal({title, text='', code='', confirmLabel='', onConfirm=null}) {
+  modalTitle.textContent = title;
+  modalText.textContent = text;
+  modalCode.value = code;
+  modalCode.classList.toggle('hidden', !code);
+  modalConfirm.classList.toggle('hidden', !confirmLabel);
+  modalConfirm.textContent = confirmLabel || '확인';
+  modalConfirm.onclick = onConfirm ? () => { onConfirm(); closeModal(); } : null;
+  modal.classList.remove('hidden');
+  if (code) setTimeout(() => modalCode.select(), 0);
+}
+function closeModal() { modal.classList.add('hidden'); modalConfirm.onclick = null; }
+modalCancel.addEventListener('click', closeModal);
+modal.addEventListener('pointerdown', e => { if (e.target === modal) closeModal(); });
+
+async function showShareCode(level) {
+  if (!isLevelVerified(level)) {
+    toastMessage('이 버전을 먼저 직접 클리어해야 합니다.');
+    return;
+  }
+  const code = encodeLevelCode(level);
+  showModal({title:'맵 코드', text:'아래 코드를 친구에게 보내세요. 같은 코드로 맵을 불러올 수 있습니다.', code});
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(code);
+      toastMessage('맵 코드를 복사했습니다.');
+    }
+  } catch { /* selectable fallback is already shown */ }
+}
+
+homeBtn.addEventListener('click', () => {
+  clearTimeout(returnToEditorTimer);
+  game.active = false;
+  setScreen('menu');
+});
+playOfficialBtn.addEventListener('click', () => startGame(createOfficialRuntime(), {kind:'official'}));
+createMapBtn.addEventListener('click', () => openEditor(createLevel()));
+levelsCreateBtn.addEventListener('click', () => openEditor(createLevel()));
+myMapsBtn.addEventListener('click', () => setScreen('levels'));
+importMapBtn.addEventListener('click', () => openImportScreen());
+
+function makeButton(label, action, opts={}) {
+  const b = document.createElement('button');
+  b.type = 'button'; b.textContent = label;
+  if (opts.disabled) b.disabled = true;
+  if (opts.danger) b.classList.add('danger');
+  b.addEventListener('click', action);
+  return b;
+}
+
+function renderLevelList() {
+  const levels = store.list();
+  levelList.replaceChildren();
+  emptyLevels.classList.toggle('hidden', levels.length > 0);
+  levelList.classList.toggle('hidden', levels.length === 0);
+  for (const level of levels) {
+    const card = document.createElement('article'); card.className = 'level-card';
+    const info = document.createElement('div'); info.className = 'level-info';
+    const name = document.createElement('b'); name.textContent = level.name;
+    const meta = document.createElement('span');
+    const ok = isLevelVerified(level);
+    meta.innerHTML = `<i class="status-dot ${ok?'ok':''}"></i>${ok?'클리어 인증':'미클리어'} · ${level.lengthCells}칸 · ${trackName(level.music)}`;
+    info.append(name,meta);
+    const actions = document.createElement('div'); actions.className='level-actions';
+    actions.append(
+      makeButton('플레이', () => startGame(runtimeFromCustomLevel(level), {kind:'custom',levelId:level.id})),
+      makeButton('수정', () => openEditor(level)),
+      makeButton('이름 변경', () => renameLevel(level)),
+      makeButton('복제', () => { store.duplicate(level.id); renderLevelList(); toastMessage('맵을 복제했습니다.'); }),
+      makeButton('맵 코드', () => showShareCode(level), {disabled:!ok}),
+      makeButton('삭제', () => deleteLevel(level), {danger:true}),
+    );
+    card.append(info,actions); levelList.append(card);
+  }
+}
+
+function renameLevel(level) {
+  const next = window.prompt?.('새 맵 이름을 입력하세요.', level.name);
+  if (next == null) return;
+  const clean = String(next).trim().slice(0,40);
+  if (!clean) return;
+  level.name = clean;
+  store.save(level);
+  renderLevelList();
+}
+function deleteLevel(level) {
+  const yes = window.confirm ? window.confirm(`'${level.name}' 맵을 삭제할까요?`) : true;
+  if (!yes) return;
+  store.delete(level.id); renderLevelList(); toastMessage('맵을 삭제했습니다.');
+}
+
+function openImportScreen() {
+  pendingImportCode = null;
+  importCodeInput.value=''; importPreview.textContent=''; importPreview.classList.add('hidden');
+  importError.textContent=''; importError.classList.add('hidden'); confirmImportBtn.classList.add('hidden');
+  setScreen('import');
+}
+previewImportBtn.addEventListener('click', () => {
+  importError.classList.add('hidden'); importPreview.classList.add('hidden'); confirmImportBtn.classList.add('hidden');
+  try {
+    const decoded = decodeLevelCode(importCodeInput.value);
+    pendingImportCode = importCodeInput.value.trim();
+    importPreview.textContent = `${decoded.name} · ${decoded.lengthCells}칸 · 오브젝트 ${decoded.objects.length}개 · ${trackName(decoded.music)}`;
+    importPreview.classList.remove('hidden'); confirmImportBtn.classList.remove('hidden');
+  } catch (err) {
+    pendingImportCode = null;
+    importError.textContent = err?.message || '맵 코드를 확인할 수 없습니다.';
+    importError.classList.remove('hidden');
+  }
+});
+confirmImportBtn.addEventListener('click', () => {
+  if (!pendingImportCode) return;
+  try {
+    const level = store.importCode(pendingImportCode);
+    toastMessage('맵을 불러왔습니다. 클리어 전에는 다시 공유할 수 없습니다.');
+    openEditor(level);
+  } catch (err) {
+    importError.textContent = err?.message || '맵 저장에 실패했습니다.'; importError.classList.remove('hidden');
+  }
+});
+
+function trackName(id) {
+  return ({'neon-rush':'Neon Rush','hyper-drive':'Hyper Drive','dark-pulse':'Dark Pulse'})[id] || id;
+}
+
+// ---------------- Editor ----------------
+const EDITOR_GRID_BOTTOM = 480;
+const EDITOR_CELL = 40;
+const EDITOR_VISIBLE_COLS = Math.ceil(editorCanvas.width / EDITOR_CELL);
+
+function openEditor(level) {
+  editorModel = new EditorModel(normalizeLevel(level));
+  editorCameraCell = 0; editorTool = 'block'; editorLastPaintKey='';
+  setScreen('editor');
+  syncEditorUI(); drawEditor();
+}
+
+function commitEditorMeta() {
+  if (!editorModel) return;
+  editorModel.setName(mapNameInput.value);
+  editorModel.setMusic(musicSelect.value);
+}
+function saveEditor() {
+  if (!editorModel) return null;
+  commitEditorMeta();
+  try {
+    const saved = store.save(editorModel.level);
+    editorModel.level = normalizeLevel(saved);
+    syncEditorUI(); toastMessage('맵을 저장했습니다.');
+    return saved;
+  } catch (err) { toastMessage(err?.message || '저장에 실패했습니다.'); return null; }
+}
+function syncEditorUI() {
+  if (!editorModel) return;
+  mapNameInput.value = editorModel.level.name;
+  musicSelect.value = editorModel.level.music;
+  undoBtn.disabled = editorModel.undoStack.length === 0;
+  redoBtn.disabled = editorModel.redoStack.length === 0;
+  const verified = isLevelVerified(editorModel.level);
+  verifyBadge.textContent = verified ? '클리어 인증됨' : '미클리어';
+  verifyBadge.classList.toggle('verified', verified); verifyBadge.classList.toggle('unverified', !verified);
+  verifyText.textContent = verified ? '이 버전은 공유할 수 있습니다.' : '이 버전을 직접 클리어하면 맵 코드를 만들 수 있습니다.';
+  shareEditorBtn.disabled = !verified;
+  const maxCamera = Math.max(0, editorModel.level.lengthCells - EDITOR_VISIBLE_COLS);
+  editorCameraCell = Math.max(0, Math.min(editorCameraCell, maxCamera));
+  panRange.max = String(maxCamera); panRange.value = String(editorCameraCell);
+  editorPosition.textContent = `${editorCameraCell+1} ~ ${Math.min(editorModel.level.lengthCells,editorCameraCell+EDITOR_VISIBLE_COLS)} / ${editorModel.level.lengthCells}칸`;
+  for (const button of palette.querySelectorAll('.tool')) button.classList.toggle('active', button.dataset.tool === editorTool);
+}
+
+mapNameInput.addEventListener('input', () => { if(editorModel) editorModel.setName(mapNameInput.value); });
+mapNameInput.addEventListener('change', () => { if(editorModel){editorModel.setName(mapNameInput.value);syncEditorUI();} });
+musicSelect.addEventListener('change', () => { if(editorModel){editorModel.setMusic(musicSelect.value);syncEditorUI(); audio.setTrack(musicSelect.value);} });
+undoBtn.addEventListener('click', () => { if(editorModel?.undo()){syncEditorUI();drawEditor();} });
+redoBtn.addEventListener('click', () => { if(editorModel?.redo()){syncEditorUI();drawEditor();} });
+saveMapBtn.addEventListener('click', saveEditor);
+extendBtn.addEventListener('click', () => { if(editorModel?.extendSection()){syncEditorUI();drawEditor();toastMessage('오른쪽에 40칸을 추가했습니다.');} });
+shareEditorBtn.addEventListener('click', () => { if(editorModel) showShareCode(editorModel.level); });
+testMapBtn.addEventListener('click', () => {
+  const saved = saveEditor(); if (!saved) return;
+  startGame(runtimeFromCustomLevel(saved), {kind:'custom',levelId:saved.id,returnToEditor:true});
+});
+palette.addEventListener('click', e => { const b=e.target.closest('.tool'); if(!b)return; editorTool=b.dataset.tool; syncEditorUI(); drawEditor(); });
+panRange.addEventListener('input', () => { editorCameraCell = Number(panRange.value); syncEditorUI(); drawEditor(); });
+panLeftBtn.addEventListener('click', () => { editorCameraCell=Math.max(0,editorCameraCell-8);syncEditorUI();drawEditor(); });
+panRightBtn.addEventListener('click', () => { if(!editorModel)return;editorCameraCell=Math.min(Number(panRange.max),editorCameraCell+8);syncEditorUI();drawEditor(); });
+
+function editorCellFromEvent(e) {
+  const rect = editorCanvas.getBoundingClientRect();
+  const sx = (e.clientX-rect.left) * editorCanvas.width / rect.width;
+  const sy = (e.clientY-rect.top) * editorCanvas.height / rect.height;
+  const x = Math.floor(sx / EDITOR_CELL) + editorCameraCell;
+  const y = Math.floor((EDITOR_GRID_BOTTOM - sy) / EDITOR_CELL);
+  if (!editorModel || x < 0 || x >= editorModel.level.lengthCells || y < 0 || y > MAX_ROW) return null;
+  return {x,y};
+}
+function paintEditorCell(e) {
+  const cell = editorCellFromEvent(e); if (!cell || !editorModel) return;
+  const key=`${cell.x}:${cell.y}:${editorTool}`; if(key===editorLastPaintKey)return; editorLastPaintKey=key;
+  const changed = editorTool === 'eraser' ? editorModel.remove(cell.x,cell.y) : editorModel.place(editorTool,cell.x,cell.y);
+  if (changed) { syncEditorUI(); drawEditor(); }
+}
+editorCanvas.addEventListener('pointerdown', e => { e.preventDefault(); editorPointerDown=true;editorLastPaintKey='';editorCanvas.setPointerCapture?.(e.pointerId);paintEditorCell(e); }, {passive:false});
+editorCanvas.addEventListener('pointermove', e => { if(editorPointerDown) paintEditorCell(e); });
+window.addEventListener('pointerup', () => { editorPointerDown=false;editorLastPaintKey=''; });
+window.addEventListener('pointercancel', () => { editorPointerDown=false;editorLastPaintKey=''; });
+
+function drawEditorObject(o, x, y) {
+  const cx=x+20, cy=y+20;
+  ectx.save();
+  if(o.type==='block'){
+    const g=ectx.createLinearGradient(x,y,x+40,y+40);g.addColorStop(0,'#67e8f9');g.addColorStop(1,'#6d28d9');ectx.fillStyle=g;ectx.fillRect(x+3,y+3,34,34);ectx.strokeStyle='#ffffff66';ectx.strokeRect(x+7,y+7,26,26);
+  } else if(o.type==='spike'){
+    ectx.fillStyle='#f472b6';ectx.beginPath();ectx.moveTo(x+3,y+37);ectx.lineTo(cx,y+3);ectx.lineTo(x+37,y+37);ectx.closePath();ectx.fill();
+  } else if(o.type==='pad'){
+    ectx.shadowColor='#fde047';ectx.shadowBlur=10;ectx.fillStyle='#fde047';ectx.beginPath();ectx.roundRect(x+5,y+28,30,8,4);ectx.fill();
+  } else if(o.type==='orb'){
+    ectx.strokeStyle='#fde047';ectx.lineWidth=5;ectx.shadowColor='#fde047';ectx.shadowBlur=12;ectx.beginPath();ectx.arc(cx,cy,12,0,Math.PI*2);ectx.stroke();
+  } else {
+    const ship=o.type==='portal-ship';ectx.strokeStyle=ship?'#67e8f9':'#f9a8d4';ectx.lineWidth=5;ectx.shadowColor=ectx.strokeStyle;ectx.shadowBlur=12;ectx.beginPath();ectx.ellipse(cx,cy,9,17,0,0,Math.PI*2);ectx.stroke();
+  }
+  ectx.restore();
+}
+
+function drawEditor() {
+  const W=editorCanvas.width,H=editorCanvas.height;
+  const g=ectx.createLinearGradient(0,0,0,H);g.addColorStop(0,'#0b1030');g.addColorStop(1,'#060818');ectx.fillStyle=g;ectx.fillRect(0,0,W,H);
+  ectx.save();ectx.strokeStyle='rgba(99,102,241,.25)';ectx.lineWidth=1;
+  for(let c=0;c<=EDITOR_VISIBLE_COLS;c++){const x=c*EDITOR_CELL+.5;ectx.beginPath();ectx.moveTo(x,EDITOR_GRID_BOTTOM-(MAX_ROW+1)*EDITOR_CELL);ectx.lineTo(x,EDITOR_GRID_BOTTOM);ectx.stroke();}
+  for(let r=0;r<=MAX_ROW+1;r++){const y=EDITOR_GRID_BOTTOM-r*EDITOR_CELL+.5;ectx.beginPath();ectx.moveTo(0,y);ectx.lineTo(W,y);ectx.stroke();}
+  ectx.restore();
+  ectx.fillStyle='rgba(34,211,238,.08)';ectx.fillRect(0,EDITOR_GRID_BOTTOM,W,H-EDITOR_GRID_BOTTOM);ectx.fillStyle='#22d3ee';ectx.fillRect(0,EDITOR_GRID_BOTTOM,W,3);
+  if(!editorModel)return;
+  // Start safety marker and finish marker
+  const spawnX=(5-editorCameraCell)*EDITOR_CELL;if(spawnX>-120&&spawnX<W){ectx.fillStyle='rgba(103,232,249,.08)';ectx.fillRect(0,EDITOR_GRID_BOTTOM-(MAX_ROW+1)*EDITOR_CELL,Math.max(0,spawnX), (MAX_ROW+1)*EDITOR_CELL);ectx.fillStyle='#67e8f9';ectx.font='800 11px system-ui';ectx.fillText('START',8,22);}
+  const finishX=(editorModel.level.lengthCells-editorCameraCell)*EDITOR_CELL;if(finishX>=0&&finishX<=W){ectx.strokeStyle='#c4b5fd';ectx.lineWidth=4;ectx.beginPath();ectx.moveTo(finishX-3,40);ectx.lineTo(finishX-3,EDITOR_GRID_BOTTOM);ectx.stroke();}
+  for(const o of editorModel.level.objects){if(o.x<editorCameraCell||o.x>=editorCameraCell+EDITOR_VISIBLE_COLS)continue;const x=(o.x-editorCameraCell)*EDITOR_CELL;const y=EDITOR_GRID_BOTTOM-(o.y+1)*EDITOR_CELL;drawEditorObject(o,x,y);}
+  ectx.fillStyle='rgba(255,255,255,.55)';ectx.font='700 10px system-ui';ectx.textAlign='right';ectx.fillText(`${editorModel.level.lengthCells} CELLS`,W-10,18);ectx.textAlign='left';
+}
+
+// ---------------- Game ----------------
+const W=gameCanvas.width,H=gameCanvas.height,GROUND_Y=430,PLAYER_SIZE=40,PLAYER_SCREEN_X=190,GRAVITY=2300,FLIGHT_TOP=58,FLIGHT_BOTTOM=GROUND_Y;
+const game={active:false,runtime:null,kind:'official',levelId:null,returnToEditor:false,attempt:1,best:0,dead:false,won:false,deathTimer:0,inputHeld:false,jumpBuffer:0,coyote:.08,cameraX:0,particles:[],usedOrbs:new Set(),lastPad:null,lastTime:performance.now(),beatPulse:0,flash:0};
+const player={worldX:180,y:GROUND_Y-PLAYER_SIZE,prevY:GROUND_Y-PLAYER_SIZE,vy:0,grounded:true,rotation:0,mode:'cube'};
+
+function clamp(v,a,b){return Math.max(a,Math.min(b,v));}
+function isPointNear(ax,ay,bx,by,r){const dx=ax-bx,dy=ay-by;return dx*dx+dy*dy<=r*r;}
+function playerRect(inset=4){return{x:player.worldX+inset,y:player.y+inset,w:PLAYER_SIZE-inset*2,h:PLAYER_SIZE-inset*2};}
+function px(x){return x-game.cameraX;}
+
+function startGame(runtime, options={}) {
+  clearTimeout(returnToEditorTimer);
+  game.runtime=runtime;game.kind=options.kind||'custom';game.levelId=options.levelId||null;game.returnToEditor=!!options.returnToEditor;game.attempt=1;
+  game.best=game.kind==='official'?Number(storage.getItem(BEST_KEY)||0):0;
+  playLevelName.textContent=runtime.name; playModeLabel.textContent=game.kind==='official'?'공식 맵':game.returnToEditor?'테스트 플레이':'사용자 제작 맵';
+  audio.ensureStarted();audio.setTrack(runtime.music||'neon-rush');
+  setScreen('play');resetRun(false);game.active=true;game.lastTime=performance.now();
+}
+function resetRun(increment=true){if(increment)game.attempt++;player.worldX=game.runtime?.startX||180;player.y=GROUND_Y-PLAYER_SIZE;player.prevY=player.y;player.vy=0;player.grounded=true;player.rotation=0;player.mode='cube';game.dead=false;game.won=false;game.deathTimer=0;game.inputHeld=false;game.jumpBuffer=0;game.coyote=.08;game.cameraX=0;game.particles=[];game.usedOrbs=new Set();game.lastPad=null;game.flash=0;hideGameMessage();updateHud();}
+function stopGameInput(){game.inputHeld=false;}
+function showGameMessage(title,text){gameMessageTitle.textContent=title;gameMessageText.textContent=text;gameMessage.classList.remove('hidden');}
+function hideGameMessage(){gameMessage.classList.add('hidden');}
+function setOfficialBest(v){if(v>game.best){game.best=Math.min(100,v);storage.setItem(BEST_KEY,game.best.toFixed(1));}}
+function burst(x,y,count,kind){for(let i=0;i<count;i++){const angle=Math.PI*2*i/count+Math.random()*.45;const speed=(kind==='crash'?130:70)+Math.random()*(kind==='crash'?220:120);game.particles.push({x,y,vx:Math.cos(angle)*speed,vy:Math.sin(angle)*speed-(kind==='jump'?80:0),life:.35+Math.random()*.55,maxLife:.9,size:3+Math.random()*(kind==='crash'?9:5),kind});}}
+function kill(){if(game.dead||game.won)return;game.dead=true;game.deathTimer=.72;const pct=progressPercent(player.worldX-game.runtime.startX,game.runtime.levelEnd-game.runtime.startX);if(game.kind==='official')setOfficialBest(pct);audio.crash();burst(player.worldX+20,player.y+20,28,'crash');game.flash=1;showGameMessage('CRASH!',`${pct.toFixed(0)}% · 곧 다시 시작합니다`);}
+function completeCustomVerification(){if(!game.levelId)return;const stored=store.get(game.levelId);if(!stored)return;const verified=markLevelVerified(stored);store.save(verified);if(editorModel?.level.id===verified.id)editorModel.level=normalizeLevel(verified);}
+function finish(){if(game.won)return;game.won=true;if(game.kind==='official')setOfficialBest(100);else completeCustomVerification();audio.finish();burst(player.worldX+20,player.y+20,44,'finish');showGameMessage('LEVEL CLEAR',game.kind==='official'?`ATTEMPT ${game.attempt}`:'클리어 인증 완료! 이제 맵 코드를 공유할 수 있습니다.');if(game.returnToEditor){returnToEditorTimer=setTimeout(()=>{game.active=false;setScreen('editor');syncEditorUI();drawEditor();toastMessage('클리어 인증이 완료됐습니다.');},1200);}}
+function switchMode(next){if(player.mode===next)return;player.mode=next;player.rotation=0;game.jumpBuffer=0;game.coyote=0;if(next==='ship'){player.y=224;player.prevY=224;player.vy=0;player.grounded=false;}else{player.y=GROUND_Y-PLAYER_SIZE;player.prevY=player.y;player.vy=0;player.grounded=true;game.coyote=.08;}audio.portal();burst(player.worldX+20,player.y+20,22,'portal');game.flash=Math.max(game.flash,.45);}
+function performGroundJump(){if(game.dead||game.won||!game.active||player.mode!=='cube')return false;player.vy=jumpVelocity();player.grounded=false;game.coyote=0;game.jumpBuffer=0;audio.jump();burst(player.worldX+20,player.y+40,6,'jump');return true;}
+function tryBufferedJump(){if(game.jumpBuffer<=0||game.dead||game.won||!game.active)return false;const cx=player.worldX+20,cy=player.y+20;if(!player.grounded){const orb=game.runtime.orbs.find(o=>!game.usedOrbs.has(o.id)&&isPointNear(cx,cy,o.x,o.y,72));if(orb){game.usedOrbs.add(orb.id);player.vy=orb.power;game.jumpBuffer=0;audio.orb();burst(orb.x,orb.y,16,'orb');return true;}}if(player.grounded||game.coyote>0)return performGroundJump();return false;}
+function actionStart(e){if(currentScreen!=='play'||!game.active)return;if(e?.cancelable)e.preventDefault();audio.ensureStarted();if(game.dead||game.won){if(!game.returnToEditor)resetRun(true);return;}game.inputHeld=true;if(player.mode==='cube')game.jumpBuffer=.13;}
+function actionEnd(e){if(e?.cancelable)e.preventDefault();game.inputHeld=false;}
+window.addEventListener('keydown',e=>{if(['Space','ArrowUp','KeyW'].includes(e.code)){if(e.repeat&&player.mode==='cube')return;actionStart(e);}});
+window.addEventListener('keyup',e=>{if(['Space','ArrowUp','KeyW'].includes(e.code))actionEnd(e);});
+gameCanvas.addEventListener('pointerdown',actionStart,{passive:false});window.addEventListener('pointerup',actionEnd,{passive:false});window.addEventListener('pointercancel',actionEnd,{passive:false});
+restartBtn.addEventListener('click',()=>{if(currentScreen==='play'&&game.runtime){audio.ensureStarted();resetRun(true);game.active=true;}});
+
+function updateGame(dt){
+  game.beatPulse=Math.max(0,game.beatPulse-dt*3.8);game.flash=Math.max(0,game.flash-dt*4.4);
+  for(const p of game.particles){p.life-=dt;p.vy+=800*dt;p.x+=p.vx*dt;p.y+=p.vy*dt;}game.particles=game.particles.filter(p=>p.life>0);
+  if(!game.active||game.won)return;if(game.dead){game.deathTimer-=dt;if(game.deathTimer<=0)resetRun(true);return;}
+  game.jumpBuffer=Math.max(0,game.jumpBuffer-dt);game.coyote=player.grounded?.08:Math.max(0,game.coyote-dt);tryBufferedJump();
+  const progress01=clamp((player.worldX-game.runtime.startX)/(game.runtime.levelEnd-game.runtime.startX),0,1);const speed=speedForProgress(progress01);player.prevY=player.y;const previousX=player.worldX;player.worldX+=speed*dt;
+  for(const portal of game.runtime.portals)if(crossedPortal(previousX,player.worldX,portal.x))switchMode(portal.type);
+  if(player.mode==='ship'){
+    player.grounded=false;player.vy=flightVerticalVelocity(player.vy,game.inputHeld,dt);player.y+=player.vy*dt;player.rotation=clamp(player.vy/900,-.48,.58);const pr=playerRect(5);
+    if(player.y<FLIGHT_TOP||player.y+PLAYER_SIZE>FLIGHT_BOTTOM)kill();
+    if(!game.dead){for(const obstacle of [...game.runtime.flightObstacles,...game.runtime.blocks]){if(rectsOverlap(pr,obstacle)){kill();break;}}}
+  }else{
+    player.vy+=GRAVITY*dt;player.y+=player.vy*dt;const wasGrounded=player.grounded;player.grounded=false;let landing=null;const prevBottom=player.prevY+PLAYER_SIZE,currBottom=player.y+PLAYER_SIZE;const platforms=[...game.runtime.floors,...game.runtime.blocks];
+    for(const plat of platforms){const horizontal=player.worldX+PLAYER_SIZE-5>plat.x&&player.worldX+5<plat.x+plat.w;if(!horizontal)continue;if(player.vy>=0&&prevBottom<=plat.y+8&&currBottom>=plat.y){if(!landing||plat.y<landing.y)landing=plat;}}
+    if(landing){player.y=landing.y-PLAYER_SIZE;player.vy=0;player.grounded=true;game.coyote=.08;if(!wasGrounded){const q=Math.PI/2;player.rotation=Math.round(player.rotation/q)*q;}}else player.rotation+=dt*5.4;
+    if(!game.dead){const pr=playerRect(5),landingId=landing?.id||null;for(const block of game.runtime.blocks){if(block.id!==landingId&&rectsOverlap(pr,block)){kill();break;}}}
+    if(!game.dead){const pr=playerRect(7);for(const s of game.runtime.spikes){const hit={x:s.x+7,y:s.y+9,w:s.w-14,h:s.h-9};if(rectsOverlap(pr,hit)){kill();break;}}}
+    if(!game.dead&&player.grounded){const feet={x:player.worldX+7,y:player.y+PLAYER_SIZE-6,w:PLAYER_SIZE-14,h:9};const pad=game.runtime.pads.find(p=>rectsOverlap(feet,p));if(pad&&game.lastPad!==pad.id){player.vy=pad.power;player.grounded=false;game.coyote=0;game.jumpBuffer=0;game.lastPad=pad.id;audio.pad();burst(pad.x+pad.w/2,pad.y,14,'pad');}else if(!pad)game.lastPad=null;}
+  }
+  if(!game.dead&&shouldAutoJump(player.mode,player.grounded,game.inputHeld))performGroundJump();else if(!game.dead&&player.mode==='cube')tryBufferedJump();
+  if(player.mode==='cube'&&player.y>H+110)kill();if(player.worldX>=game.runtime.levelEnd)finish();game.cameraX=Math.max(0,player.worldX-PLAYER_SCREEN_X);updateHud();
+}
+function updateHud(){if(!game.runtime)return;const pct=game.won?100:progressPercent(player.worldX-game.runtime.startX,game.runtime.levelEnd-game.runtime.startX);progressFill.style.width=`${pct}%`;progressText.textContent=`${Math.floor(pct)}%`;attemptText.textContent=`ATTEMPT ${game.attempt}`;bestText.textContent=game.kind==='official'?`BEST ${Math.floor(game.best)}%`:(isLevelVerified(store.get(game.levelId)||{})?'VERIFIED':'CUSTOM');}
+
+const stars=Array.from({length:70},(_,i)=>({x:(i*137.21)%W,y:35+((i*83.73)%315),r:1+(i%3)*.5,a:.18+(i%5)*.08}));
+function drawBackground(){const pulse=game.beatPulse,g=ctx.createLinearGradient(0,0,0,H);g.addColorStop(0,`rgb(${10+pulse*10},${11+pulse*4},${40+pulse*18})`);g.addColorStop(.55,'#0b1030');g.addColorStop(1,'#060818');ctx.fillStyle=g;ctx.fillRect(0,0,W,H);ctx.save();for(const s of stars){const sx=(s.x-(game.cameraX*.06)%W+W)%W;ctx.globalAlpha=s.a+pulse*.12;ctx.fillStyle='#dbeafe';ctx.beginPath();ctx.arc(sx,s.y,s.r,0,Math.PI*2);ctx.fill();}ctx.restore();const horizon=325;ctx.save();ctx.globalAlpha=.18+pulse*.06;ctx.strokeStyle='#6366f1';ctx.lineWidth=1;const off=-((game.cameraX*.18)%48);for(let x=off;x<W;x+=48){ctx.beginPath();ctx.moveTo(x,horizon);ctx.lineTo(W/2+(x-W/2)*1.55,H);ctx.stroke();}for(let y=horizon;y<H;y+=24){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}ctx.restore();}
+function drawPlatforms(){for(const p of [...game.runtime.floors,...game.runtime.blocks]){const x=px(p.x);if(x>W+100||x+p.w<-100)continue;const isBlock=p.kind==='block';const g=ctx.createLinearGradient(0,p.y,0,p.y+p.h);g.addColorStop(0,isBlock?'#19214d':'#111a3d');g.addColorStop(1,'#070a20');ctx.fillStyle=g;ctx.fillRect(x,p.y,p.w,p.h);ctx.fillStyle=isBlock?'#67e8f9':'#22d3ee';ctx.globalAlpha=.85;ctx.fillRect(x,p.y,p.w,4);ctx.globalAlpha=1;if(isBlock){ctx.strokeStyle='rgba(103,232,249,.22)';ctx.lineWidth=2;ctx.strokeRect(x+6,p.y+8,Math.max(0,p.w-12),Math.max(0,p.h-14));}}}
+function drawSpikes(){for(const s of game.runtime.spikes){const x=px(s.x);if(x<-60||x>W+60)continue;const g=ctx.createLinearGradient(x,s.y,x,s.y+s.h);g.addColorStop(0,'#f9a8d4');g.addColorStop(1,'#db2777');ctx.fillStyle=g;ctx.shadowColor='#ec4899';ctx.shadowBlur=12;ctx.beginPath();ctx.moveTo(x,s.y+s.h);ctx.lineTo(x+s.w/2,s.y);ctx.lineTo(x+s.w,s.y+s.h);ctx.closePath();ctx.fill();ctx.shadowBlur=0;}}
+function drawPadsOrbs(){for(const p of game.runtime.pads){const x=px(p.x);if(x<-100||x>W+100)continue;ctx.shadowColor='#fde047';ctx.shadowBlur=16;ctx.fillStyle='#facc15';ctx.beginPath();ctx.roundRect(x,p.y,p.w,p.h,6);ctx.fill();ctx.shadowBlur=0;}for(const o of game.runtime.orbs){const x=px(o.x);if(x<-80||x>W+80)continue;const used=game.usedOrbs.has(o.id);ctx.save();ctx.globalAlpha=used?.22:1;ctx.shadowColor='#fde047';ctx.shadowBlur=used?0:20+game.beatPulse*8;ctx.strokeStyle='#fde047';ctx.lineWidth=6;ctx.beginPath();ctx.arc(x,o.y,o.r+4,0,Math.PI*2);ctx.stroke();ctx.fillStyle='rgba(250,204,21,.2)';ctx.beginPath();ctx.arc(x,o.y,o.r-4,0,Math.PI*2);ctx.fill();ctx.restore();}}
+function drawFlightElements(){for(const o of game.runtime.flightObstacles){const x=px(o.x);if(x>W+120||x+o.w<-120)continue;const g=ctx.createLinearGradient(x,o.y,x+o.w,o.y+o.h);g.addColorStop(0,'#312e81');g.addColorStop(1,'#0f172a');ctx.fillStyle=g;ctx.fillRect(x,o.y,o.w,o.h);ctx.strokeStyle='#a78bfa';ctx.lineWidth=3;ctx.strokeRect(x+2,o.y+2,o.w-4,o.h-4);}for(const p of game.runtime.portals){const x=px(p.x);if(x<-100||x>W+100)continue;const cy=p.y+p.h/2;ctx.save();ctx.shadowColor=p.type==='ship'?'#22d3ee':'#f472b6';ctx.shadowBlur=22;ctx.strokeStyle=p.type==='ship'?'#67e8f9':'#f9a8d4';ctx.lineWidth=7;ctx.beginPath();ctx.ellipse(x,cy,18,p.h/2,0,0,Math.PI*2);ctx.stroke();ctx.restore();}if(player.mode==='ship'){ctx.fillStyle='#67e8f9';ctx.font='800 15px system-ui';ctx.textAlign='center';ctx.fillText('FLIGHT · HOLD TO RISE',W/2,34);ctx.textAlign='left';}}
+function drawFinish(){const x=px(game.runtime.levelEnd);if(x<-100||x>W+140)return;ctx.save();ctx.shadowColor='#a78bfa';ctx.shadowBlur=24;ctx.strokeStyle='#c4b5fd';ctx.lineWidth=8;ctx.beginPath();ctx.arc(x,GROUND_Y-92,58,0,Math.PI*2);ctx.stroke();ctx.restore();}
+function drawPlayer(){if(game.dead&&game.particles.length>10)return;const x=px(player.worldX),cx=x+20,cy=player.y+20;ctx.save();ctx.translate(cx,cy);ctx.rotate(player.rotation);ctx.shadowColor='#22d3ee';ctx.shadowBlur=20+game.beatPulse*8;const g=ctx.createLinearGradient(-20,-20,20,20);g.addColorStop(0,'#67e8f9');g.addColorStop(.55,'#8b5cf6');g.addColorStop(1,'#f472b6');ctx.fillStyle=g;if(player.mode==='ship'){ctx.beginPath();ctx.moveTo(22,0);ctx.lineTo(-16,-15);ctx.lineTo(-9,0);ctx.lineTo(-16,15);ctx.closePath();ctx.fill();ctx.shadowBlur=0;ctx.strokeStyle='rgba(255,255,255,.8)';ctx.lineWidth=2;ctx.stroke();ctx.fillStyle=game.inputHeld?'#fde047':'#f472b6';ctx.beginPath();ctx.moveTo(-13,-7);ctx.lineTo(-29,0);ctx.lineTo(-13,7);ctx.closePath();ctx.fill();}else{ctx.fillRect(-20,-20,40,40);ctx.shadowBlur=0;ctx.fillStyle='#081126';ctx.fillRect(-12,-10,8,8);ctx.fillRect(4,-10,8,8);ctx.fillRect(-11,7,22,5);ctx.strokeStyle='rgba(255,255,255,.7)';ctx.lineWidth=2;ctx.strokeRect(-15,-15,30,30);}ctx.restore();}
+function drawParticles(){ctx.save();for(const p of game.particles){const x=px(p.x),a=clamp(p.life/p.maxLife,0,1);ctx.globalAlpha=a;ctx.fillStyle=p.kind==='crash'?'#f472b6':p.kind==='orb'||p.kind==='pad'?'#fde047':p.kind==='finish'||p.kind==='portal'?'#c4b5fd':'#67e8f9';ctx.fillRect(x-p.size/2,p.y-p.size/2,p.size,p.size);}ctx.restore();}
+function drawGame(){if(!game.runtime)return;drawBackground();drawPlatforms();drawPadsOrbs();drawFlightElements();drawSpikes();drawFinish();drawParticles();drawPlayer();if(game.flash>0){ctx.fillStyle=`rgba(255,255,255,${game.flash*.24})`;ctx.fillRect(0,0,W,H);}}
+function frame(now){const dt=Math.min(.033,Math.max(0,(now-game.lastTime)/1000));game.lastTime=now;if(currentScreen==='play'){updateGame(dt);drawGame();}requestAnimationFrame(frame);}requestAnimationFrame(frame);
+
+// ---------------- Original browser-synth audio ----------------
+class AudioEngine {
+  constructor(){this.ctx=null;this.master=null;this.musicGain=null;this.fxGain=null;this.noiseBuffer=null;this.timer=null;this.step=0;this.nextStepTime=0;this.trackId='neon-rush';this.bpm=156;this.musicActive=false;this.muted=storage.getItem(MUTED_KEY)==='1';this.updateButton();}
+  updateButton(){muteBtn.textContent=this.muted?'🔇':'🔊';muteBtn.setAttribute('aria-label',this.muted?'소리 켜기':'소리 끄기');}
+  ensureStarted(){if(!this.ctx){const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;this.ctx=new AC();this.master=this.ctx.createGain();this.musicGain=this.ctx.createGain();this.fxGain=this.ctx.createGain();this.master.gain.value=this.muted?0:.72;this.musicGain.gain.value=this.musicActive?.42:0;this.fxGain.gain.value=.72;this.musicGain.connect(this.master);this.fxGain.connect(this.master);this.master.connect(this.ctx.destination);this.makeNoise();this.nextStepTime=this.ctx.currentTime+.05;this.timer=setInterval(()=>this.schedule(),25);}if(this.ctx.state==='suspended')this.ctx.resume();}
+  setMusicActive(active){this.musicActive=active;if(this.musicGain&&this.ctx)this.musicGain.gain.setTargetAtTime(active?.42:0,this.ctx.currentTime,.04);}
+  setTrack(id){if(!TRACK_IDS.includes(id))id='neon-rush';if(this.trackId===id)return;this.trackId=id;this.bpm=id==='hyper-drive'?174:id==='dark-pulse'?138:156;this.step=0;if(this.ctx)this.nextStepTime=this.ctx.currentTime+.05;}
+  makeNoise(){const len=this.ctx.sampleRate;this.noiseBuffer=this.ctx.createBuffer(1,len,this.ctx.sampleRate);const data=this.noiseBuffer.getChannelData(0);for(let i=0;i<len;i++)data[i]=Math.random()*2-1;}
+  midi(n){return 440*Math.pow(2,(n-69)/12);}
+  tone(freq,time,dur,type='sine',gain=.08,dest=this.musicGain,detune=0){if(!this.ctx||!dest)return;const o=this.ctx.createOscillator(),g=this.ctx.createGain();o.type=type;o.frequency.setValueAtTime(freq,time);o.detune.setValueAtTime(detune,time);g.gain.setValueAtTime(.0001,time);g.gain.exponentialRampToValueAtTime(gain,time+.008);g.gain.exponentialRampToValueAtTime(.0001,time+dur);o.connect(g);g.connect(dest);o.start(time);o.stop(time+dur+.03);}
+  pluck(freq,time,dur=.12,gain=.035){if(!this.ctx)return;const o=this.ctx.createOscillator(),f=this.ctx.createBiquadFilter(),g=this.ctx.createGain();o.type='sawtooth';o.frequency.setValueAtTime(freq,time);f.type='lowpass';f.Q.value=3.2;f.frequency.setValueAtTime(3600,time);f.frequency.exponentialRampToValueAtTime(720,time+dur);g.gain.setValueAtTime(.0001,time);g.gain.exponentialRampToValueAtTime(gain,time+.006);g.gain.exponentialRampToValueAtTime(.0001,time+dur);o.connect(f);f.connect(g);g.connect(this.musicGain);o.start(time);o.stop(time+dur+.025);}
+  chord(notes,time,dur=.7,gain=.008){for(const n of notes)for(const d of[-10,0,10])this.tone(this.midi(n),time,dur,'sawtooth',gain,this.musicGain,d);}
+  noise(time,dur,gain=.05,hp=3000){if(!this.ctx||!this.noiseBuffer)return;const s=this.ctx.createBufferSource(),f=this.ctx.createBiquadFilter(),g=this.ctx.createGain();s.buffer=this.noiseBuffer;f.type='highpass';f.frequency.value=hp;g.gain.setValueAtTime(gain,time);g.gain.exponentialRampToValueAtTime(.0001,time+dur);s.connect(f);f.connect(g);g.connect(this.musicGain);s.start(time);s.stop(time+dur+.02);}
+  kick(time,gain=.22){if(!this.ctx)return;const o=this.ctx.createOscillator(),g=this.ctx.createGain();o.type='sine';o.frequency.setValueAtTime(135,time);o.frequency.exponentialRampToValueAtTime(46,time+.12);g.gain.setValueAtTime(gain,time);g.gain.exponentialRampToValueAtTime(.0001,time+.16);o.connect(g);g.connect(this.musicGain);o.start(time);o.stop(time+.18);}
+  scheduleStep(step,time){const local=step%16,bar=Math.floor(step/16)%4;let roots,chords;if(this.trackId==='dark-pulse'){roots=[45,41,48,43];chords=[[45,48,52],[41,45,48],[48,52,55],[43,47,50]];}else{roots=[50,46,53,48];chords=[[50,53,57],[46,50,53],[53,57,60],[48,52,55]];}const root=roots[bar],ch=chords[bar];if(local===0||local===8)this.chord(ch.map(n=>n+12),time,this.trackId==='hyper-drive'?.55:.75,this.trackId==='dark-pulse'?.008:.01);const kickEvery=this.trackId==='hyper-drive'?2:4;if(local%kickEvery===0){this.kick(time,this.trackId==='dark-pulse'?.25:.21);game.beatPulse=1;}if(local===4||local===12)this.noise(time,.1,.05,1200);if(this.trackId==='dark-pulse'){if(local%4===0){this.tone(this.midi(root-12),time,.22,'sawtooth',.055);this.pluck(this.midi(root+12+[0,3,7,10][local/4]),time,.18,.03);}}else{const lead=[0,2,3,6,8,10,11,14],melody=this.trackId==='hyper-drive'?[12,15,19,22,24,22,19,15]:[12,15,19,22,17,19,15,12],idx=lead.indexOf(local);if(idx>=0){this.pluck(this.midi(root+melody[idx]),time,.095,this.trackId==='hyper-drive'?.05:.044);}if(local%2===0){this.tone(this.midi(root-(this.trackId==='hyper-drive'?0:12)),time,.13,'sawtooth',.04);}}}
+  schedule(){if(!this.ctx)return;const ahead=.13,stepDur=60/this.bpm/4;while(this.nextStepTime<this.ctx.currentTime+ahead){this.scheduleStep(this.step,this.nextStepTime);this.nextStepTime+=stepDur;this.step=(this.step+1)%128;}}
+  fxSweep(a,b,dur,type='square',gain=.08){if(!this.ctx)return;const t=this.ctx.currentTime,o=this.ctx.createOscillator(),g=this.ctx.createGain();o.type=type;o.frequency.setValueAtTime(a,t);o.frequency.exponentialRampToValueAtTime(Math.max(20,b),t+dur);g.gain.setValueAtTime(gain,t);g.gain.exponentialRampToValueAtTime(.0001,t+dur);o.connect(g);g.connect(this.fxGain);o.start(t);o.stop(t+dur+.02);}
+  jump(){this.fxSweep(270,520,.075,'square',.045)} pad(){this.fxSweep(180,760,.14,'sawtooth',.065)} orb(){this.fxSweep(540,1050,.11,'triangle',.075)} portal(){this.fxSweep(260,1180,.18,'triangle',.08)} crash(){this.fxSweep(190,44,.22,'sawtooth',.11)} finish(){if(!this.ctx)return;const t=this.ctx.currentTime;[60,64,67,72].forEach((n,i)=>this.tone(this.midi(n),t+i*.08,.34,'triangle',.08,this.fxGain));}
+  toggle(){this.muted=!this.muted;storage.setItem(MUTED_KEY,this.muted?'1':'0');if(this.master&&this.ctx)this.master.gain.setTargetAtTime(this.muted?0:.72,this.ctx.currentTime,.02);this.updateButton();}
+}
+const audio=new AudioEngine();
+muteBtn.addEventListener('click',()=>{audio.ensureStarted();audio.toggle();});
+
+updateMenuStats();
+setScreen('menu');
+
+</script>
+</body>
+</html>
