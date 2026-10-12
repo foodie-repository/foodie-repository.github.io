@@ -756,7 +756,7 @@ function setAutoMode(enabled) {
     autoCodeStatus.textContent = autoModeEnabled ? 'AUTO ON' : 'AUTO OFF';
     autoCodeStatus.classList.toggle('on', autoModeEnabled);
   }
-  if (autoBadge) autoBadge.classList.toggle('hidden', !(autoModeEnabled && game?.kind === 'official' && currentScreen === 'play'));
+  if (autoBadge) autoBadge.classList.toggle('hidden', !(autoModeEnabled && currentScreen === 'play'));
 }
 function toggleAutoFromCode() {
   if (!validateAutoCode(autoCodeInput?.value)) {
@@ -1029,7 +1029,7 @@ function px(x){return x-game.cameraX;}
 
 function startGame(runtime, options={}) {
   clearTimeout(returnToEditorTimer);
-  game.runtime=runtime;game.kind=options.kind||'custom';game.levelId=options.levelId||null;game.returnToEditor=!!options.returnToEditor;game.attempt=1;game.autoMode=autoModeEnabled&&game.kind==='official';
+  game.runtime=runtime;game.kind=options.kind||'custom';game.levelId=options.levelId||null;game.returnToEditor=!!options.returnToEditor;game.attempt=1;game.autoMode=autoModeEnabled;
   game.best=game.kind==='official'?Number(storage.getItem(BEST_KEY)||0):0;
   autoBadge?.classList.toggle('hidden',!game.autoMode);
   playLevelName.textContent=runtime.name; playModeLabel.textContent=game.kind==='official'?'공식 맵':game.returnToEditor?'테스트 플레이':'사용자 제작 맵';
@@ -1042,8 +1042,8 @@ function showGameMessage(title,text){gameMessageTitle.textContent=title;gameMess
 function hideGameMessage(){gameMessage.classList.add('hidden');}
 function setOfficialBest(v){if(v>game.best){game.best=Math.min(100,v);storage.setItem(BEST_KEY,game.best.toFixed(1));}}
 function burst(x,y,count,kind){for(let i=0;i<count;i++){const angle=Math.PI*2*i/count+Math.random()*.45;const speed=(kind==='crash'?130:70)+Math.random()*(kind==='crash'?220:120);game.particles.push({x,y,vx:Math.cos(angle)*speed,vy:Math.sin(angle)*speed-(kind==='jump'?80:0),life:.35+Math.random()*.55,maxLife:.9,size:3+Math.random()*(kind==='crash'?9:5),kind});}}
-function kill(){if(game.autoMode&&game.kind==='official')return;if(game.dead||game.won)return;game.dead=true;game.deathTimer=.72;const pct=progressPercent(player.worldX-game.runtime.startX,game.runtime.levelEnd-game.runtime.startX);if(game.kind==='official')setOfficialBest(pct);audio.crash();burst(player.worldX+20,player.y+20,28,'crash');game.flash=1;showGameMessage('CRASH!',`${pct.toFixed(0)}% · 곧 다시 시작합니다`);}
-function completeCustomVerification(){if(!game.levelId)return;const stored=store.get(game.levelId);if(!stored)return;const verified=markLevelVerified(stored);store.save(verified);if(editorModel?.level.id===verified.id)editorModel.level=normalizeLevel(verified);}
+function kill(){if(game.dead||game.won)return;game.dead=true;game.deathTimer=.72;const pct=progressPercent(player.worldX-game.runtime.startX,game.runtime.levelEnd-game.runtime.startX);if(game.kind==='official')setOfficialBest(pct);audio.crash();burst(player.worldX+20,player.y+20,28,'crash');game.flash=1;showGameMessage('CRASH!',`${pct.toFixed(0)}% · 곧 다시 시작합니다`);}
+function completeCustomVerification(){if(game.autoMode)return;if(!game.levelId)return;const stored=store.get(game.levelId);if(!stored)return;const verified=markLevelVerified(stored);store.save(verified);if(editorModel?.level.id===verified.id)editorModel.level=normalizeLevel(verified);}
 function finish(){if(game.won)return;game.won=true;if(game.kind==='official')setOfficialBest(100);else completeCustomVerification();audio.finish();burst(player.worldX+20,player.y+20,44,'finish');showGameMessage('LEVEL CLEAR',game.kind==='official'?`ATTEMPT ${game.attempt}`:'클리어 인증 완료! 이제 맵 코드를 공유할 수 있습니다.');if(game.returnToEditor){returnToEditorTimer=setTimeout(()=>{game.active=false;setScreen('editor');syncEditorUI();drawEditor();toastMessage('클리어 인증이 완료됐습니다.');},1200);}}
 function switchMode(next){if(player.mode===next)return;player.mode=next;player.rotation=0;game.jumpBuffer=0;game.coyote=0;if(next==='ship'||next==='wave'){player.y=224;player.prevY=224;player.vy=0;player.grounded=false;}else{player.y=GROUND_Y-PLAYER_SIZE;player.prevY=player.y;player.vy=0;player.grounded=true;game.coyote=.08;}audio.portal();burst(player.worldX+20,player.y+20,22,'portal');game.flash=Math.max(game.flash,.45);}
 function performGroundJump(){if(game.dead||game.won||!game.active||player.mode!=='cube')return false;player.vy=jumpVelocity();player.grounded=false;game.coyote=0;game.jumpBuffer=0;audio.jump();burst(player.worldX+20,player.y+40,6,'jump');return true;}
@@ -1055,21 +1055,40 @@ window.addEventListener('keyup',e=>{if(['Space','ArrowUp','KeyW'].includes(e.cod
 gameCanvas.addEventListener('pointerdown',actionStart,{passive:false});window.addEventListener('pointerup',actionEnd,{passive:false});window.addEventListener('pointercancel',actionEnd,{passive:false});
 restartBtn.addEventListener('click',()=>{if(currentScreen==='play'&&game.runtime){audio.ensureStarted();resetRun(true);game.active=true;}});
 
+function autoVerticalHold() {
+  const minX=player.worldX+30,maxX=player.worldX+280;
+  const obstacle=[...game.runtime.flightObstacles,...game.runtime.blocks]
+    .filter(o=>o.x+o.w>=minX&&o.x<=maxX)
+    .sort((a,b)=>a.x-b.x)[0];
+  let targetY=235;
+  if(obstacle) targetY=(obstacle.y+obstacle.h/2)<235?335:135;
+  if(player.y<90) targetY=300;
+  if(player.y>350) targetY=150;
+  return player.y>targetY;
+}
+function autoCubeShouldJump() {
+  const minX=player.worldX+28,maxX=player.worldX+175;
+  const spike=game.runtime.spikes.some(o=>o.x+o.w>=minX&&o.x<=maxX);
+  const block=game.runtime.blocks.some(o=>o.x+o.w>=minX&&o.x<=maxX&&o.y>=player.y-55);
+  const probeX=player.worldX+120;
+  const floorAhead=game.runtime.floors.some(f=>probeX>=f.x&&probeX<=f.x+f.w);
+  return spike||block||!floorAhead;
+}
+function autoOrbAvailable() {
+  if(player.grounded)return false;
+  const cx=player.worldX+20,cy=player.y+20;
+  return game.runtime.orbs.some(o=>!game.usedOrbs.has(o.id)&&o.x>=cx-10&&o.x<=cx+85&&isPointNear(cx,cy,o.x,o.y,78));
+}
 function updateAutoPilot() {
-  if (!game.autoMode || game.kind !== 'official' || !game.active || game.dead || game.won) return;
-  if (player.mode === 'ship' || player.mode === 'wave') {
-    game.inputHeld = player.y > 235;
+  if(!game.autoMode||!game.active||game.dead||game.won)return;
+  if(player.mode==='ship'||player.mode==='wave'){
+    game.inputHeld=autoVerticalHold();
     return;
   }
-  const aheadMin = player.worldX + 35;
-  const aheadMax = player.worldX + 190;
-  const hazardAhead =
-    game.runtime.spikes.some(o => o.x >= aheadMin && o.x <= aheadMax) ||
-    game.runtime.blocks.some(o => o.x >= aheadMin && o.x <= aheadMax);
-  const probeX = player.worldX + 130;
-  const floorAhead = game.runtime.floors.some(f => probeX >= f.x && probeX <= f.x + f.w);
-  game.inputHeld = !!(player.grounded && (hazardAhead || !floorAhead));
-  if (game.inputHeld) game.jumpBuffer = Math.max(game.jumpBuffer, .13);
+  const jumpNow=player.grounded&&autoCubeShouldJump();
+  const useOrb=autoOrbAvailable();
+  game.inputHeld=jumpNow;
+  if(jumpNow||useOrb)game.jumpBuffer=Math.max(game.jumpBuffer,.13);
 }
 
 function updateGame(dt){
@@ -1097,7 +1116,7 @@ function updateGame(dt){
     if(!game.dead&&player.grounded){const feet={x:player.worldX+7,y:player.y+PLAYER_SIZE-6,w:PLAYER_SIZE-14,h:9};const pad=game.runtime.pads.find(p=>rectsOverlap(feet,p));if(pad&&game.lastPad!==pad.id){player.vy=pad.power;player.grounded=false;game.coyote=0;game.jumpBuffer=0;game.lastPad=pad.id;audio.pad();burst(pad.x+pad.w/2,pad.y,14,'pad');}else if(!pad)game.lastPad=null;}
   }
   if(!game.dead&&shouldAutoJump(player.mode,player.grounded,game.inputHeld))performGroundJump();else if(!game.dead&&player.mode==='cube')tryBufferedJump();
-  if(player.mode==='cube'&&player.y>H+110)kill();if(game.autoMode&&player.mode==='cube'&&player.y>GROUND_Y-PLAYER_SIZE){player.y=GROUND_Y-PLAYER_SIZE;player.vy=0;player.grounded=true;}if(player.worldX>=game.runtime.levelEnd)finish();game.cameraX=Math.max(0,player.worldX-PLAYER_SCREEN_X);updateHud();
+  if(player.mode==='cube'&&player.y>H+110)kill();if(player.worldX>=game.runtime.levelEnd)finish();game.cameraX=Math.max(0,player.worldX-PLAYER_SCREEN_X);updateHud();
 }
 function updateHud(){if(!game.runtime)return;const pct=game.won?100:progressPercent(player.worldX-game.runtime.startX,game.runtime.levelEnd-game.runtime.startX);progressFill.style.width=`${pct}%`;progressText.textContent=`${Math.floor(pct)}%`;attemptText.textContent=`ATTEMPT ${game.attempt}`;bestText.textContent=game.kind==='official'?`BEST ${Math.floor(game.best)}%`:(isLevelVerified(store.get(game.levelId)||{})?'VERIFIED':'CUSTOM');}
 
