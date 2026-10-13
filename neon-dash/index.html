@@ -1055,24 +1055,83 @@ window.addEventListener('keyup',e=>{if(['Space','ArrowUp','KeyW'].includes(e.cod
 gameCanvas.addEventListener('pointerdown',actionStart,{passive:false});window.addEventListener('pointerup',actionEnd,{passive:false});window.addEventListener('pointercancel',actionEnd,{passive:false});
 restartBtn.addEventListener('click',()=>{if(currentScreen==='play'&&game.runtime){audio.ensureStarted();resetRun(true);game.active=true;}});
 
-function autoVerticalHold() {
-  const minX=player.worldX+30,maxX=player.worldX+280;
-  const obstacle=[...game.runtime.flightObstacles,...game.runtime.blocks]
-    .filter(o=>o.x+o.w>=minX&&o.x<=maxX)
+function autoCurrentSpeed() {
+  const progress01=clamp((player.worldX-game.runtime.startX)/(game.runtime.levelEnd-game.runtime.startX),0,1);
+  return speedForProgress(progress01);
+}
+function autoJumpLeadForRise(risePx) {
+  const rise=clamp(risePx,8,118);
+  const jumpSpeed=Math.abs(jumpVelocity());
+  const disc=Math.max(0,jumpSpeed*jumpSpeed-2*GRAVITY*rise);
+  const t=(jumpSpeed-Math.sqrt(disc))/GRAVITY;
+  return 43+autoCurrentSpeed()*t;
+}
+function autoPassageTargetY() {
+  const lookMin=player.worldX+35,lookMax=player.worldX+(player.mode==='ship'?430:360);
+  const obstacles=[...game.runtime.flightObstacles,...game.runtime.blocks];
+  if(player.mode==='wave'){
+    for(const sp of game.runtime.spikes)obstacles.push({x:sp.x,y:sp.y,w:sp.w,h:sp.h,id:sp.id});
+  }
+  const obstacle=obstacles
+    .filter(o=>o.x+o.w>=lookMin&&o.x<=lookMax&&o.y<FLIGHT_BOTTOM&&o.y+o.h>FLIGHT_TOP)
     .sort((a,b)=>a.x-b.x)[0];
-  let targetY=235;
-  if(obstacle) targetY=(obstacle.y+obstacle.h/2)<235?335:135;
-  if(player.y<90) targetY=300;
-  if(player.y>350) targetY=150;
-  return player.y>targetY;
+  if(!obstacle)return (FLIGHT_TOP+FLIGHT_BOTTOM-PLAYER_SIZE)/2;
+  const margin=10;
+  const topSpace=obstacle.y-FLIGHT_TOP;
+  const bottomSpace=FLIGHT_BOTTOM-(obstacle.y+obstacle.h);
+  const need=PLAYER_SIZE+margin*2;
+  const topTarget=(FLIGHT_TOP+Math.max(FLIGHT_TOP,obstacle.y-margin)-PLAYER_SIZE)/2;
+  const bottomStart=Math.min(FLIGHT_BOTTOM-PLAYER_SIZE,obstacle.y+obstacle.h+margin);
+  const bottomTarget=(bottomStart+FLIGHT_BOTTOM-PLAYER_SIZE)/2;
+  if(topSpace>=need&&bottomSpace>=need){
+    const topCost=Math.abs(player.y-topTarget)-topSpace*.12;
+    const bottomCost=Math.abs(player.y-bottomTarget)-bottomSpace*.12;
+    return topCost<=bottomCost?topTarget:bottomTarget;
+  }
+  if(topSpace>=need)return topTarget;
+  if(bottomSpace>=need)return bottomTarget;
+  return topSpace>=bottomSpace?Math.max(FLIGHT_TOP+4,topTarget):Math.min(FLIGHT_BOTTOM-PLAYER_SIZE-4,bottomTarget);
+}
+function autoVerticalHold() {
+  const target=autoPassageTargetY();
+  if(player.mode==='wave')return player.y>target;
+  if(player.y>target+10)return true;
+  if(player.y<target-10)return false;
+  return player.vy>35;
 }
 function autoCubeShouldJump() {
-  const minX=player.worldX+28,maxX=player.worldX+175;
-  const spike=game.runtime.spikes.some(o=>o.x+o.w>=minX&&o.x<=maxX);
-  const block=game.runtime.blocks.some(o=>o.x+o.w>=minX&&o.x<=maxX&&o.y>=player.y-55);
-  const probeX=player.worldX+120;
-  const floorAhead=game.runtime.floors.some(f=>probeX>=f.x&&probeX<=f.x+f.w);
-  return spike||block||!floorAhead;
+  const playerFront=player.worldX+35;
+  const searchEnd=player.worldX+220;
+  const spike=game.runtime.spikes
+    .filter(o=>o.x+o.w>=playerFront&&o.x<=searchEnd)
+    .sort((a,b)=>a.x-b.x)[0];
+  if(spike){
+    const lead=autoJumpLeadForRise(42);
+    if(spike.x-player.worldX<=lead)return true;
+  }
+  const block=game.runtime.blocks
+    .filter(o=>o.x+o.w>=playerFront&&o.x<=searchEnd)
+    .sort((a,b)=>a.x-b.x)[0];
+  if(block){
+    const requiredRise=(player.y+35)-block.y+8;
+    if(requiredRise>5&&requiredRise<=122){
+      const lead=autoJumpLeadForRise(requiredRise);
+      if(block.x-player.worldX<=lead)return true;
+    }
+  }
+  const feetY=player.y+PLAYER_SIZE;
+  const supports=[...game.runtime.floors,...game.runtime.blocks]
+    .filter(p=>player.worldX+30>=p.x&&player.worldX+10<=p.x+p.w&&Math.abs(feetY-p.y)<=10)
+    .sort((a,b)=>a.y-b.y);
+  const support=supports[0];
+  if(support){
+    const edge=support.x+support.w;
+    const probeX=edge+44;
+    const safeBelow=[...game.runtime.floors,...game.runtime.blocks]
+      .some(p=>probeX>=p.x&&probeX<=p.x+p.w&&p.y>=feetY-8&&p.y<=feetY+105);
+    if(!safeBelow&&edge-playerFront<=58)return true;
+  }
+  return false;
 }
 function autoOrbAvailable() {
   if(player.grounded)return false;
