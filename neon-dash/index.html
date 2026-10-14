@@ -118,6 +118,25 @@ const CUSTOM_ORIGIN_X = 240;
 const CUSTOM_GROUND_Y = 430;
 
 // AUTO_REPLAY_CORE_START
+var AUTO_PHYSICS_HZ = 120;
+var FIXED_AUTO_DT = 1 / AUTO_PHYSICS_HZ;
+var MAX_AUTO_CATCHUP_SECONDS = 0.25;
+
+function advanceAutoAccumulator(frameDt, state, stepFn) {
+  if (!state || typeof stepFn !== 'function') return 0;
+  const safeDt = Math.max(0, Math.min(Number(frameDt) || 0, MAX_AUTO_CATCHUP_SECONDS));
+  state.accumulator = Math.max(0, Number(state.accumulator) || 0) + safeDt;
+  let steps = 0;
+  const epsilon = 1e-10;
+  while (state.accumulator + epsilon >= FIXED_AUTO_DT) {
+    state.accumulator -= FIXED_AUTO_DT;
+    if (state.accumulator < 0 && state.accumulator > -epsilon) state.accumulator = 0;
+    stepFn(FIXED_AUTO_DT);
+    steps++;
+  }
+  return steps;
+}
+
 function normalizeReplay(replay) {
   if (replay == null) return null;
   if (typeof replay !== 'object' || Array.isArray(replay)) throw new Error('Invalid replay');
@@ -1064,7 +1083,7 @@ function drawEditor() {
 
 // ---------------- Game ----------------
 const W=gameCanvas.width,H=gameCanvas.height,GROUND_Y=430,PLAYER_SIZE=40,PLAYER_SCREEN_X=190,GRAVITY=2300,FLIGHT_TOP=58,FLIGHT_BOTTOM=GROUND_Y;
-const game={active:false,runtime:null,kind:'official',levelId:null,returnToEditor:false,attempt:1,best:0,dead:false,won:false,deathTimer:0,inputHeld:false,jumpBuffer:0,coyote:.08,cameraX:0,particles:[],usedOrbs:new Set(),lastPad:null,lastTime:performance.now(),beatPulse:0,flash:0,autoMode:false};
+const game={active:false,runtime:null,kind:'official',levelId:null,returnToEditor:false,attempt:1,best:0,dead:false,won:false,deathTimer:0,inputHeld:false,jumpBuffer:0,coyote:.08,cameraX:0,particles:[],usedOrbs:new Set(),lastPad:null,lastTime:performance.now(),beatPulse:0,flash:0,autoMode:false,simAccumulator:0,simTick:0};
 const player={worldX:180,y:GROUND_Y-PLAYER_SIZE,prevY:GROUND_Y-PLAYER_SIZE,vy:0,grounded:true,rotation:0,mode:'cube'};
 
 function clamp(v,a,b){return Math.max(a,Math.min(b,v));}
@@ -1081,7 +1100,7 @@ function startGame(runtime, options={}) {
   audio.ensureStarted();audio.setTrack(runtime.music||'neon-rush');
   setScreen('play');resetRun(false);game.active=true;game.lastTime=performance.now();
 }
-function resetRun(increment=true){if(increment)game.attempt++;player.worldX=game.runtime?.startX||180;player.y=GROUND_Y-PLAYER_SIZE;player.prevY=player.y;player.vy=0;player.grounded=true;player.rotation=0;player.mode='cube';game.dead=false;game.won=false;game.deathTimer=0;game.inputHeld=false;game.jumpBuffer=0;game.coyote=.08;game.cameraX=0;game.particles=[];game.usedOrbs=new Set();game.lastPad=null;game.flash=0;hideGameMessage();updateHud();}
+function resetRun(increment=true){if(increment)game.attempt++;player.worldX=game.runtime?.startX||180;player.y=GROUND_Y-PLAYER_SIZE;player.prevY=player.y;player.vy=0;player.grounded=true;player.rotation=0;player.mode='cube';game.dead=false;game.won=false;game.deathTimer=0;game.inputHeld=false;game.jumpBuffer=0;game.coyote=.08;game.cameraX=0;game.particles=[];game.usedOrbs=new Set();game.lastPad=null;game.flash=0;game.simAccumulator=0;game.simTick=0;hideGameMessage();updateHud();}
 function stopGameInput(){game.inputHeld=false;}
 function showGameMessage(title,text){gameMessageTitle.textContent=title;gameMessageText.textContent=text;gameMessage.classList.remove('hidden');}
 function hideGameMessage(){gameMessage.classList.add('hidden');}
@@ -1234,7 +1253,25 @@ function drawFinish(){const x=px(game.runtime.levelEnd);if(x<-100||x>W+140)retur
 function drawPlayer(){if(game.dead&&game.particles.length>10)return;const x=px(player.worldX),cx=x+20,cy=player.y+20;ctx.save();ctx.translate(cx,cy);ctx.rotate(player.rotation);ctx.shadowColor='#22d3ee';ctx.shadowBlur=20+game.beatPulse*8;const g=ctx.createLinearGradient(-20,-20,20,20);g.addColorStop(0,'#67e8f9');g.addColorStop(.55,'#8b5cf6');g.addColorStop(1,'#f472b6');ctx.fillStyle=g;if(player.mode==='ship'){ctx.beginPath();ctx.moveTo(22,0);ctx.lineTo(-16,-15);ctx.lineTo(-9,0);ctx.lineTo(-16,15);ctx.closePath();ctx.fill();ctx.shadowBlur=0;ctx.strokeStyle='rgba(255,255,255,.8)';ctx.lineWidth=2;ctx.stroke();ctx.fillStyle=game.inputHeld?'#fde047':'#f472b6';ctx.beginPath();ctx.moveTo(-13,-7);ctx.lineTo(-29,0);ctx.lineTo(-13,7);ctx.closePath();ctx.fill();}else if(player.mode==='wave'){ctx.shadowColor='#a3e635';ctx.fillStyle='#a3e635';ctx.beginPath();ctx.moveTo(24,0);ctx.lineTo(-15,-15);ctx.lineTo(-7,0);ctx.lineTo(-15,15);ctx.closePath();ctx.fill();ctx.shadowBlur=0;ctx.strokeStyle='rgba(255,255,255,.9)';ctx.lineWidth=2;ctx.stroke();ctx.fillStyle='#0f172a';ctx.beginPath();ctx.moveTo(7,0);ctx.lineTo(-7,-6);ctx.lineTo(-3,0);ctx.lineTo(-7,6);ctx.closePath();ctx.fill();}else{ctx.fillRect(-20,-20,40,40);ctx.shadowBlur=0;ctx.fillStyle='#081126';ctx.fillRect(-12,-10,8,8);ctx.fillRect(4,-10,8,8);ctx.fillRect(-11,7,22,5);ctx.strokeStyle='rgba(255,255,255,.7)';ctx.lineWidth=2;ctx.strokeRect(-15,-15,30,30);}ctx.restore();}
 function drawParticles(){ctx.save();for(const p of game.particles){const x=px(p.x),a=clamp(p.life/p.maxLife,0,1);ctx.globalAlpha=a;ctx.fillStyle=p.kind==='crash'?'#f472b6':p.kind==='orb'||p.kind==='pad'?'#fde047':p.kind==='finish'||p.kind==='portal'?'#c4b5fd':'#67e8f9';ctx.fillRect(x-p.size/2,p.y-p.size/2,p.size,p.size);}ctx.restore();}
 function drawGame(){if(!game.runtime)return;drawBackground();drawPlatforms();drawPadsOrbs();drawFlightElements();drawSpikes();drawFinish();drawParticles();drawPlayer();if(game.flash>0){ctx.fillStyle=`rgba(255,255,255,${game.flash*.24})`;ctx.fillRect(0,0,W,H);}}
-function frame(now){const dt=Math.min(.033,Math.max(0,(now-game.lastTime)/1000));game.lastTime=now;if(currentScreen==='play'){updateGame(dt);drawGame();}requestAnimationFrame(frame);}requestAnimationFrame(frame);
+function frame(now){
+  const frameDt=Math.max(0,(now-game.lastTime)/1000);
+  game.lastTime=now;
+  if(currentScreen==='play'){
+    if(game.autoMode){
+      const accumulatorState={accumulator:game.simAccumulator};
+      advanceAutoAccumulator(frameDt,accumulatorState,()=>{
+        updateGame(FIXED_AUTO_DT);
+        game.simTick++;
+      });
+      game.simAccumulator=accumulatorState.accumulator;
+    }else{
+      updateGame(Math.min(.033,frameDt));
+    }
+    drawGame();
+  }
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
 
 // ---------------- Original browser-synth audio ----------------
 class AudioEngine {
