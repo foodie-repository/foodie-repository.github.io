@@ -117,6 +117,51 @@ const STORAGE_KEY = 'neonDash:levels:v1';
 const CUSTOM_ORIGIN_X = 240;
 const CUSTOM_GROUND_Y = 430;
 
+// AUTO_REPLAY_CORE_START
+function normalizeReplay(replay) {
+  if (replay == null) return null;
+  if (typeof replay !== 'object' || Array.isArray(replay)) throw new Error('Invalid replay');
+  if (replay.version !== 1) throw new Error('Unsupported replay version');
+  if (replay.physicsHz !== 120) throw new Error('Unsupported replay physics rate');
+  if (typeof replay.fingerprint !== 'string' || replay.fingerprint.length === 0) throw new Error('Invalid replay fingerprint');
+  if (!Array.isArray(replay.events)) throw new Error('Invalid replay events');
+  let lastTick = -1;
+  const events = replay.events.map((event) => {
+    if (!event || typeof event !== 'object') throw new Error('Invalid replay event');
+    const tick = Number(event.tick);
+    if (!Number.isInteger(tick) || tick < 0 || tick < lastTick) throw new Error('Invalid replay tick ordering');
+    const action = event.action;
+    if (action !== 'press' && action !== 'release') throw new Error('Invalid replay action');
+    lastTick = tick;
+    return { tick, action };
+  });
+  return {
+    version: 1,
+    physicsHz: 120,
+    fingerprint: replay.fingerprint,
+    events,
+  };
+}
+
+function isReplayValidForFingerprint(replay, fingerprint) {
+  try {
+    const normalized = normalizeReplay(replay);
+    return !!normalized && normalized.fingerprint === fingerprint;
+  } catch {
+    return false;
+  }
+}
+
+function applyReplayEventsForTick(replayState, tick, setHeld) {
+  if (!replayState || !replayState.replay || typeof setHeld !== 'function') return;
+  const events = replayState.replay.events || [];
+  while (replayState.cursor < events.length && events[replayState.cursor].tick === tick) {
+    const event = events[replayState.cursor++];
+    setHeld(event.action === 'press');
+  }
+}
+// AUTO_REPLAY_CORE_END
+
 function rectsOverlap(a, b) {
   return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
 }
