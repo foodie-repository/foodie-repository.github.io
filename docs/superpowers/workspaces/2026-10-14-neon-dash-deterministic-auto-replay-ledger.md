@@ -27,3 +27,13 @@ Ruling: The environment cannot mount this GitHub branch into the local Node cont
 - AUTO runs through the accumulator; manual play retains the prior frame-delta path.
 - Verification passed for 30/60/90/120/144 Hz schedules: exactly 120 simulation steps per simulated second.
 - 500 ms stall produced 30 fixed steps (0.25 s cap).
+
+## Task 3 — unified input + replay recording/playback routing
+- RED observed: `recordReplayInputTransition` did not exist.
+- Added shared `setInputHeld(nextHeld, source)` and routed keyboard/pointer input through it.
+- Added replay runtime fields and tick-based manual input recording.
+- Replay events are applied before each deterministic physics step.
+- Custom manual runs enter record mode and therefore use the same 120 Hz fixed-step path required for deterministic replay.
+- Verification passed for duplicate suppression, manual-only recording, reset/system behavior, and portal held-state preservation.
+
+Ruling: Manual custom-map verification uses fixed-step physics while recording, even though ordinary manual official play keeps the old frame-delta path — deterministic custom replay requires the recorded run to use the same 120 Hz simulation as playback — cost if wrong: custom-map test-play feel may change slightly, but only during deterministic verification runs.
