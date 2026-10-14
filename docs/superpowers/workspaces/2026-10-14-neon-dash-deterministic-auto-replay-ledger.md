@@ -64,3 +64,25 @@ Ruling: Manual custom-map verification uses fixed-step physics while recording, 
 - Real collision during replay stops the run and shows `AUTO REPLAY INVALID`; no forced recovery/restart.
 - AUTO UI now uses `AUTO READY` and `AUTO PLAY`.
 - Behavior checks passed.
+
+## Task 7 — final regression
+- Added/reset-tick regression: replay events apply → `simTick++` → physics update, so a reset inside physics can restore tick 0 without being incremented afterward.
+- Production inline script parse check passed.
+- Replay-core/schema/input/fixed-step checks passed.
+- Heuristic AUTO functions are absent; direct `game.inputHeld` mutation exists only inside the shared input API.
+- Existing ship/wave/cube/editor/map-code/audio/device-mode markers remain present.
+- Official replay fresh verification:
+  - fingerprint `og1-8a879f3c`
+  - 1,362 legal press/release events
+  - 60 Hz render → win at tick 6912
+  - 90 Hz render → win at tick 6912
+  - 120 Hz render → win at tick 6912
+  - 144 Hz render → win at tick 6912
+  - corrupted replay → normal death at tick 133, x≈535.9
+- Custom-map replay smoke test: a manual one-jump input sequence clears at tick 505; attached replay reproduces the same tick/x; changed fingerprint is rejected.
+
+Ruling: Full branch tests are executed against the exact GitHub branch content in the available V8 harness because this environment cannot check out/mount the remote branch into the local Node container. Repository `node:test` files are committed and mirror these assertions. Cost if wrong: Node module-loader-specific issues could remain, but production JS, schemas, deterministic physics, and replay execution have all been exercised directly.
+
+## Final review
+- No Critical or Important finding remains after the reset-tick fix.
+- Main branch has not been modified by this implementation branch.
