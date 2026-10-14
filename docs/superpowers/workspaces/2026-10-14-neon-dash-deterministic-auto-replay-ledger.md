@@ -20,3 +20,10 @@ Ruling: Use a GitHub feature branch as the isolated workspace — the harness ex
 - Equivalent branch test execution passed all schema/action cases in the available V8 harness.
 
 Ruling: The environment cannot mount this GitHub branch into the local Node container, so repository test files are created exactly as planned, while RED/GREEN execution is performed against the branch content through the GitHub connector + V8 isolate. This preserves real production-code evaluation; cost if wrong: the exact `node --test` invocation is deferred to final CI/branch verification if a runnable checkout becomes available.
+
+## Task 2 — fixed-step AUTO simulation
+- RED observed: `advanceAutoAccumulator` did not exist.
+- Added 120 Hz fixed step, 0.25 s catch-up cap, `game.simAccumulator`, and `game.simTick`.
+- AUTO runs through the accumulator; manual play retains the prior frame-delta path.
+- Verification passed for 30/60/90/120/144 Hz schedules: exactly 120 simulation steps per simulated second.
+- 500 ms stall produced 30 fixed steps (0.25 s cap).
