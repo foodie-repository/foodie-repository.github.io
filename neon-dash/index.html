@@ -162,6 +162,31 @@ function normalizeReplay(replay) {
   };
 }
 
+function normalizeOptionalReplay(replay) {
+  try {
+    return normalizeReplay(replay);
+  } catch {
+    return null;
+  }
+}
+
+function attachReplayVerification(level, fingerprint, events) {
+  const copy = {...(level || {})};
+  const replay = normalizeReplay({
+    version: 1,
+    physicsHz: 120,
+    fingerprint,
+    events: Array.isArray(events) ? events : [],
+  });
+  copy.verifiedFingerprint = fingerprint;
+  copy.replay = replay;
+  return copy;
+}
+
+function invalidateReplayVerification(level) {
+  return {...(level || {}), verifiedFingerprint: null, replay: null};
+}
+
 function isReplayValidForFingerprint(replay, fingerprint) {
   try {
     const normalized = normalizeReplay(replay);
@@ -266,6 +291,7 @@ function normalizeLevel(input) {
     createdAt: typeof obj.createdAt === 'string' ? obj.createdAt : stamp,
     updatedAt: typeof obj.updatedAt === 'string' ? obj.updatedAt : stamp,
     verifiedFingerprint: typeof obj.verifiedFingerprint === 'string' ? obj.verifiedFingerprint : null,
+    replay: normalizeOptionalReplay(obj.replay),
   };
 }
 
@@ -331,6 +357,14 @@ function markLevelVerified(level) {
   return copy;
 }
 
+function attachVerifiedReplay(level, recordedEvents) {
+  const copy = normalizeLevel(level);
+  const fingerprint = gameplayFingerprint(copy);
+  const attached = attachReplayVerification(copy, fingerprint, recordedEvents);
+  attached.updatedAt = nowIso();
+  return normalizeLevel(attached);
+}
+
 function utf8ToBase64Url(text) {
   if (typeof Buffer !== 'undefined') return Buffer.from(text, 'utf8').toString('base64url');
   const bytes = new TextEncoder().encode(text);
@@ -359,6 +393,7 @@ function encodeLevelCode(level) {
     cellSize: CELL_SIZE,
     music: normalized.music,
     objects: normalized.objects.map(o => ({id:o.id,type:o.type,x:o.x,y:o.y,...(o.orientation?{orientation:o.orientation}:{})})),
+    replay: isReplayValidForFingerprint(normalized.replay, gameplayFingerprint(normalized)) ? normalized.replay : null,
   };
   return `ND1:${utf8ToBase64Url(JSON.stringify(payload))}`;
 }
@@ -399,7 +434,10 @@ class EditorModel {
   }
   _touch(gameplay = false) {
     this.level.updatedAt = nowIso();
-    if (gameplay) this.level.verifiedFingerprint = null;
+    if (gameplay) {
+      this.level.verifiedFingerprint = null;
+      this.level.replay = null;
+    }
   }
   _cellValid(x,y) { return Number.isInteger(x) && x >= 0 && x < this.level.lengthCells && Number.isInteger(y) && y >= 0 && y <= MAX_ROW; }
 
@@ -1127,7 +1165,7 @@ function hideGameMessage(){gameMessage.classList.add('hidden');}
 function setOfficialBest(v){if(v>game.best){game.best=Math.min(100,v);storage.setItem(BEST_KEY,game.best.toFixed(1));}}
 function burst(x,y,count,kind){for(let i=0;i<count;i++){const angle=Math.PI*2*i/count+Math.random()*.45;const speed=(kind==='crash'?130:70)+Math.random()*(kind==='crash'?220:120);game.particles.push({x,y,vx:Math.cos(angle)*speed,vy:Math.sin(angle)*speed-(kind==='jump'?80:0),life:.35+Math.random()*.55,maxLife:.9,size:3+Math.random()*(kind==='crash'?9:5),kind});}}
 function kill(){if(game.dead||game.won)return;game.dead=true;game.deathTimer=.72;const pct=progressPercent(player.worldX-game.runtime.startX,game.runtime.levelEnd-game.runtime.startX);if(game.kind==='official')setOfficialBest(pct);audio.crash();burst(player.worldX+20,player.y+20,28,'crash');game.flash=1;showGameMessage('CRASH!',`${pct.toFixed(0)}% · 곧 다시 시작합니다`);}
-function completeCustomVerification(){if(game.autoMode)return;if(!game.levelId)return;const stored=store.get(game.levelId);if(!stored)return;const verified=markLevelVerified(stored);store.save(verified);if(editorModel?.level.id===verified.id)editorModel.level=normalizeLevel(verified);}
+function completeCustomVerification(){if(game.autoMode)return;if(!game.levelId)return;const stored=store.get(game.levelId);if(!stored)return;const verified=attachVerifiedReplay(stored,game.recordedEvents);store.save(verified);if(editorModel?.level.id===verified.id)editorModel.level=normalizeLevel(verified);}
 function finish(){if(game.won)return;game.won=true;if(game.kind==='official')setOfficialBest(100);else completeCustomVerification();audio.finish();burst(player.worldX+20,player.y+20,44,'finish');const clearText=game.kind==='official'?`ATTEMPT ${game.attempt}`:(game.autoMode?'AUTO 클리어 · 공유 인증은 직접 플레이로 해야 합니다.':'클리어 인증 완료! 이제 맵 코드를 공유할 수 있습니다.');showGameMessage('LEVEL CLEAR',clearText);if(game.returnToEditor){returnToEditorTimer=setTimeout(()=>{game.active=false;setScreen('editor');syncEditorUI();drawEditor();toastMessage(game.autoMode?'AUTO 클리어입니다. 직접 플레이로 클리어해야 공유 인증됩니다.':'클리어 인증이 완료됐습니다.');},1200);}}
 function switchMode(next){if(player.mode===next)return;player.mode=next;player.rotation=0;game.jumpBuffer=0;game.coyote=0;if(next==='ship'||next==='wave'){player.y=224;player.prevY=224;player.vy=0;player.grounded=false;}else{player.y=GROUND_Y-PLAYER_SIZE;player.prevY=player.y;player.vy=0;player.grounded=true;game.coyote=.08;}audio.portal();burst(player.worldX+20,player.y+20,22,'portal');game.flash=Math.max(game.flash,.45);}
 function performGroundJump(){if(game.dead||game.won||!game.active||player.mode!=='cube')return false;player.vy=jumpVelocity();player.grounded=false;game.coyote=0;game.jumpBuffer=0;audio.jump();burst(player.worldX+20,player.y+40,6,'jump');return true;}
