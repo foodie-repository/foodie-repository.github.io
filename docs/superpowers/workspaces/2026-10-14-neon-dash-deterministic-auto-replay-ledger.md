@@ -37,3 +37,20 @@ Ruling: The environment cannot mount this GitHub branch into the local Node cont
 - Verification passed for duplicate suppression, manual-only recording, reset/system behavior, and portal held-state preservation.
 
 Ruling: Manual custom-map verification uses fixed-step physics while recording, even though ordinary manual official play keeps the old frame-delta path — deterministic custom replay requires the recorded run to use the same 120 Hz simulation as playback — cost if wrong: custom-map test-play feel may change slightly, but only during deterministic verification runs.
+
+## Task 4 — custom replay persistence
+- Added optional `level.replay` normalization; old maps normalize to `replay:null`.
+- Malformed replay data is ignored rather than breaking map import.
+- Gameplay edits clear both `verifiedFingerprint` and `replay`; name/BGM changes preserve them under the existing gameplay fingerprint rules.
+- ND1 export now includes an optional matching replay; import clears local creator verification but keeps a syntactically valid replay.
+- Manual custom-map completion stores the recorded 120 Hz replay; AUTO completion remains excluded.
+- Schema verification passed.
+
+## Task 5 — official replay
+- RED observed: o2 remained at x=5710, final cube portal at x=21800, and no official replay block existed.
+- Moved `o2` to x=5590 and final wave→cube portal to x=21900, the two diagnosed impossible placements.
+- Generated a legal input-only official replay at 120 Hz: 1,362 press/release events.
+- Official runtime fingerprint: `og1-8a879f3c`.
+- Replay reaches 100% at simulation tick 6912.
+- Render schedule verification: 60/90/120/144 Hz all finish at the same tick and x=22400.09.
+- Corruption verification: removing the first replay event causes a normal death at tick 133 / x≈535.9; no recovery path exists.
