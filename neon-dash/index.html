@@ -171,6 +171,18 @@ function isReplayValidForFingerprint(replay, fingerprint) {
   }
 }
 
+function recordReplayInputTransition(state, nextHeld, source, tick) {
+  if (!state) return false;
+  const next = !!nextHeld;
+  if (!!state.held === next) return false;
+  state.held = next;
+  if (state.mode === 'record' && source === 'manual') {
+    if (!Array.isArray(state.events)) state.events = [];
+    state.events.push({ tick: Math.max(0, Number.isInteger(tick) ? tick : 0), action: next ? 'press' : 'release' });
+  }
+  return true;
+}
+
 function applyReplayEventsForTick(replayState, tick, setHeld) {
   if (!replayState || !replayState.replay || typeof setHeld !== 'function') return;
   const events = replayState.replay.events || [];
@@ -1083,8 +1095,16 @@ function drawEditor() {
 
 // ---------------- Game ----------------
 const W=gameCanvas.width,H=gameCanvas.height,GROUND_Y=430,PLAYER_SIZE=40,PLAYER_SCREEN_X=190,GRAVITY=2300,FLIGHT_TOP=58,FLIGHT_BOTTOM=GROUND_Y;
-const game={active:false,runtime:null,kind:'official',levelId:null,returnToEditor:false,attempt:1,best:0,dead:false,won:false,deathTimer:0,inputHeld:false,jumpBuffer:0,coyote:.08,cameraX:0,particles:[],usedOrbs:new Set(),lastPad:null,lastTime:performance.now(),beatPulse:0,flash:0,autoMode:false,simAccumulator:0,simTick:0};
+const game={active:false,runtime:null,kind:'official',levelId:null,returnToEditor:false,attempt:1,best:0,dead:false,won:false,deathTimer:0,inputHeld:false,jumpBuffer:0,coyote:.08,cameraX:0,particles:[],usedOrbs:new Set(),lastPad:null,lastTime:performance.now(),beatPulse:0,flash:0,autoMode:false,simAccumulator:0,simTick:0,replayMode:'off',replayEvents:[],replayCursor:0,recordedEvents:[],activeReplay:null};
 const player={worldX:180,y:GROUND_Y-PLAYER_SIZE,prevY:GROUND_Y-PLAYER_SIZE,vy:0,grounded:true,rotation:0,mode:'cube'};
+
+function setInputHeld(nextHeld, source='manual') {
+  const state={held:game.inputHeld,mode:game.replayMode,events:game.recordedEvents};
+  const changed=recordReplayInputTransition(state,nextHeld,source,game.simTick);
+  game.inputHeld=state.held;
+  game.recordedEvents=state.events;
+  return changed;
+}
 
 function clamp(v,a,b){return Math.max(a,Math.min(b,v));}
 function isPointNear(ax,ay,bx,by,r){const dx=ax-bx,dy=ay-by;return dx*dx+dy*dy<=r*r;}
@@ -1093,15 +1113,15 @@ function px(x){return x-game.cameraX;}
 
 function startGame(runtime, options={}) {
   clearTimeout(returnToEditorTimer);
-  game.runtime=runtime;game.kind=options.kind||'custom';game.levelId=options.levelId||null;game.returnToEditor=!!options.returnToEditor;game.attempt=1;game.autoMode=autoModeEnabled;
+  game.runtime=runtime;game.kind=options.kind||'custom';game.levelId=options.levelId||null;game.returnToEditor=!!options.returnToEditor;game.attempt=1;game.autoMode=autoModeEnabled;game.replayMode=(!game.autoMode&&game.kind==='custom')?'record':'off';game.replayEvents=[];game.replayCursor=0;game.recordedEvents=[];game.activeReplay=null;
   game.best=game.kind==='official'?Number(storage.getItem(BEST_KEY)||0):0;
   autoBadge?.classList.toggle('hidden',!game.autoMode);
   playLevelName.textContent=runtime.name; playModeLabel.textContent=game.kind==='official'?'공식 맵':game.returnToEditor?'테스트 플레이':'사용자 제작 맵';
   audio.ensureStarted();audio.setTrack(runtime.music||'neon-rush');
   setScreen('play');resetRun(false);game.active=true;game.lastTime=performance.now();
 }
-function resetRun(increment=true){if(increment)game.attempt++;player.worldX=game.runtime?.startX||180;player.y=GROUND_Y-PLAYER_SIZE;player.prevY=player.y;player.vy=0;player.grounded=true;player.rotation=0;player.mode='cube';game.dead=false;game.won=false;game.deathTimer=0;game.inputHeld=false;game.jumpBuffer=0;game.coyote=.08;game.cameraX=0;game.particles=[];game.usedOrbs=new Set();game.lastPad=null;game.flash=0;game.simAccumulator=0;game.simTick=0;hideGameMessage();updateHud();}
-function stopGameInput(){game.inputHeld=false;}
+function resetRun(increment=true){if(increment)game.attempt++;player.worldX=game.runtime?.startX||180;player.y=GROUND_Y-PLAYER_SIZE;player.prevY=player.y;player.vy=0;player.grounded=true;player.rotation=0;player.mode='cube';game.dead=false;game.won=false;game.deathTimer=0;setInputHeld(false,'system');game.jumpBuffer=0;game.coyote=.08;game.cameraX=0;game.particles=[];game.usedOrbs=new Set();game.lastPad=null;game.flash=0;game.simAccumulator=0;game.simTick=0;game.replayCursor=0;if(game.replayMode==='record')game.recordedEvents=[];hideGameMessage();updateHud();}
+function stopGameInput(){setInputHeld(false,'system');}
 function showGameMessage(title,text){gameMessageTitle.textContent=title;gameMessageText.textContent=text;gameMessage.classList.remove('hidden');}
 function hideGameMessage(){gameMessage.classList.add('hidden');}
 function setOfficialBest(v){if(v>game.best){game.best=Math.min(100,v);storage.setItem(BEST_KEY,game.best.toFixed(1));}}
@@ -1112,8 +1132,8 @@ function finish(){if(game.won)return;game.won=true;if(game.kind==='official')set
 function switchMode(next){if(player.mode===next)return;player.mode=next;player.rotation=0;game.jumpBuffer=0;game.coyote=0;if(next==='ship'||next==='wave'){player.y=224;player.prevY=224;player.vy=0;player.grounded=false;}else{player.y=GROUND_Y-PLAYER_SIZE;player.prevY=player.y;player.vy=0;player.grounded=true;game.coyote=.08;}audio.portal();burst(player.worldX+20,player.y+20,22,'portal');game.flash=Math.max(game.flash,.45);}
 function performGroundJump(){if(game.dead||game.won||!game.active||player.mode!=='cube')return false;player.vy=jumpVelocity();player.grounded=false;game.coyote=0;game.jumpBuffer=0;audio.jump();burst(player.worldX+20,player.y+40,6,'jump');return true;}
 function tryBufferedJump(){if(game.jumpBuffer<=0||game.dead||game.won||!game.active)return false;const cx=player.worldX+20,cy=player.y+20;if(!player.grounded){const orb=game.runtime.orbs.find(o=>!game.usedOrbs.has(o.id)&&isPointNear(cx,cy,o.x,o.y,72));if(orb){game.usedOrbs.add(orb.id);player.vy=orb.power;game.jumpBuffer=0;audio.orb();burst(orb.x,orb.y,16,'orb');return true;}}if(player.grounded||game.coyote>0)return performGroundJump();return false;}
-function actionStart(e){if(currentScreen!=='play'||!game.active)return;if(e?.cancelable)e.preventDefault();audio.ensureStarted();if(game.dead||game.won){if(!game.returnToEditor)resetRun(true);return;}game.inputHeld=true;if(player.mode==='cube')game.jumpBuffer=.13;}
-function actionEnd(e){if(e?.cancelable)e.preventDefault();game.inputHeld=false;}
+function actionStart(e){if(currentScreen!=='play'||!game.active)return;if(e?.cancelable)e.preventDefault();audio.ensureStarted();if(game.dead||game.won){if(!game.returnToEditor)resetRun(true);return;}setInputHeld(true,'manual');if(player.mode==='cube')game.jumpBuffer=.13;}
+function actionEnd(e){if(e?.cancelable)e.preventDefault();setInputHeld(false,'manual');}
 window.addEventListener('keydown',e=>{if(['Space','ArrowUp','KeyW'].includes(e.code)){if(e.repeat&&player.mode==='cube')return;actionStart(e);}});
 window.addEventListener('keyup',e=>{if(['Space','ArrowUp','KeyW'].includes(e.code))actionEnd(e);});
 gameCanvas.addEventListener('pointerdown',actionStart,{passive:false});window.addEventListener('pointerup',actionEnd,{passive:false});window.addEventListener('pointercancel',actionEnd,{passive:false});
@@ -1257,9 +1277,14 @@ function frame(now){
   const frameDt=Math.max(0,(now-game.lastTime)/1000);
   game.lastTime=now;
   if(currentScreen==='play'){
-    if(game.autoMode){
+    if(game.autoMode||game.replayMode==='record'||game.replayMode==='play'){
       const accumulatorState={accumulator:game.simAccumulator};
       advanceAutoAccumulator(frameDt,accumulatorState,()=>{
+        if(game.replayMode==='play'&&game.activeReplay){
+          const replayState={replay:game.activeReplay,cursor:game.replayCursor};
+          applyReplayEventsForTick(replayState,game.simTick,(held)=>setInputHeld(held,'replay'));
+          game.replayCursor=replayState.cursor;
+        }
         updateGame(FIXED_AUTO_DT);
         game.simTick++;
       });
