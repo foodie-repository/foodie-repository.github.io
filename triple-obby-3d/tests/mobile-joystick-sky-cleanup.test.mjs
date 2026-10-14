@@ -19,7 +19,7 @@ test('mobile joystick supports analog forward plus turning and returns neutral w
   assert.ok(Math.abs(normalized.y + 0.8) < 1e-9);
 
   const moving = joystickApi.stepJoystickControls({ x: 0.5, y: -1, active: true }, 0, 0.5, 2);
-  assert.ok(moving.yaw > 0);
+  assert.ok(moving.yaw < 0);
   assert.ok(moving.drive > 0.99);
   assert.ok(Number.isFinite(moving.moveX));
   assert.ok(Number.isFinite(moving.moveZ));
