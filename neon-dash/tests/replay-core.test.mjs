@@ -166,3 +166,16 @@ test('portal transitions do not require input transitions', () => {
   assert.equal(state.held, true);
   assert.deepEqual(JSON.parse(JSON.stringify(state.events)), []);
 });
+
+
+test('fixed-step loop advances simTick before physics so a reset inside update can restore tick zero', () => {
+  const html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
+  const callback = html.match(/advanceAutoAccumulator\(frameDt,accumulatorState,\(\)=>\{([\s\S]*?)\n\s*\}\);/);
+  assert.ok(callback);
+  const body = callback[1];
+  const applyPos = body.indexOf('applyReplayEventsForTick');
+  const tickPos = body.indexOf('game.simTick++');
+  const updatePos = body.indexOf('updateGame(FIXED_AUTO_DT)');
+  assert.ok(applyPos >= 0 && tickPos > applyPos && updatePos > tickPos,
+    'event application must precede tick increment, which must precede physics update');
+});
