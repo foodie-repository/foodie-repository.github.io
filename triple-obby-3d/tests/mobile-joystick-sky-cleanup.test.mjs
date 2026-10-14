@@ -51,4 +51,6 @@ test('sky islands no longer add unnecessary overlapping underside blocks', async
   const skySource = await fs.readFile(new URL('../game-04.part', import.meta.url), 'utf8');
   assert.doesNotMatch(skySource, /const underside = makeBox/);
   assert.doesNotMatch(skySource, /level\.group\.add\(underside\)/);
+  assert.doesNotMatch(skySource, /\[22, 5\.4, -6\.6\]/);
+  assert.doesNotMatch(skySource, /\[48, 11\.2, 6\.8\]/);
 });
