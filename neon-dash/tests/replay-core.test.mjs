@@ -94,3 +94,37 @@ test('applyReplayEventsForTick applies all events at the current tick in order',
   assert.deepEqual(states, [true, false]);
   assert.equal(replayState.cursor, 2);
 });
+
+
+test('fixed-step accumulator runs exactly 120 simulation steps per second at common render rates', () => {
+  const { advanceAutoAccumulator } = context;
+  for (const fps of [30, 60, 90, 120, 144]) {
+    const state = { accumulator: 0 };
+    let steps = 0;
+    for (let frame = 0; frame < fps; frame++) {
+      advanceAutoAccumulator(1 / fps, state, () => { steps++; });
+    }
+    assert.equal(steps, 120, `${fps} Hz render should run 120 physics steps`);
+  }
+});
+
+test('fixed-step accumulator caps a 500 ms stall to the maximum catch-up window', () => {
+  const { advanceAutoAccumulator, MAX_AUTO_CATCHUP_SECONDS } = context;
+  const state = { accumulator: 0 };
+  let steps = 0;
+  advanceAutoAccumulator(0.5, state, () => { steps++; });
+  assert.equal(MAX_AUTO_CATCHUP_SECONDS, 0.25);
+  assert.equal(steps, 30);
+});
+
+test('fixed-step accumulator is deterministic for identical frame-delta sequences', () => {
+  const { advanceAutoAccumulator } = context;
+  const deltas = [1/60, 1/60, 1/90, 1/144, 0.02, 0.01, 1/120];
+  const run = () => {
+    const state = { accumulator: 0 };
+    let steps = 0;
+    for (const dt of deltas) advanceAutoAccumulator(dt, state, () => { steps++; });
+    return { steps, accumulator: state.accumulator };
+  };
+  assert.deepEqual(run(), run());
+});
