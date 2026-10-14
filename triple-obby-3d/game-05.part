@@ -82,8 +82,11 @@
       if (worldMove.lengthSq() > 0) worldMove.normalize();
 
       const relative = globalThis.TripleObbyControls.stepArrowControls(arrowInput, player.yaw, dt);
-      player.yaw = relative.yaw;
-      const move = worldMove.add(new THREE.Vector3(relative.moveX, 0, relative.moveZ));
+      const analog = globalThis.TripleObbyControls.stepJoystickControls(joystickInput, relative.yaw, dt);
+      player.yaw = joystickInput.active ? analog.yaw : relative.yaw;
+      const move = worldMove
+        .add(new THREE.Vector3(relative.moveX, 0, relative.moveZ))
+        .add(new THREE.Vector3(analog.moveX, 0, analog.moveZ));
       if (move.lengthSq() > 1) move.normalize();
       return move;
     }
