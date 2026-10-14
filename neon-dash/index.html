@@ -889,10 +889,10 @@ let autoModeEnabled = false;
 function setAutoMode(enabled) {
   autoModeEnabled = !!enabled;
   if (autoCodeStatus) {
-    autoCodeStatus.textContent = autoModeEnabled ? 'AUTO ON' : 'AUTO OFF';
+    autoCodeStatus.textContent = autoModeEnabled ? 'AUTO READY' : 'AUTO OFF';
     autoCodeStatus.classList.toggle('on', autoModeEnabled);
   }
-  if (autoBadge) autoBadge.classList.toggle('hidden', !(autoModeEnabled && currentScreen === 'play'));
+  if (!autoModeEnabled && autoBadge) autoBadge.classList.add('hidden');
 }
 function toggleAutoFromCode() {
   if (!validateAutoCode(autoCodeInput?.value)) {
@@ -902,7 +902,7 @@ function toggleAutoFromCode() {
   }
   setAutoMode(!autoModeEnabled);
   if (autoCodeInput) autoCodeInput.value = '';
-  toastMessage(autoModeEnabled ? 'AUTO MODE가 켜졌습니다.' : 'AUTO MODE가 꺼졌습니다.');
+  toastMessage(autoModeEnabled ? 'AUTO READY · 리플레이가 있는 맵에서 자동 플레이합니다.' : 'AUTO MODE가 꺼졌습니다.');
   return true;
 }
 autoCodeBtn?.addEventListener('click', toggleAutoFromCode);
@@ -1172,14 +1172,65 @@ function isPointNear(ax,ay,bx,by,r){const dx=ax-bx,dy=ay-by;return dx*dx+dy*dy<=
 function playerRect(inset=4){return{x:player.worldX+inset,y:player.y+inset,w:PLAYER_SIZE-inset*2,h:PLAYER_SIZE-inset*2};}
 function px(x){return x-game.cameraX;}
 
+function startReplayForRuntime(runtime, replay) {
+  const fingerprint=game.kind==='official'?officialRuntimeFingerprint(runtime):runtime?.fingerprint;
+  if(!fingerprint||!isReplayValidForFingerprint(replay,fingerprint))return false;
+  const normalized=normalizeReplay(replay);
+  game.activeReplay=normalized;
+  game.replayEvents=normalized.events;
+  game.replayCursor=0;
+  game.recordedEvents=[];
+  game.replayMode='play';
+  game.autoMode=true;
+  game.simAccumulator=0;
+  game.simTick=0;
+  setInputHeld(false,'system');
+  if(autoBadge){
+    autoBadge.textContent='AUTO PLAY';
+    autoBadge.classList.remove('hidden');
+  }
+  return true;
+}
+
+function stopReplay(reason='') {
+  game.replayMode='off';
+  game.activeReplay=null;
+  game.replayEvents=[];
+  game.replayCursor=0;
+  game.autoMode=false;
+  setInputHeld(false,'system');
+  if(reason==='invalid'){
+    game.active=false;
+    if(autoBadge){
+      autoBadge.textContent='AUTO INVALID';
+      autoBadge.classList.remove('hidden');
+    }
+    showGameMessage('AUTO REPLAY INVALID','리플레이가 현재 맵과 맞지 않거나 정상 경로에서 벗어났습니다.');
+  }else if(autoBadge){
+    autoBadge.classList.add('hidden');
+  }
+}
+
 function startGame(runtime, options={}) {
   clearTimeout(returnToEditorTimer);
-  game.runtime=runtime;game.kind=options.kind||'custom';game.levelId=options.levelId||null;game.returnToEditor=!!options.returnToEditor;game.attempt=1;game.autoMode=autoModeEnabled;game.replayMode=(!game.autoMode&&game.kind==='custom')?'record':'off';game.replayEvents=[];game.replayCursor=0;game.recordedEvents=[];game.activeReplay=null;
+  game.runtime=runtime;game.kind=options.kind||'custom';game.levelId=options.levelId||null;game.returnToEditor=!!options.returnToEditor;game.attempt=1;game.autoMode=autoModeEnabled;game.replayMode='off';game.replayEvents=[];game.replayCursor=0;game.recordedEvents=[];game.activeReplay=null;
   game.best=game.kind==='official'?Number(storage.getItem(BEST_KEY)||0):0;
-  autoBadge?.classList.toggle('hidden',!game.autoMode);
+  let autoUnavailable=false;
+  if(game.autoMode){
+    const selectedReplay=game.kind==='official'?OFFICIAL_REPLAY:runtime.sourceLevel?.replay;
+    if(!startReplayForRuntime(runtime,selectedReplay)){
+      game.autoMode=false;
+      game.replayMode='off';
+      autoUnavailable=true;
+      autoBadge?.classList.add('hidden');
+    }
+  }else if(game.kind==='custom'){
+    game.replayMode='record';
+  }
   playLevelName.textContent=runtime.name; playModeLabel.textContent=game.kind==='official'?'공식 맵':game.returnToEditor?'테스트 플레이':'사용자 제작 맵';
   audio.ensureStarted();audio.setTrack(runtime.music||'neon-rush');
   setScreen('play');resetRun(false);game.active=true;game.lastTime=performance.now();
+  if(autoUnavailable)toastMessage(game.kind==='custom'?'직접 클리어 후 AUTO 사용 가능':'공식 AUTO 리플레이를 사용할 수 없습니다.');
 }
 function resetRun(increment=true){if(increment)game.attempt++;player.worldX=game.runtime?.startX||180;player.y=GROUND_Y-PLAYER_SIZE;player.prevY=player.y;player.vy=0;player.grounded=true;player.rotation=0;player.mode='cube';game.dead=false;game.won=false;game.deathTimer=0;setInputHeld(false,'system');game.jumpBuffer=0;game.coyote=.08;game.cameraX=0;game.particles=[];game.usedOrbs=new Set();game.lastPad=null;game.flash=0;game.simAccumulator=0;game.simTick=0;game.replayCursor=0;if(game.replayMode==='record')game.recordedEvents=[];hideGameMessage();updateHud();}
 function stopGameInput(){setInputHeld(false,'system');}
@@ -1187,119 +1238,24 @@ function showGameMessage(title,text){gameMessageTitle.textContent=title;gameMess
 function hideGameMessage(){gameMessage.classList.add('hidden');}
 function setOfficialBest(v){if(v>game.best){game.best=Math.min(100,v);storage.setItem(BEST_KEY,game.best.toFixed(1));}}
 function burst(x,y,count,kind){for(let i=0;i<count;i++){const angle=Math.PI*2*i/count+Math.random()*.45;const speed=(kind==='crash'?130:70)+Math.random()*(kind==='crash'?220:120);game.particles.push({x,y,vx:Math.cos(angle)*speed,vy:Math.sin(angle)*speed-(kind==='jump'?80:0),life:.35+Math.random()*.55,maxLife:.9,size:3+Math.random()*(kind==='crash'?9:5),kind});}}
-function kill(){if(game.dead||game.won)return;game.dead=true;game.deathTimer=.72;const pct=progressPercent(player.worldX-game.runtime.startX,game.runtime.levelEnd-game.runtime.startX);if(game.kind==='official')setOfficialBest(pct);audio.crash();burst(player.worldX+20,player.y+20,28,'crash');game.flash=1;showGameMessage('CRASH!',`${pct.toFixed(0)}% · 곧 다시 시작합니다`);}
+function kill(){if(game.dead||game.won)return;const replayFailed=game.replayMode==='play';game.dead=true;game.deathTimer=.72;const pct=progressPercent(player.worldX-game.runtime.startX,game.runtime.levelEnd-game.runtime.startX);if(game.kind==='official')setOfficialBest(pct);audio.crash();burst(player.worldX+20,player.y+20,28,'crash');game.flash=1;if(replayFailed){stopReplay('invalid');return;}showGameMessage('CRASH!',`${pct.toFixed(0)}% · 곧 다시 시작합니다`);}
 function completeCustomVerification(){if(game.autoMode)return;if(!game.levelId)return;const stored=store.get(game.levelId);if(!stored)return;const verified=attachVerifiedReplay(stored,game.recordedEvents);store.save(verified);if(editorModel?.level.id===verified.id)editorModel.level=normalizeLevel(verified);}
 function finish(){if(game.won)return;game.won=true;if(game.kind==='official')setOfficialBest(100);else completeCustomVerification();audio.finish();burst(player.worldX+20,player.y+20,44,'finish');const clearText=game.kind==='official'?`ATTEMPT ${game.attempt}`:(game.autoMode?'AUTO 클리어 · 공유 인증은 직접 플레이로 해야 합니다.':'클리어 인증 완료! 이제 맵 코드를 공유할 수 있습니다.');showGameMessage('LEVEL CLEAR',clearText);if(game.returnToEditor){returnToEditorTimer=setTimeout(()=>{game.active=false;setScreen('editor');syncEditorUI();drawEditor();toastMessage(game.autoMode?'AUTO 클리어입니다. 직접 플레이로 클리어해야 공유 인증됩니다.':'클리어 인증이 완료됐습니다.');},1200);}}
 function switchMode(next){if(player.mode===next)return;player.mode=next;player.rotation=0;game.jumpBuffer=0;game.coyote=0;if(next==='ship'||next==='wave'){player.y=224;player.prevY=224;player.vy=0;player.grounded=false;}else{player.y=GROUND_Y-PLAYER_SIZE;player.prevY=player.y;player.vy=0;player.grounded=true;game.coyote=.08;}audio.portal();burst(player.worldX+20,player.y+20,22,'portal');game.flash=Math.max(game.flash,.45);}
 function performGroundJump(){if(game.dead||game.won||!game.active||player.mode!=='cube')return false;player.vy=jumpVelocity();player.grounded=false;game.coyote=0;game.jumpBuffer=0;audio.jump();burst(player.worldX+20,player.y+40,6,'jump');return true;}
 function tryBufferedJump(){if(game.jumpBuffer<=0||game.dead||game.won||!game.active)return false;const cx=player.worldX+20,cy=player.y+20;if(!player.grounded){const orb=game.runtime.orbs.find(o=>!game.usedOrbs.has(o.id)&&isPointNear(cx,cy,o.x,o.y,72));if(orb){game.usedOrbs.add(orb.id);player.vy=orb.power;game.jumpBuffer=0;audio.orb();burst(orb.x,orb.y,16,'orb');return true;}}if(player.grounded||game.coyote>0)return performGroundJump();return false;}
-function actionStart(e){if(currentScreen!=='play'||!game.active)return;if(e?.cancelable)e.preventDefault();audio.ensureStarted();if(game.dead||game.won){if(!game.returnToEditor)resetRun(true);return;}setInputHeld(true,'manual');if(player.mode==='cube')game.jumpBuffer=.13;}
+function actionStart(e){if(currentScreen!=='play'||!game.active)return;if(e?.cancelable)e.preventDefault();audio.ensureStarted();if(game.dead||game.won){if(!game.returnToEditor)resetRun(true);return;}setInputHeld(true,'manual');}
 function actionEnd(e){if(e?.cancelable)e.preventDefault();setInputHeld(false,'manual');}
 window.addEventListener('keydown',e=>{if(['Space','ArrowUp','KeyW'].includes(e.code)){if(e.repeat&&player.mode==='cube')return;actionStart(e);}});
 window.addEventListener('keyup',e=>{if(['Space','ArrowUp','KeyW'].includes(e.code))actionEnd(e);});
 gameCanvas.addEventListener('pointerdown',actionStart,{passive:false});window.addEventListener('pointerup',actionEnd,{passive:false});window.addEventListener('pointercancel',actionEnd,{passive:false});
 restartBtn.addEventListener('click',()=>{if(currentScreen==='play'&&game.runtime){audio.ensureStarted();resetRun(true);game.active=true;}});
 
-function autoCurrentSpeed() {
-  const progress01=clamp((player.worldX-game.runtime.startX)/(game.runtime.levelEnd-game.runtime.startX),0,1);
-  return speedForProgress(progress01);
-}
-function autoJumpLeadForRise(risePx) {
-  const rise=clamp(risePx,8,118);
-  const jumpSpeed=Math.abs(jumpVelocity());
-  const disc=Math.max(0,jumpSpeed*jumpSpeed-2*GRAVITY*rise);
-  const t=(jumpSpeed-Math.sqrt(disc))/GRAVITY;
-  return 43+autoCurrentSpeed()*t;
-}
-function autoPassageTargetY() {
-  const lookMin=player.worldX+35,lookMax=player.worldX+(player.mode==='ship'?430:360);
-  const obstacles=[...game.runtime.flightObstacles,...game.runtime.blocks];
-  if(player.mode==='wave'){
-    for(const sp of game.runtime.spikes)obstacles.push({x:sp.x,y:sp.y,w:sp.w,h:sp.h,id:sp.id});
-  }
-  const obstacle=obstacles
-    .filter(o=>o.x+o.w>=lookMin&&o.x<=lookMax&&o.y<FLIGHT_BOTTOM&&o.y+o.h>FLIGHT_TOP)
-    .sort((a,b)=>a.x-b.x)[0];
-  if(!obstacle)return (FLIGHT_TOP+FLIGHT_BOTTOM-PLAYER_SIZE)/2;
-  const margin=10;
-  const topSpace=obstacle.y-FLIGHT_TOP;
-  const bottomSpace=FLIGHT_BOTTOM-(obstacle.y+obstacle.h);
-  const need=PLAYER_SIZE+margin*2;
-  const topTarget=(FLIGHT_TOP+Math.max(FLIGHT_TOP,obstacle.y-margin)-PLAYER_SIZE)/2;
-  const bottomStart=Math.min(FLIGHT_BOTTOM-PLAYER_SIZE,obstacle.y+obstacle.h+margin);
-  const bottomTarget=(bottomStart+FLIGHT_BOTTOM-PLAYER_SIZE)/2;
-  if(topSpace>=need&&bottomSpace>=need){
-    const topCost=Math.abs(player.y-topTarget)-topSpace*.12;
-    const bottomCost=Math.abs(player.y-bottomTarget)-bottomSpace*.12;
-    return topCost<=bottomCost?topTarget:bottomTarget;
-  }
-  if(topSpace>=need)return topTarget;
-  if(bottomSpace>=need)return bottomTarget;
-  return topSpace>=bottomSpace?Math.max(FLIGHT_TOP+4,topTarget):Math.min(FLIGHT_BOTTOM-PLAYER_SIZE-4,bottomTarget);
-}
-function autoVerticalHold() {
-  const target=autoPassageTargetY();
-  if(player.mode==='wave')return player.y>target;
-  if(player.y>target+10)return true;
-  if(player.y<target-10)return false;
-  return player.vy>35;
-}
-function autoCubeShouldJump() {
-  const playerFront=player.worldX+35;
-  const searchEnd=player.worldX+220;
-  const spike=game.runtime.spikes
-    .filter(o=>o.x+o.w>=playerFront&&o.x<=searchEnd)
-    .sort((a,b)=>a.x-b.x)[0];
-  if(spike){
-    const lead=autoJumpLeadForRise(42);
-    if(spike.x-player.worldX<=lead)return true;
-  }
-  const block=game.runtime.blocks
-    .filter(o=>o.x+o.w>=playerFront&&o.x<=searchEnd)
-    .sort((a,b)=>a.x-b.x)[0];
-  if(block){
-    const requiredRise=(player.y+35)-block.y+8;
-    if(requiredRise>5&&requiredRise<=122){
-      const lead=autoJumpLeadForRise(requiredRise);
-      if(block.x-player.worldX<=lead)return true;
-    }
-  }
-  const feetY=player.y+PLAYER_SIZE;
-  const supports=[...game.runtime.floors,...game.runtime.blocks]
-    .filter(p=>player.worldX+30>=p.x&&player.worldX+10<=p.x+p.w&&Math.abs(feetY-p.y)<=10)
-    .sort((a,b)=>a.y-b.y);
-  const support=supports[0];
-  if(support){
-    const edge=support.x+support.w;
-    const probeX=edge+44;
-    const safeBelow=[...game.runtime.floors,...game.runtime.blocks]
-      .some(p=>probeX>=p.x&&probeX<=p.x+p.w&&p.y>=feetY-8&&p.y<=feetY+105);
-    if(!safeBelow&&edge-playerFront<=58)return true;
-  }
-  return false;
-}
-function autoOrbAvailable() {
-  if(player.grounded)return false;
-  const cx=player.worldX+20,cy=player.y+20;
-  return game.runtime.orbs.some(o=>!game.usedOrbs.has(o.id)&&o.x>=cx-10&&o.x<=cx+85&&isPointNear(cx,cy,o.x,o.y,78));
-}
-function updateAutoPilot() {
-  if(!game.autoMode||!game.active||game.dead||game.won)return;
-  if(player.mode==='ship'||player.mode==='wave'){
-    game.inputHeld=autoVerticalHold();
-    return;
-  }
-  const jumpNow=player.grounded&&autoCubeShouldJump();
-  const useOrb=autoOrbAvailable();
-  game.inputHeld=jumpNow;
-  if(jumpNow||useOrb)game.jumpBuffer=Math.max(game.jumpBuffer,.13);
-}
-
 function updateGame(dt){
   game.beatPulse=Math.max(0,game.beatPulse-dt*3.8);game.flash=Math.max(0,game.flash-dt*4.4);
   for(const p of game.particles){p.life-=dt;p.vy+=800*dt;p.x+=p.vx*dt;p.y+=p.vy*dt;}game.particles=game.particles.filter(p=>p.life>0);
   if(!game.active||game.won)return;if(game.dead){game.deathTimer-=dt;if(game.deathTimer<=0)resetRun(true);return;}
-  game.jumpBuffer=Math.max(0,game.jumpBuffer-dt);game.coyote=player.grounded?.08:Math.max(0,game.coyote-dt);updateAutoPilot();tryBufferedJump();
+  game.jumpBuffer=Math.max(0,game.jumpBuffer-dt);game.coyote=player.grounded?.08:Math.max(0,game.coyote-dt);tryBufferedJump();
   const progress01=clamp((player.worldX-game.runtime.startX)/(game.runtime.levelEnd-game.runtime.startX),0,1);const speed=speedForProgress(progress01);player.prevY=player.y;const previousX=player.worldX;player.worldX+=speed*dt;
   for(const portal of game.runtime.portals)if(crossedPortal(previousX,player.worldX,portal.x))switchMode(portal.type);
   if(player.mode==='ship'){
@@ -1338,7 +1294,7 @@ function frame(now){
   const frameDt=Math.max(0,(now-game.lastTime)/1000);
   game.lastTime=now;
   if(currentScreen==='play'){
-    if(game.autoMode||game.replayMode==='record'||game.replayMode==='play'){
+    if(game.replayMode==='record'||game.replayMode==='play'){
       const accumulatorState={accumulator:game.simAccumulator};
       advanceAutoAccumulator(frameDt,accumulatorState,()=>{
         if(game.replayMode==='play'&&game.activeReplay){
