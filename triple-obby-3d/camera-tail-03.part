@@ -10,6 +10,51 @@ btn.addEventListener('pointerup', up, { passive: false });
 btn.addEventListener('pointercancel', up, { passive: false });
 btn.addEventListener('pointerleave', e => { if (e.buttons === 0) up(e); }, { passive: false });
 });
+const joystickBase = document.getElementById('joystickBase');
+const joystickKnob = document.getElementById('joystickKnob');
+const JOYSTICK_RADIUS = 52;
+
+function setJoystickFromPointer(e) {
+  if (!joystickBase || !joystickKnob) return;
+  const rect = joystickBase.getBoundingClientRect();
+  const dx = e.clientX - (rect.left + rect.width / 2);
+  const dy = e.clientY - (rect.top + rect.height / 2);
+  const normalized = globalThis.TripleObbyControls.normalizeJoystickVector(dx, dy, JOYSTICK_RADIUS);
+  joystickInput.x = normalized.x;
+  joystickInput.y = normalized.y;
+  joystickInput.active = true;
+  arrowFacingMode = true;
+  joystickKnob.style.transform = `translate(${normalized.x * JOYSTICK_RADIUS}px, ${normalized.y * JOYSTICK_RADIUS}px)`;
+}
+
+function resetJoystick() {
+  joystickInput.x = 0;
+  joystickInput.y = 0;
+  joystickInput.active = false;
+  joystickInput.pointerId = null;
+  if (joystickKnob) joystickKnob.style.transform = 'translate(0, 0)';
+}
+
+if (joystickBase) {
+  joystickBase.addEventListener('pointerdown', e => {
+    e.preventDefault();
+    joystickInput.pointerId = e.pointerId;
+    if (joystickBase.setPointerCapture) joystickBase.setPointerCapture(e.pointerId);
+    setJoystickFromPointer(e);
+  }, { passive: false });
+  joystickBase.addEventListener('pointermove', e => {
+    if (joystickInput.pointerId !== e.pointerId) return;
+    e.preventDefault();
+    setJoystickFromPointer(e);
+  }, { passive: false });
+  const endJoystick = e => {
+    if (joystickInput.pointerId !== null && e.pointerId !== undefined && joystickInput.pointerId !== e.pointerId) return;
+    e.preventDefault();
+    resetJoystick();
+  };
+  joystickBase.addEventListener('pointerup', endJoystick, { passive: false });
+  joystickBase.addEventListener('pointercancel', endJoystick, { passive: false });
+}
 addEventListener('resize', () => {
 camera.aspect = innerWidth / innerHeight;
 camera.updateProjectionMatrix();

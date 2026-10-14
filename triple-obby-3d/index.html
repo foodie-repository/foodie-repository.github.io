@@ -10,7 +10,7 @@
   <meta property="og:description" content="6자리 방 코드로 최대 8명이 함께 즐기는 3D 점프맵." />
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://foodie-repository.github.io/triple-obby-3d/" />
-  <link rel="stylesheet" href="styles.css?v=online-1.0.0" />
+  <link rel="stylesheet" href="styles.css?v=online-1.0.5" />
   <link rel="stylesheet" href="camera.css?v=online-1.0.0" />
   <link rel="stylesheet" href="online.css?v=online-1.0.0" />
 </head>
@@ -95,10 +95,8 @@
   </section>
 
   <div id="mobileControls" data-visible="false">
-    <div class="dpad">
-      <div class="blank"></div><div class="mBtn" data-key="forward">▲</div><div class="blank"></div>
-      <div class="mBtn" data-key="left">◀</div><div class="blank"></div><div class="mBtn" data-key="right">▶</div>
-      <div class="blank"></div><div class="mBtn" data-key="back">▼</div><div class="blank"></div>
+    <div id="joystickBase" aria-label="이동 조이스틱">
+      <div id="joystickKnob"></div>
     </div>
     <div class="actions"><div class="mBtn big" data-key="jump">⬆</div></div>
   </div>
@@ -110,11 +108,12 @@
   <script src="config.js?v=online-1.0.0"></script>
   <script src="src/arrow-controls.js?v=online-1.0.3"></script>
   <script src="src/platform-collision.js?v=online-1.0.4"></script>
+  <script src="src/joystick-controls.js?v=online-1.0.5"></script>
   <script src="network/room-reconcile.js?v=online-1.0.0"></script>
   <script src="network/room-client.js?v=online-1.0.0"></script>
   <script src="network/invite-qr.js?v=online-1.0.0"></script>
   <script src="network/remote-player-manager.js?v=online-1.0.2"></script>
   <script src="network/online-ui.js?v=online-1.0.0"></script>
-  <script src="loader-camera.js?v=online-1.0.4"></script>
+  <script src="loader-camera.js?v=online-1.0.5"></script>
 </body>
 </html>

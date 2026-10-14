@@ -81,15 +81,26 @@
       position: fixed; inset: auto 0 18px; display: none; justify-content: space-between; z-index: 20; padding: 0 18px;
     }
     #mobileControls[data-visible="true"] { display: flex; }
-    .dpad, .actions { display: grid; gap: 10px; }
-    .dpad { grid-template-columns: repeat(3, 60px); grid-template-rows: repeat(3, 60px); }
+    .actions { display: grid; gap: 10px; }
+    #joystickBase {
+      width: 132px; height: 132px; border-radius: 50%; position: relative;
+      background: rgba(7, 12, 28, .5); border: 1px solid rgba(255,255,255,.2);
+      box-shadow: inset 0 0 0 18px rgba(255,255,255,.035), 0 10px 28px rgba(0,0,0,.24);
+      touch-action: none; user-select: none;
+    }
+    #joystickKnob {
+      position: absolute; left: 50%; top: 50%; width: 58px; height: 58px;
+      margin-left: -29px; margin-top: -29px; border-radius: 50%;
+      background: rgba(255,255,255,.9); border: 1px solid rgba(255,255,255,.95);
+      box-shadow: 0 6px 18px rgba(0,0,0,.3); transform: translate(0,0);
+      pointer-events: none;
+    }
     .mBtn {
       width: 60px; height: 60px; border-radius: 18px; display: grid; place-items: center;
       background: rgba(7, 12, 28, .62); border: 1px solid rgba(255,255,255,.18); color: white;
       font-size: 24px; font-weight: 1000; user-select: none;
     }
     .mBtn.big { width: 76px; height: 76px; border-radius: 50%; font-size: 28px; background: rgba(94, 80, 255, .68); }
-    .blank { visibility: hidden; }
     #help {
       position: fixed; right: 12px; bottom: 12px; z-index: 8; color: rgba(255,255,255,.72); background: rgba(0,0,0,.28);
       padding: 8px 12px; border-radius: 999px; font-size: 11px; font-weight: 800;
