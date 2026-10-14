@@ -33,7 +33,10 @@ test('mobile joystick supports analog forward plus turning and returns neutral w
 test('mobile UI uses one joystick instead of the four-button dpad', async () => {
   const html = await fs.readFile(new URL('../index.html', import.meta.url), 'utf8');
   const css = await fs.readFile(new URL('../styles.css', import.meta.url), 'utf8');
-  const inputRuntime = await fs.readFile(new URL('../camera-tail-02.part', import.meta.url), 'utf8');
+  const inputRuntime = [
+    await fs.readFile(new URL('../camera-tail-02.part', import.meta.url), 'utf8'),
+    await fs.readFile(new URL('../camera-tail-03.part', import.meta.url), 'utf8'),
+  ].join('\n');
 
   assert.match(html, /id="joystickBase"/);
   assert.match(html, /id="joystickKnob"/);
