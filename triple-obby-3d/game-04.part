@@ -9,10 +9,6 @@
         const islandW = idx % 3 === 0 ? 6.5 : 5.2;
         const islandD = idx % 2 === 0 ? 5.7 : 4.8;
         makePlatform(level, x, y, z, islandW, 0.7, islandD, 'solid', { color: idx % 2 ? 0xffffff : 0xe6fbff });
-        const underside = makeBox(new THREE.Vector3(islandW * 0.72, 2.0, islandD * 0.72), 0x7b6d5f, new THREE.Vector3(x, y - 1.45, z), { roughness: 0.95 });
-        underside.scale.x = 0.9; underside.scale.z = 0.9;
-        level.group.add(underside);
-
         if ([2, 5, 8, 11].includes(idx)) {
           stage += 4;
           makePlatform(level, x + 3.6, y + 0.7, z + 2.8, 4.2, 0.55, 4.2, 'checkpoint', { stage: Math.min(stage, 20), color: 0x50e0ff });
