@@ -128,3 +128,41 @@ test('fixed-step accumulator is deterministic for identical frame-delta sequence
   };
   assert.deepEqual(run(), run());
 });
+
+
+test('recordReplayInputTransition records only real manual held-state changes', () => {
+  const { recordReplayInputTransition } = context;
+  const state = { held: false, mode: 'record', events: [] };
+  assert.equal(recordReplayInputTransition(state, true, 'manual', 7), true);
+  assert.deepEqual(JSON.parse(JSON.stringify(state.events)), [{ tick: 7, action: 'press' }]);
+  assert.equal(recordReplayInputTransition(state, true, 'manual', 8), false);
+  assert.equal(state.events.length, 1);
+  assert.equal(recordReplayInputTransition(state, false, 'manual', 9), true);
+  assert.deepEqual(JSON.parse(JSON.stringify(state.events)), [
+    { tick: 7, action: 'press' },
+    { tick: 9, action: 'release' },
+  ]);
+});
+
+test('recordReplayInputTransition never records replay or system sourced changes', () => {
+  const { recordReplayInputTransition } = context;
+  const state = { held: false, mode: 'record', events: [] };
+  recordReplayInputTransition(state, true, 'replay', 2);
+  recordReplayInputTransition(state, false, 'system', 3);
+  assert.deepEqual(JSON.parse(JSON.stringify(state.events)), []);
+});
+
+test('recordReplayInputTransition reset-style state write does not synthesize events', () => {
+  const { recordReplayInputTransition } = context;
+  const state = { held: true, mode: 'record', events: [{ tick: 1, action: 'press' }] };
+  recordReplayInputTransition(state, false, 'system', 10);
+  assert.deepEqual(JSON.parse(JSON.stringify(state.events)), [{ tick: 1, action: 'press' }]);
+});
+
+test('portal transitions do not require input transitions', () => {
+  const { recordReplayInputTransition } = context;
+  const state = { held: true, mode: 'record', events: [] };
+  assert.equal(recordReplayInputTransition(state, true, 'system', 12), false);
+  assert.equal(state.held, true);
+  assert.deepEqual(JSON.parse(JSON.stringify(state.events)), []);
+});
