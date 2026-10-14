@@ -1,6 +1,7 @@
 renderer.render(scene, camera);
 }
 const arrowInput = { forward: false, back: false, left: false, right: false };
+const joystickInput = { x: 0, y: 0, active: false, pointerId: null };
 let arrowFacingMode = false;
 function bindKey(name, pressed) {
 if (name === 'w') input.forward = pressed;
@@ -47,6 +48,10 @@ if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') bindKey('sprint', false);
 addEventListener('blur', () => {
 Object.keys(input).forEach(k => input[k] = false);
 Object.keys(arrowInput).forEach(k => arrowInput[k] = false);
+joystickInput.x = 0;
+joystickInput.y = 0;
+joystickInput.active = false;
+joystickInput.pointerId = null;
 arrowFacingMode = false;
 input.jumpPressed = false;
 });
