@@ -1302,8 +1302,8 @@ function frame(now){
           applyReplayEventsForTick(replayState,game.simTick,(held)=>setInputHeld(held,'replay'));
           game.replayCursor=replayState.cursor;
         }
-        updateGame(FIXED_AUTO_DT);
         game.simTick++;
+        updateGame(FIXED_AUTO_DT);
       });
       game.simAccumulator=accumulatorState.accumulator;
     }else{
