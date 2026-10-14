@@ -54,3 +54,13 @@ Ruling: Manual custom-map verification uses fixed-step physics while recording, 
 - Replay reaches 100% at simulation tick 6912.
 - Render schedule verification: 60/90/120/144 Hz all finish at the same tick and x=22400.09.
 - Corruption verification: removing the first replay event causes a normal death at tick 133 / x≈535.9; no recovery path exists.
+
+## Task 6 — replay-only AUTO UX
+- RED observed: heuristic planner remained and replay start/invalid-state functions did not exist.
+- Added `startReplayForRuntime(runtime, replay)` with fingerprint validation.
+- Official AUTO selects `OFFICIAL_REPLAY`; custom AUTO selects `runtime.sourceLevel?.replay`.
+- Maps without a usable custom replay show “직접 클리어 후 AUTO 사용 가능” and run manually; no heuristic fallback exists.
+- Removed all heuristic AUTO planner functions and the `updateAutoPilot()` call.
+- Real collision during replay stops the run and shows `AUTO REPLAY INVALID`; no forced recovery/restart.
+- AUTO UI now uses `AUTO READY` and `AUTO PLAY`.
+- Behavior checks passed.
