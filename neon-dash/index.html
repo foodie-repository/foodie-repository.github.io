@@ -1079,6 +1079,11 @@ function createOfficialRuntimeById(levelId) {
   runtime.fingerprint = officialRuntimeFingerprint(runtime);
   return runtime;
 }
+
+function getOfficialReplay(levelId) {
+  const level=getOfficialLevel(levelId);
+  return level?.replay || null;
+}
 // OFFICIAL_LEVEL_REGISTRY_END
 
 const $ = id => document.getElementById(id);
@@ -1622,7 +1627,7 @@ function startGame(runtime, options={}) {
   game.best=game.kind==='official'?getOfficialBest(game.officialLevelId):0;
   let autoUnavailable=false;
   if(game.autoMode){
-    const selectedReplay=game.kind==='official'?OFFICIAL_REPLAY:runtime.sourceLevel?.replay;
+    const selectedReplay=game.kind==='official'?getOfficialReplay(game.officialLevelId):runtime.sourceLevel?.replay;
     if(!startReplayForRuntime(runtime,selectedReplay)){
       game.autoMode=false;
       game.replayMode='off';
