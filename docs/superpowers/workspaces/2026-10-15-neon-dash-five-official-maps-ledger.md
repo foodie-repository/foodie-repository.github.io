@@ -58,3 +58,9 @@ Ruling: Use a GitHub feature branch as the isolated workspace — the harness ex
 - 60/90/120/144 Hz render schedules all complete at the identical stored tick for each map.
 - Removing the first critical replay event causes normal death on all five maps; no recovery/heuristic path exists.
 - During generation, adjusted only a few over-compressed recovery obstacles and fixed the air→cube input-release edge case in the offline generator.
+
+## Task 7 — official map presentation
+- Added per-map accent identities: cyan, factory, sky, wave, eclipse.
+- Official cards now expose `data-accent` and use map-specific neon edge/best colors.
+- Difficulty stars, descriptions, selected-level name, and selected-level difficulty remain registry-driven.
+- Presentation checks passed.
