@@ -33,3 +33,15 @@ Ruling: Use a GitHub feature branch as the isolated workspace — the harness ex
 - `startOfficialLevel(levelId)` safely rejects unknown IDs and starts the matching runtime.
 - Play header shows selected map name and difficulty.
 - Level-select verification passed.
+
+## Task 4 — four new official runtimes
+- Replaced placeholders with full Pulse Factory, Sky Circuit, Wave Storm, and Final Eclipse runtimes.
+- New maps use continuous legal cube floors, separated cube obstacle zones, and top/bottom-attached flight obstacles with ≥72 px corridor clearance.
+- Cube portal spawn-overlap checks pass.
+- Structural/complexity checks pass for all five runtimes.
+
+## Task 5 — per-level official replay routing
+- Added `getOfficialReplay(levelId)`.
+- Official AUTO now selects the selected registry entry's replay, not the legacy single `OFFICIAL_REPLAY`.
+- Replay failure remains scoped to the selected map; manual play stays available.
+- Ruling: full “every registry entry has a replay” assertions are deferred to Task 6 because four replay payloads do not exist until generation; Task 5 verifies routing/plumbing only.
