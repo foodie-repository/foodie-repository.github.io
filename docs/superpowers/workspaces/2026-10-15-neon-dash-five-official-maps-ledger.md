@@ -45,3 +45,16 @@ Ruling: Use a GitHub feature branch as the isolated workspace — the harness ex
 - Official AUTO now selects the selected registry entry's replay, not the legacy single `OFFICIAL_REPLAY`.
 - Replay failure remains scoped to the selected map; manual play stays available.
 - Ruling: full “every registry entry has a replay” assertions are deferred to Task 6 because four replay payloads do not exist until generation; Task 5 verifies routing/plumbing only.
+
+## Task 6 — five deterministic official replays
+- Generated and embedded legal input-only 120 Hz replays for all four new maps; Neon Start retains its previously verified replay.
+- Added per-level verified tick and fingerprint maps.
+- Verified every official replay against the actual fixed-step physics:
+  - Neon Start: 6912 ticks, 1362 events, fingerprint `og1-8a879f3c`
+  - Pulse Factory: 3677 ticks, 310 events, fingerprint `og1-6f6cf846`
+  - Sky Circuit: 4455 ticks, 1390 events, fingerprint `og1-26c33caa`
+  - Wave Storm: 4766 ticks, 780 events, fingerprint `og1-10505b6a`
+  - Final Eclipse: 5699 ticks, 1414 events, fingerprint `og1-2fa60601`
+- 60/90/120/144 Hz render schedules all complete at the identical stored tick for each map.
+- Removing the first critical replay event causes normal death on all five maps; no recovery/heuristic path exists.
+- During generation, adjusted only a few over-compressed recovery obstacles and fixed the air→cube input-release edge case in the offline generator.
