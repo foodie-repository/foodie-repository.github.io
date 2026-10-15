@@ -19,6 +19,18 @@
     });
   }
 
+  function stepJoystickControls(stick, yaw, dt, turnSpeed = 2.6) {
+    const x = Math.max(-1, Math.min(1, Number(stick?.x) || 0));
+    const y = Math.max(-1, Math.min(1, Number(stick?.y) || 0));
+    const nextYaw = normalizeYaw(yaw - x * turnSpeed * Math.max(0, dt));
+    const drive = -y;
+    return Object.freeze({
+      yaw: nextYaw,
+      moveX: Math.sin(nextYaw) * drive,
+      moveZ: Math.cos(nextYaw) * drive,
+    });
+  }
+
   // Three.js avatars are modeled with their visual front toward local -Z.
   // Gameplay yaw uses +Z as logical forward, so rendering needs a 180° offset.
   function modelYawForFacing(yaw) {
@@ -28,6 +40,7 @@
   globalThis.TripleObbyControls = Object.freeze({
     ...(globalThis.TripleObbyControls || {}),
     stepArrowControls,
+    stepJoystickControls,
     modelYawForFacing,
   });
 })();
