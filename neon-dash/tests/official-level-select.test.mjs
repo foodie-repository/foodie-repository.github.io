@@ -44,3 +44,25 @@ test('startOfficialLevel rejects unknown IDs and starts the selected runtime', (
 test('play header shows selected official difficulty stars', () => {
   assert.match(html, /'★'\.repeat\(officialLevel\.difficulty\)/);
 });
+
+
+test('official map cards expose five approved accent identities', () => {
+  assert.match(html, /accent:'cyan'/);
+  assert.match(html, /accent:'factory'/);
+  assert.match(html, /accent:'sky'/);
+  assert.match(html, /accent:'wave'/);
+  assert.match(html, /accent:'eclipse'/);
+  assert.match(html, /card\.dataset\.accent=level\.accent/);
+});
+
+test('CSS defines distinct official-map accent selectors', () => {
+  for (const accent of ['cyan','factory','sky','wave','eclipse']) {
+    assert.match(html, new RegExp(`official-level-card\\[data-accent="${accent}"\\]`));
+  }
+});
+
+test('difficulty stars and selected level header remain map-specific', () => {
+  assert.match(html, /'★'\.repeat\(level\.difficulty\)/);
+  assert.match(html, /'★'\.repeat\(officialLevel\.difficulty\)/);
+  assert.match(html, /playLevelName\.textContent=runtime\.name/);
+});
