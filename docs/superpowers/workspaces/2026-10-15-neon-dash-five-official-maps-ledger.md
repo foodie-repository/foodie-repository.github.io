@@ -25,3 +25,11 @@ Ruling: Use a GitHub feature branch as the isolated workspace — the harness ex
 - Legacy score migrates only to `neon-start` and never overwrites an existing new-format score.
 - Added `game.officialLevelId`; crash/finish/HUD paths now use the selected map's BEST.
 - Verification passed for key isolation, clamping, monotonic BEST, idempotent migration, and no-overwrite behavior.
+
+## Task 3 — official level-select screen
+- Added `screen-official-levels` and dynamic five-card renderer.
+- Main `게임 시작` now opens official level selection instead of launching directly.
+- Cards refresh BEST/CLEAR state whenever the screen opens.
+- `startOfficialLevel(levelId)` safely rejects unknown IDs and starts the matching runtime.
+- Play header shows selected map name and difficulty.
+- Level-select verification passed.
