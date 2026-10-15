@@ -973,7 +973,43 @@ function getSafeStorage() {
 
 const storage = getSafeStorage();
 const store = new LevelStore(storage);
-const BEST_KEY = 'neonDashBest';
+// OFFICIAL_BEST_CORE_START
+var LEGACY_BEST_KEY = 'neonDashBest';
+var OFFICIAL_BEST_PREFIX = 'neonDash.officialBest.';
+
+function officialBestKey(levelId) {
+  return OFFICIAL_LEVEL_IDS.includes(levelId) ? `${OFFICIAL_BEST_PREFIX}${levelId}` : null;
+}
+
+function getOfficialBest(levelId) {
+  const key = officialBestKey(levelId);
+  if (!key) return 0;
+  const value = Number(storage.getItem(key));
+  return Number.isFinite(value) ? Math.max(0, Math.min(100, value)) : 0;
+}
+
+function setOfficialBest(levelId, percent) {
+  const key = officialBestKey(levelId);
+  if (!key) return 0;
+  const current = getOfficialBest(levelId);
+  const numeric = Number(percent);
+  const next = Number.isFinite(numeric) ? Math.max(0, Math.min(100, numeric)) : current;
+  const best = Math.max(current, next);
+  if (best !== current || storage.getItem(key) === null) storage.setItem(key, best.toFixed(1));
+  return best;
+}
+
+function migrateLegacyOfficialBest() {
+  const neonKey = officialBestKey('neon-start');
+  if (!neonKey || storage.getItem(neonKey) !== null) return getOfficialBest('neon-start');
+  const legacy = Number(storage.getItem(LEGACY_BEST_KEY));
+  if (!Number.isFinite(legacy)) return 0;
+  return setOfficialBest('neon-start', legacy);
+}
+// OFFICIAL_BEST_CORE_END
+
+migrateLegacyOfficialBest();
+
 const MUTED_KEY = 'neonDashMuted';
 let currentScreen = 'menu';
 let editorModel = null;
@@ -1034,7 +1070,7 @@ autoCodeBtn?.addEventListener('click', toggleAutoFromCode);
 autoCodeInput?.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); toggleAutoFromCode(); } });
 
 function updateMenuStats() {
-  const best = Number(storage.getItem(BEST_KEY) || 0);
+  const best = Math.max(...OFFICIAL_LEVEL_IDS.map(id => getOfficialBest(id)));
   menuBest.textContent = `${Math.floor(best)}%`;
 }
 
@@ -1280,7 +1316,7 @@ function drawEditor() {
 
 // ---------------- Game ----------------
 const W=gameCanvas.width,H=gameCanvas.height,GROUND_Y=430,PLAYER_SIZE=40,PLAYER_SCREEN_X=190,GRAVITY=2300,FLIGHT_TOP=58,FLIGHT_BOTTOM=GROUND_Y;
-const game={active:false,runtime:null,kind:'official',levelId:null,returnToEditor:false,attempt:1,best:0,dead:false,won:false,deathTimer:0,inputHeld:false,jumpBuffer:0,coyote:.08,cameraX:0,particles:[],usedOrbs:new Set(),lastPad:null,lastTime:performance.now(),beatPulse:0,flash:0,autoMode:false,simAccumulator:0,simTick:0,replayMode:'off',replayEvents:[],replayCursor:0,recordedEvents:[],activeReplay:null};
+const game={active:false,runtime:null,kind:'official',levelId:null,officialLevelId:null,returnToEditor:false,attempt:1,best:0,dead:false,won:false,deathTimer:0,inputHeld:false,jumpBuffer:0,coyote:.08,cameraX:0,particles:[],usedOrbs:new Set(),lastPad:null,lastTime:performance.now(),beatPulse:0,flash:0,autoMode:false,simAccumulator:0,simTick:0,replayMode:'off',replayEvents:[],replayCursor:0,recordedEvents:[],activeReplay:null};
 const player={worldX:180,y:GROUND_Y-PLAYER_SIZE,prevY:GROUND_Y-PLAYER_SIZE,vy:0,grounded:true,rotation:0,mode:'cube'};
 
 function setInputHeld(nextHeld, source='manual') {
@@ -1338,8 +1374,8 @@ function stopReplay(reason='') {
 
 function startGame(runtime, options={}) {
   clearTimeout(returnToEditorTimer);
-  game.runtime=runtime;game.kind=options.kind||'custom';game.levelId=options.levelId||null;game.returnToEditor=!!options.returnToEditor;game.attempt=1;game.autoMode=autoModeEnabled;game.replayMode='off';game.replayEvents=[];game.replayCursor=0;game.recordedEvents=[];game.activeReplay=null;
-  game.best=game.kind==='official'?Number(storage.getItem(BEST_KEY)||0):0;
+  game.runtime=runtime;game.kind=options.kind||'custom';game.levelId=options.levelId||null;game.officialLevelId=game.kind==='official'?(options.officialLevelId||runtime?.id||'neon-start'):null;game.returnToEditor=!!options.returnToEditor;game.attempt=1;game.autoMode=autoModeEnabled;game.replayMode='off';game.replayEvents=[];game.replayCursor=0;game.recordedEvents=[];game.activeReplay=null;
+  game.best=game.kind==='official'?getOfficialBest(game.officialLevelId):0;
   let autoUnavailable=false;
   if(game.autoMode){
     const selectedReplay=game.kind==='official'?OFFICIAL_REPLAY:runtime.sourceLevel?.replay;
@@ -1361,11 +1397,10 @@ function resetRun(increment=true){if(increment)game.attempt++;player.worldX=game
 function stopGameInput(){setInputHeld(false,'system');}
 function showGameMessage(title,text){gameMessageTitle.textContent=title;gameMessageText.textContent=text;gameMessage.classList.remove('hidden');}
 function hideGameMessage(){gameMessage.classList.add('hidden');}
-function setOfficialBest(v){if(v>game.best){game.best=Math.min(100,v);storage.setItem(BEST_KEY,game.best.toFixed(1));}}
 function burst(x,y,count,kind){for(let i=0;i<count;i++){const angle=Math.PI*2*i/count+Math.random()*.45;const speed=(kind==='crash'?130:70)+Math.random()*(kind==='crash'?220:120);game.particles.push({x,y,vx:Math.cos(angle)*speed,vy:Math.sin(angle)*speed-(kind==='jump'?80:0),life:.35+Math.random()*.55,maxLife:.9,size:3+Math.random()*(kind==='crash'?9:5),kind});}}
-function kill(){if(game.dead||game.won)return;const replayFailed=game.replayMode==='play';game.dead=true;game.deathTimer=.72;const pct=progressPercent(player.worldX-game.runtime.startX,game.runtime.levelEnd-game.runtime.startX);if(game.kind==='official')setOfficialBest(pct);audio.crash();burst(player.worldX+20,player.y+20,28,'crash');game.flash=1;if(replayFailed){stopReplay('invalid');return;}showGameMessage('CRASH!',`${pct.toFixed(0)}% · 곧 다시 시작합니다`);}
+function kill(){if(game.dead||game.won)return;const replayFailed=game.replayMode==='play';game.dead=true;game.deathTimer=.72;const pct=progressPercent(player.worldX-game.runtime.startX,game.runtime.levelEnd-game.runtime.startX);if(game.kind==='official')game.best=setOfficialBest(game.officialLevelId,pct);audio.crash();burst(player.worldX+20,player.y+20,28,'crash');game.flash=1;if(replayFailed){stopReplay('invalid');return;}showGameMessage('CRASH!',`${pct.toFixed(0)}% · 곧 다시 시작합니다`);}
 function completeCustomVerification(){if(game.autoMode)return;if(!game.levelId)return;const stored=store.get(game.levelId);if(!stored)return;const verified=attachVerifiedReplay(stored,game.recordedEvents);store.save(verified);if(editorModel?.level.id===verified.id)editorModel.level=normalizeLevel(verified);}
-function finish(){if(game.won)return;game.won=true;if(game.kind==='official')setOfficialBest(100);else completeCustomVerification();audio.finish();burst(player.worldX+20,player.y+20,44,'finish');const clearText=game.kind==='official'?`ATTEMPT ${game.attempt}`:(game.autoMode?'AUTO 클리어 · 공유 인증은 직접 플레이로 해야 합니다.':'클리어 인증 완료! 이제 맵 코드를 공유할 수 있습니다.');showGameMessage('LEVEL CLEAR',clearText);if(game.returnToEditor){returnToEditorTimer=setTimeout(()=>{game.active=false;setScreen('editor');syncEditorUI();drawEditor();toastMessage(game.autoMode?'AUTO 클리어입니다. 직접 플레이로 클리어해야 공유 인증됩니다.':'클리어 인증이 완료됐습니다.');},1200);}}
+function finish(){if(game.won)return;game.won=true;if(game.kind==='official')game.best=setOfficialBest(game.officialLevelId,100);else completeCustomVerification();audio.finish();burst(player.worldX+20,player.y+20,44,'finish');const clearText=game.kind==='official'?`ATTEMPT ${game.attempt}`:(game.autoMode?'AUTO 클리어 · 공유 인증은 직접 플레이로 해야 합니다.':'클리어 인증 완료! 이제 맵 코드를 공유할 수 있습니다.');showGameMessage('LEVEL CLEAR',clearText);if(game.returnToEditor){returnToEditorTimer=setTimeout(()=>{game.active=false;setScreen('editor');syncEditorUI();drawEditor();toastMessage(game.autoMode?'AUTO 클리어입니다. 직접 플레이로 클리어해야 공유 인증됩니다.':'클리어 인증이 완료됐습니다.');},1200);}}
 function switchMode(next){if(player.mode===next)return;player.mode=next;player.rotation=0;game.jumpBuffer=0;game.coyote=0;if(next==='ship'||next==='wave'){player.y=224;player.prevY=224;player.vy=0;player.grounded=false;}else{player.y=GROUND_Y-PLAYER_SIZE;player.prevY=player.y;player.vy=0;player.grounded=true;game.coyote=.08;}audio.portal();burst(player.worldX+20,player.y+20,22,'portal');game.flash=Math.max(game.flash,.45);}
 function performGroundJump(){if(game.dead||game.won||!game.active||player.mode!=='cube')return false;player.vy=jumpVelocity();player.grounded=false;game.coyote=0;game.jumpBuffer=0;audio.jump();burst(player.worldX+20,player.y+40,6,'jump');return true;}
 function tryBufferedJump(){if(game.jumpBuffer<=0||game.dead||game.won||!game.active)return false;const cx=player.worldX+20,cy=player.y+20;if(!player.grounded){const orb=game.runtime.orbs.find(o=>!game.usedOrbs.has(o.id)&&isPointNear(cx,cy,o.x,o.y,72));if(orb){game.usedOrbs.add(orb.id);player.vy=orb.power;game.jumpBuffer=0;audio.orb();burst(orb.x,orb.y,16,'orb');return true;}}if(player.grounded||game.coyote>0)return performGroundJump();return false;}
