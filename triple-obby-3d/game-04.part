@@ -13,10 +13,6 @@
           stage += 4;
           makePlatform(level, x + 3.6, y + 0.7, z + 2.8, 4.2, 0.55, 4.2, 'checkpoint', { stage: Math.min(stage, 20), color: 0x50e0ff });
         }
-        if ([3, 6, 10].includes(idx)) {
-          makePlatform(level, x + 5.2, y + 0.4, z - 3.2, 3.3, 0.45, 3.3, 'crumble', { color: 0xb6f6ff });
-          makePlatform(level, x + 8.6, y + 1.2, z - 0.2, 3.3, 0.45, 3.3, 'crumble', { color: 0xdffcff });
-        }
         if ([4, 9].includes(idx)) {
           makePlatform(level, x + 5.6, y + 0.2, z + 4.4, 4.4, 0.45, 4.4, 'boost', { color: 0x63ffbf });
         }
