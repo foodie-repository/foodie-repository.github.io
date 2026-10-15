@@ -18,3 +18,10 @@ Ruling: Use a GitHub feature branch as the isolated workspace — the harness ex
 - Added stable five-level registry in approved order with unique IDs/names/difficulties.
 - Added structurally valid placeholders for the four new runtimes.
 - Registry verification passed for count/order/uniqueness/runtime/replay slots and safe missing-ID behavior.
+
+## Task 2 — per-level BEST storage
+- RED observed: only legacy `neonDashBest` existed.
+- Added `officialBestKey`, `getOfficialBest`, `setOfficialBest`, and idempotent legacy migration.
+- Legacy score migrates only to `neon-start` and never overwrites an existing new-format score.
+- Added `game.officialLevelId`; crash/finish/HUD paths now use the selected map's BEST.
+- Verification passed for key isolation, clamping, monotonic BEST, idempotent migration, and no-overwrite behavior.
