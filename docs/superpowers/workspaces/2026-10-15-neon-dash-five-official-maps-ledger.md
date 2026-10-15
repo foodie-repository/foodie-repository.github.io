@@ -64,3 +64,23 @@ Ruling: Use a GitHub feature branch as the isolated workspace — the harness ex
 - Official cards now expose `data-accent` and use map-specific neon edge/best colors.
 - Difficulty stars, descriptions, selected-level name, and selected-level difficulty remain registry-driven.
 - Presentation checks passed.
+
+## Task 8 — full regression and deployment verification
+- Fresh final production-script parse passed.
+- Official registry verified: exactly five approved IDs/names in approved order.
+- Per-level BEST isolation and legacy Neon Start migration passed.
+- Official level-select navigation, refreshed BEST/CLEAR rendering, and per-map accents passed.
+- All five runtime contracts, portal bounds, cube spawn safety, and ≥72 px flight/wave corridor clearance passed.
+- All replay fingerprints match their current runtime geometry.
+- Fresh deterministic replay verification:
+  - Neon Start: 6912 ticks / 1362 events
+  - Pulse Factory: 3677 ticks / 310 events
+  - Sky Circuit: 4455 ticks / 1390 events
+  - Wave Storm: 4766 ticks / 780 events
+  - Final Eclipse: 5699 ticks / 1414 events
+- Every replay clears at identical completion ticks under 60/90/120/144 Hz render schedules.
+- Removing the first critical event causes normal death in every map.
+- Existing custom replay, ND1 map code, cube/ship/wave, three synth tracks, device selector, landscape/fullscreen, and heuristic-AUTO removal checks all passed.
+- Final review: no Critical or Important issue remains.
+
+Ruling: As in the prior feature, exact GitHub-branch source was executed in the available V8 harness because the remote branch is not locally mounted. Repository node:test files are committed and mirror the verified assertions; production JS and deterministic physics were exercised directly.
