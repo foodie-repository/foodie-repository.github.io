@@ -745,20 +745,20 @@ function createNeonStartRuntime() {
 
 
 
-function createPlaceholderOfficialRuntime(id, name, music='neon-rush') {
+function makeOfficialFloor(id, levelEnd) {
+  return [{id:`${id}-floor-0`,x:-300,y:OFFICIAL_GROUND_Y,w:levelEnd+900,h:OFFICIAL_H-OFFICIAL_GROUND_Y+120,kind:'floor'}];
+}
+
+function makeOfficialSpikes(prefix, xs) {
+  return xs.map((x,i)=>({id:`${prefix}-s${i}`,x,y:OFFICIAL_GROUND_Y-38,w:36,h:38}));
+}
+
+function officialRuntimeBase(id,name,music,levelEnd,{blocks=[],spikes=[],pads=[],orbs=[],portals=[],flightObstacles=[]}={}) {
   return {
-    id,
-    name,
-    music,
-    levelEnd: 1800,
-    startX: 180,
-    floors: [{id:`${id}-floor-0`,x:-300,y:OFFICIAL_GROUND_Y,w:2400,h:OFFICIAL_H-OFFICIAL_GROUND_Y+120,kind:'floor'}],
-    blocks: [],
-    spikes: [],
-    pads: [],
-    orbs: [],
-    portals: [],
-    flightObstacles: [],
+    id,name,music,levelEnd,startX:180,
+    floors:makeOfficialFloor(id,levelEnd),
+    blocks:blocks.map(b=>({...b,kind:'block'})),
+    spikes,pads,orbs,portals,flightObstacles,
     isCustom:false,
     fingerprint:null,
     sourceLevel:null,
@@ -766,16 +766,206 @@ function createPlaceholderOfficialRuntime(id, name, music='neon-rush') {
 }
 
 function createPulseFactoryRuntime() {
-  return createPlaceholderOfficialRuntime('pulse-factory','Pulse Factory','hyper-drive');
+  const blocks=[
+    {id:'pf-b1',x:1350,y:365,w:90,h:65},
+    {id:'pf-b2',x:2150,y:350,w:100,h:80},
+    {id:'pf-b3',x:2920,y:330,w:100,h:100},
+    {id:'pf-b4',x:3820,y:365,w:90,h:65},
+    {id:'pf-b5',x:4720,y:350,w:100,h:80},
+    {id:'pf-b6',x:5600,y:370,w:80,h:60},
+    {id:'pf-b7',x:6350,y:345,w:105,h:85},
+    {id:'pf-b8',x:9300,y:365,w:90,h:65},
+    {id:'pf-b9',x:10050,y:340,w:105,h:90},
+    {id:'pf-b10',x:10900,y:360,w:95,h:70},
+  ];
+  const spikes=makeOfficialSpikes('pf',[650,900,1750,1785,2500,3320,4200,4235,5100,5900,6600,9000,9700,9735,10400,11300]);
+  const pads=[
+    {id:'pf-p1',x:3400,y:OFFICIAL_GROUND_Y-12,w:72,h:12,power:-930},
+    {id:'pf-p2',x:8850,y:OFFICIAL_GROUND_Y-12,w:72,h:12,power:-970},
+  ];
+  const orbs=[
+    {id:'pf-o1',x:3070,y:300,r:19,power:-860},
+    {id:'pf-o2',x:5250,y:305,r:19,power:-900},
+    {id:'pf-o3',x:10280,y:300,r:19,power:-910},
+  ];
+  const portals=[
+    {id:'pf-ship-1',x:7000,y:112,w:22,h:286,type:'ship'},
+    {id:'pf-cube-1',x:8700,y:112,w:22,h:286,type:'cube'},
+  ];
+  const flightObstacles=[
+    {id:'pf-fo1',x:7350,y:OFFICIAL_FLIGHT_TOP,w:120,h:145},
+    {id:'pf-fo2',x:7700,y:305,w:125,h:OFFICIAL_FLIGHT_BOTTOM-305},
+    {id:'pf-fo3',x:8050,y:OFFICIAL_FLIGHT_TOP,w:130,h:175},
+    {id:'pf-fo4',x:8400,y:290,w:125,h:OFFICIAL_FLIGHT_BOTTOM-290},
+  ];
+  return officialRuntimeBase('pulse-factory','Pulse Factory','hyper-drive',12000,{blocks,spikes,pads,orbs,portals,flightObstacles});
 }
+
 function createSkyCircuitRuntime() {
-  return createPlaceholderOfficialRuntime('sky-circuit','Sky Circuit','neon-rush');
+  const blocks=[
+    {id:'sc-b1',x:1200,y:360,w:90,h:70},
+    {id:'sc-b2',x:2050,y:345,w:100,h:85},
+    {id:'sc-b3',x:6900,y:360,w:90,h:70},
+    {id:'sc-b4',x:7350,y:335,w:105,h:95},
+    {id:'sc-b5',x:11600,y:360,w:90,h:70},
+    {id:'sc-b6',x:12100,y:345,w:100,h:85},
+    {id:'sc-b7',x:13800,y:360,w:90,h:70},
+  ];
+  const spikes=makeOfficialSpikes('sc',[650,1550,1585,2450,6750,7200,7520,11400,11880,12300,13600,14100]);
+  const pads=[
+    {id:'sc-p1',x:2580,y:OFFICIAL_GROUND_Y-12,w:72,h:12,power:-940},
+    {id:'sc-p2',x:11820,y:OFFICIAL_GROUND_Y-12,w:72,h:12,power:-960},
+  ];
+  const orbs=[
+    {id:'sc-o1',x:2380,y:300,r:19,power:-880},
+    {id:'sc-o2',x:7050,y:300,r:19,power:-900},
+    {id:'sc-o3',x:11980,y:300,r:19,power:-920},
+  ];
+  const portals=[
+    {id:'sc-ship-1',x:3000,y:112,w:22,h:286,type:'ship'},
+    {id:'sc-cube-1',x:6500,y:112,w:22,h:286,type:'cube'},
+    {id:'sc-ship-2',x:7800,y:112,w:22,h:286,type:'ship'},
+    {id:'sc-cube-2',x:11200,y:112,w:22,h:286,type:'cube'},
+    {id:'sc-wave-1',x:12500,y:112,w:22,h:286,type:'wave'},
+    {id:'sc-cube-3',x:13400,y:112,w:22,h:286,type:'cube'},
+  ];
+  const flightObstacles=[
+    {id:'sc-fo1',x:3400,y:OFFICIAL_FLIGHT_TOP,w:120,h:160},
+    {id:'sc-fo2',x:3850,y:300,w:130,h:OFFICIAL_FLIGHT_BOTTOM-300},
+    {id:'sc-fo3',x:4300,y:OFFICIAL_FLIGHT_TOP,w:125,h:180},
+    {id:'sc-fo4',x:4800,y:280,w:135,h:OFFICIAL_FLIGHT_BOTTOM-280},
+    {id:'sc-fo5',x:5300,y:OFFICIAL_FLIGHT_TOP,w:120,h:140},
+    {id:'sc-fo6',x:5800,y:310,w:130,h:OFFICIAL_FLIGHT_BOTTOM-310},
+    {id:'sc-fo7',x:6200,y:OFFICIAL_FLIGHT_TOP,w:120,h:175},
+    {id:'sc-fo8',x:8200,y:300,w:125,h:OFFICIAL_FLIGHT_BOTTOM-300},
+    {id:'sc-fo9',x:8600,y:OFFICIAL_FLIGHT_TOP,w:130,h:170},
+    {id:'sc-fo10',x:9000,y:285,w:130,h:OFFICIAL_FLIGHT_BOTTOM-285},
+    {id:'sc-fo11',x:9450,y:OFFICIAL_FLIGHT_TOP,w:125,h:150},
+    {id:'sc-fo12',x:9900,y:305,w:130,h:OFFICIAL_FLIGHT_BOTTOM-305},
+    {id:'sc-fo13',x:10350,y:OFFICIAL_FLIGHT_TOP,w:130,h:185},
+    {id:'sc-fo14',x:10750,y:295,w:125,h:OFFICIAL_FLIGHT_BOTTOM-295},
+    {id:'sc-fo15',x:12700,y:OFFICIAL_FLIGHT_TOP,w:105,h:150},
+    {id:'sc-fo16',x:13000,y:300,w:105,h:OFFICIAL_FLIGHT_BOTTOM-300},
+  ];
+  return officialRuntimeBase('sky-circuit','Sky Circuit','neon-rush',14500,{blocks,spikes,pads,orbs,portals,flightObstacles});
 }
+
 function createWaveStormRuntime() {
-  return createPlaceholderOfficialRuntime('wave-storm','Wave Storm','hyper-drive');
+  const blocks=[
+    {id:'ws-b1',x:1250,y:360,w:90,h:70},
+    {id:'ws-b2',x:2150,y:340,w:105,h:90},
+    {id:'ws-b3',x:6900,y:360,w:90,h:70},
+    {id:'ws-b4',x:7250,y:335,w:100,h:95},
+    {id:'ws-b5',x:9300,y:355,w:95,h:75},
+    {id:'ws-b6',x:14200,y:345,w:105,h:85},
+    {id:'ws-b7',x:14800,y:365,w:90,h:65},
+  ];
+  const spikes=makeOfficialSpikes('ws',[650,950,1700,1735,2550,6750,7150,7450,9150,9550,14000,14550,15100]);
+  const pads=[
+    {id:'ws-p1',x:2600,y:OFFICIAL_GROUND_Y-12,w:72,h:12,power:-950},
+    {id:'ws-p2',x:13780,y:OFFICIAL_GROUND_Y-12,w:72,h:12,power:-980},
+  ];
+  const orbs=[
+    {id:'ws-o1',x:2350,y:300,r:19,power:-890},
+    {id:'ws-o2',x:7050,y:295,r:19,power:-900},
+    {id:'ws-o3',x:14400,y:300,r:19,power:-920},
+  ];
+  const portals=[
+    {id:'ws-wave-1',x:3000,y:112,w:22,h:286,type:'wave'},
+    {id:'ws-cube-1',x:6500,y:112,w:22,h:286,type:'cube'},
+    {id:'ws-ship-1',x:7600,y:112,w:22,h:286,type:'ship'},
+    {id:'ws-cube-2',x:9000,y:112,w:22,h:286,type:'cube'},
+    {id:'ws-wave-2',x:9800,y:112,w:22,h:286,type:'wave'},
+    {id:'ws-cube-3',x:13700,y:112,w:22,h:286,type:'cube'},
+  ];
+  const flightObstacles=[
+    {id:'ws-fo1',x:3300,y:OFFICIAL_FLIGHT_TOP,w:100,h:150},
+    {id:'ws-fo2',x:3600,y:300,w:105,h:OFFICIAL_FLIGHT_BOTTOM-300},
+    {id:'ws-fo3',x:3900,y:OFFICIAL_FLIGHT_TOP,w:105,h:180},
+    {id:'ws-fo4',x:4250,y:285,w:110,h:OFFICIAL_FLIGHT_BOTTOM-285},
+    {id:'ws-fo5',x:4600,y:OFFICIAL_FLIGHT_TOP,w:105,h:160},
+    {id:'ws-fo6',x:4950,y:305,w:110,h:OFFICIAL_FLIGHT_BOTTOM-305},
+    {id:'ws-fo7',x:5300,y:OFFICIAL_FLIGHT_TOP,w:110,h:190},
+    {id:'ws-fo8',x:5650,y:290,w:110,h:OFFICIAL_FLIGHT_BOTTOM-290},
+    {id:'ws-fo9',x:6000,y:OFFICIAL_FLIGHT_TOP,w:105,h:150},
+    {id:'ws-fo10',x:6300,y:310,w:100,h:OFFICIAL_FLIGHT_BOTTOM-310},
+    {id:'ws-fo11',x:8000,y:OFFICIAL_FLIGHT_TOP,w:110,h:150},
+    {id:'ws-fo12',x:8400,y:300,w:110,h:OFFICIAL_FLIGHT_BOTTOM-300},
+    {id:'ws-fo13',x:8750,y:OFFICIAL_FLIGHT_TOP,w:110,h:170},
+    {id:'ws-fo14',x:10100,y:OFFICIAL_FLIGHT_TOP,w:100,h:160},
+    {id:'ws-fo15',x:10400,y:300,w:105,h:OFFICIAL_FLIGHT_BOTTOM-300},
+    {id:'ws-fo16',x:10700,y:OFFICIAL_FLIGHT_TOP,w:105,h:180},
+    {id:'ws-fo17',x:11000,y:285,w:110,h:OFFICIAL_FLIGHT_BOTTOM-285},
+    {id:'ws-fo18',x:11300,y:OFFICIAL_FLIGHT_TOP,w:105,h:150},
+    {id:'ws-fo19',x:11600,y:305,w:110,h:OFFICIAL_FLIGHT_BOTTOM-305},
+    {id:'ws-fo20',x:11900,y:OFFICIAL_FLIGHT_TOP,w:110,h:190},
+    {id:'ws-fo21',x:12200,y:290,w:110,h:OFFICIAL_FLIGHT_BOTTOM-290},
+    {id:'ws-fo22',x:12500,y:OFFICIAL_FLIGHT_TOP,w:105,h:165},
+    {id:'ws-fo23',x:12800,y:300,w:105,h:OFFICIAL_FLIGHT_BOTTOM-300},
+    {id:'ws-fo24',x:13100,y:OFFICIAL_FLIGHT_TOP,w:110,h:185},
+    {id:'ws-fo25',x:13400,y:295,w:105,h:OFFICIAL_FLIGHT_BOTTOM-295},
+  ];
+  return officialRuntimeBase('wave-storm','Wave Storm','hyper-drive',15500,{blocks,spikes,pads,orbs,portals,flightObstacles});
 }
+
 function createFinalEclipseRuntime() {
-  return createPlaceholderOfficialRuntime('final-eclipse','Final Eclipse','dark-pulse');
+  const blocks=[
+    {id:'fe-b1',x:1200,y:360,w:90,h:70},
+    {id:'fe-b2',x:1950,y:340,w:105,h:90},
+    {id:'fe-b3',x:2750,y:365,w:90,h:65},
+    {id:'fe-b4',x:6900,y:350,w:100,h:80},
+    {id:'fe-b5',x:7500,y:330,w:105,h:100},
+    {id:'fe-b6',x:11600,y:360,w:90,h:70},
+    {id:'fe-b7',x:12300,y:340,w:105,h:90},
+    {id:'fe-b8',x:15700,y:360,w:90,h:70},
+    {id:'fe-b9',x:17750,y:345,w:105,h:85},
+  ];
+  const spikes=makeOfficialSpikes('fe',[650,950,1600,1635,2350,3100,6750,7200,7750,11350,11950,12650,15750,17600,18100,18135]);
+  const pads=[
+    {id:'fe-p1',x:3200,y:OFFICIAL_GROUND_Y-12,w:72,h:12,power:-960},
+    {id:'fe-p2',x:12780,y:OFFICIAL_GROUND_Y-12,w:72,h:12,power:-990},
+  ];
+  const orbs=[
+    {id:'fe-o1',x:2500,y:300,r:19,power:-880},
+    {id:'fe-o2',x:7050,y:300,r:19,power:-910},
+    {id:'fe-o3',x:12000,y:300,r:19,power:-920},
+    {id:'fe-o4',x:17880,y:295,r:19,power:-930},
+  ];
+  const portals=[
+    {id:'fe-ship-1',x:3500,y:112,w:22,h:286,type:'ship'},
+    {id:'fe-cube-1',x:6500,y:112,w:22,h:286,type:'cube'},
+    {id:'fe-wave-1',x:8000,y:112,w:22,h:286,type:'wave'},
+    {id:'fe-cube-2',x:11000,y:112,w:22,h:286,type:'cube'},
+    {id:'fe-ship-2',x:13000,y:112,w:22,h:286,type:'ship'},
+    {id:'fe-cube-3',x:15500,y:112,w:22,h:286,type:'cube'},
+    {id:'fe-wave-2',x:16000,y:112,w:22,h:286,type:'wave'},
+    {id:'fe-cube-4',x:17400,y:112,w:22,h:286,type:'cube'},
+  ];
+  const flightObstacles=[
+    {id:'fe-fo1',x:3900,y:OFFICIAL_FLIGHT_TOP,w:120,h:155},
+    {id:'fe-fo2',x:4300,y:300,w:125,h:OFFICIAL_FLIGHT_BOTTOM-300},
+    {id:'fe-fo3',x:4750,y:OFFICIAL_FLIGHT_TOP,w:125,h:180},
+    {id:'fe-fo4',x:5200,y:285,w:130,h:OFFICIAL_FLIGHT_BOTTOM-285},
+    {id:'fe-fo5',x:5650,y:OFFICIAL_FLIGHT_TOP,w:120,h:150},
+    {id:'fe-fo6',x:6100,y:305,w:125,h:OFFICIAL_FLIGHT_BOTTOM-305},
+    {id:'fe-fo7',x:8350,y:OFFICIAL_FLIGHT_TOP,w:105,h:160},
+    {id:'fe-fo8',x:8700,y:300,w:105,h:OFFICIAL_FLIGHT_BOTTOM-300},
+    {id:'fe-fo9',x:9050,y:OFFICIAL_FLIGHT_TOP,w:110,h:185},
+    {id:'fe-fo10',x:9400,y:285,w:110,h:OFFICIAL_FLIGHT_BOTTOM-285},
+    {id:'fe-fo11',x:9750,y:OFFICIAL_FLIGHT_TOP,w:105,h:155},
+    {id:'fe-fo12',x:10100,y:305,w:110,h:OFFICIAL_FLIGHT_BOTTOM-305},
+    {id:'fe-fo13',x:10450,y:OFFICIAL_FLIGHT_TOP,w:105,h:180},
+    {id:'fe-fo14',x:13400,y:300,w:120,h:OFFICIAL_FLIGHT_BOTTOM-300},
+    {id:'fe-fo15',x:13800,y:OFFICIAL_FLIGHT_TOP,w:125,h:170},
+    {id:'fe-fo16',x:14200,y:285,w:125,h:OFFICIAL_FLIGHT_BOTTOM-285},
+    {id:'fe-fo17',x:14600,y:OFFICIAL_FLIGHT_TOP,w:120,h:150},
+    {id:'fe-fo18',x:15000,y:305,w:120,h:OFFICIAL_FLIGHT_BOTTOM-305},
+    {id:'fe-fo19',x:16300,y:OFFICIAL_FLIGHT_TOP,w:105,h:165},
+    {id:'fe-fo20',x:16600,y:300,w:105,h:OFFICIAL_FLIGHT_BOTTOM-300},
+    {id:'fe-fo21',x:16900,y:OFFICIAL_FLIGHT_TOP,w:110,h:180},
+    {id:'fe-fo22',x:17200,y:295,w:105,h:OFFICIAL_FLIGHT_BOTTOM-295},
+  ];
+  return officialRuntimeBase('final-eclipse','Final Eclipse','dark-pulse',18500,{blocks,spikes,pads,orbs,portals,flightObstacles});
 }
 
 // Temporary compatibility alias until all official-start callers use the registry.
