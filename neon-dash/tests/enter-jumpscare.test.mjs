@@ -40,11 +40,11 @@ test('jumpscare auto-hides after 1500ms and resumes play',()=>{
 });
 
 test('jumpscare visual fills the viewport',()=>{
-  assert.match(html,/\.ghost-jumpscare svg\{[^}]*width:100vw[^}]*height:100vh/);
+  assert.match(html,/\.ghost-jumpscare img\{[^}]*width:100vw[^}]*height:100vh[^}]*object-fit:cover/);
 });
 
-test('jumpscare uses embedded original ghost visual with no remote dependency',()=>{
-  assert.match(html,/id="ghostJumpscare"[\s\S]{0,400}<svg[^>]+viewBox=/);
+test('jumpscare uses embedded uploaded JPEG with no remote dependency',()=>{
+  assert.match(html,/id="ghostJumpscare"[\s\S]{0,260}<img[^>]+src="data:image\/jpeg;base64,/);
   assert.doesNotMatch(html,/ghost\.png/);
 });
 
@@ -58,12 +58,12 @@ test('jumpscare element is parsed before the main script',()=>{
 });
 
 
-test('jumpscare uses inline SVG and force-display state',()=>{
-  assert.match(html,/id="ghostJumpscare"[\s\S]{0,400}<svg[^>]+viewBox=/);
+test('jumpscare keeps force-display state with uploaded photo',()=>{
   assert.match(html,/document\.documentElement\.classList\.add\('jumpscare-active'\)/);
   assert.match(html,/document\.documentElement\.classList\.remove\('jumpscare-active'\)/);
   assert.match(html,/html\.jumpscare-active\s+#ghostJumpscare\{display:grid!important/);
-  assert.doesNotMatch(html,/data:image\/svg\+xml/);
+  assert.match(html,/data:image\/jpeg;base64,/);
+  assert.doesNotMatch(html,/id="ghostJumpscare"[\s\S]{0,260}<svg/);
 });
 
 
