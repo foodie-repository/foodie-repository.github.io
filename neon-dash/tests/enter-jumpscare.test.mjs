@@ -65,3 +65,9 @@ test('jumpscare uses inline SVG and force-display state',()=>{
   assert.match(html,/html\.jumpscare-active\s+#ghostJumpscare\{display:grid!important/);
   assert.doesNotMatch(html,/data:image\/svg\+xml/);
 });
+
+
+test('uploaded ghost photo is embedded as JPEG',()=>{
+  assert.match(html,/id="ghostJumpscare"[\s\S]{0,260}<img[^>]+src="data:image\/jpeg;base64,/);
+  assert.doesNotMatch(html,/id="ghostJumpscare"[\s\S]{0,260}<svg/);
+});
