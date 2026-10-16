@@ -61,7 +61,7 @@ test('production ND1 encoder includes optional replay and decoder strips local v
 });
 
 test('gameplay editor touch invalidates replay with verification', () => {
-  assert.match(html, /if\s*\(gameplay\)[^\n]*verifiedFingerprint\s*=\s*null/);
+  assert.match(html, /if\s*\(gameplay\)\s*\{[\s\S]{0,180}verifiedFingerprint\s*=\s*null/);
   assert.match(html, /if\s*\(gameplay\)[\s\S]{0,180}replay\s*=\s*null/);
 });
 
