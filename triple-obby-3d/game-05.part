@@ -82,8 +82,7 @@
       if (worldMove.lengthSq() > 0) worldMove.normalize();
 
       const relative = globalThis.TripleObbyControls.stepArrowControls(arrowInput, player.yaw, dt);
-      const analog = globalThis.TripleObbyControls.stepJoystickControls(joystickInput, relative.yaw, dt);
-      player.yaw = joystickInput.active ? analog.yaw : relative.yaw;
+      const analog = globalThis.TripleObbyControls.stepJoystickControls(joystickInput, player.yaw, dt);
       const move = worldMove
         .add(new THREE.Vector3(relative.moveX, 0, relative.moveZ))
         .add(new THREE.Vector3(analog.moveX, 0, analog.moveZ));
@@ -126,25 +125,28 @@
       player.vel.y -= 24 * dt;
       player.vel.y = Math.max(-28, player.vel.y);
 
-      player.pos.x += player.vel.x * dt;
-      player.pos.z += player.vel.z * dt;
-      player.pos.y += player.vel.y * dt;
+      const substeps = globalThis.TripleObbyPhysics.computePhysicsSubsteps(player.vel, dt, 0.22);
+      const stepDt = dt / substeps;
       player.grounded = false;
 
-      (level.obstacles || []).forEach(obstacle => {
-        const resolved = resolveHorizontalObstacle(prevPos, player.pos, obstacle);
-        player.pos.x = resolved.x;
-        player.pos.z = resolved.z;
-        if (resolved.blockedX) player.vel.x = 0;
-        if (resolved.blockedZ) player.vel.z = 0;
-      });
+      for (let step = 0; step < substeps; step++) {
+        const stepPrev = player.pos.clone();
+        player.pos.x += player.vel.x * stepDt;
+        player.pos.z += player.vel.z * stepDt;
+        player.pos.y += player.vel.y * stepDt;
 
-      level.platforms.forEach(p => {
-        if (!p.active) return;
+        (level.obstacles || []).forEach(obstacle => {
+          const resolved = resolveHorizontalObstacle(stepPrev, player.pos, obstacle);
+          player.pos.x = resolved.x;
+          player.pos.z = resolved.z;
+          if (resolved.blockedX) player.vel.x = 0;
+          if (resolved.blockedZ) player.vel.z = 0;
+        });
 
-        if (level.id === 'lava') {
+        level.platforms.forEach(p => {
+          if (!p.active) return;
           const resolved = globalThis.TripleObbyPhysics.resolveSolidPlatformCollision(
-            prevPos,
+            stepPrev,
             player.pos,
             {
               x: p.mesh.position.x,
@@ -157,30 +159,17 @@
             },
             { radius: player.radius, height: player.height, velocityY: player.vel.y },
           );
+
           player.pos.set(resolved.x, resolved.y, resolved.z);
           player.vel.y = resolved.velocityY;
           if (resolved.blockedX) player.vel.x = 0;
           if (resolved.blockedZ) player.vel.z = 0;
           if (resolved.hitTop) handlePlatformLanding(p);
-          return;
-        }
-
-        const top = p.mesh.position.y + p.h / 2;
-        const prevBottom = prevPos.y;
-        const nowBottom = player.pos.y;
-        const inside = withinTop(p, player.pos.x, player.pos.z);
-        if (inside && prevBottom >= top && nowBottom <= top && player.vel.y <= 0) {
-          player.pos.y = top;
-          player.vel.y = 0;
-          handlePlatformLanding(p);
-        }
-      });
+        });
+      }
 
       if (player.pos.y < level.killY) respawn('바닥 킬존에 떨어졌습니다');
       playerGroup.position.set(player.pos.x, player.pos.y, player.pos.z);
-      if (!arrowFacingMode && (player.vel.x || player.vel.z)) {
-        player.yaw = Math.atan2(player.vel.x, player.vel.z);
-      }
       playerGroup.rotation.y = globalThis.TripleObbyControls.modelYawForFacing(player.yaw);
       const swing = state.elapsed * 10;
       const amp = player.grounded && (Math.abs(player.vel.x) + Math.abs(player.vel.z)) > 0.2 ? 0.55 : 0;
@@ -204,5 +193,4 @@
       player.pos.addScaledVector(player.vel, dt);
       if (player.pos.y <= 0) { player.pos.y = 0; player.vel.y = 0; player.grounded = true; }
       playerGroup.position.set(player.pos.x, player.pos.y, player.pos.z);
-      if (!arrowFacingMode && (player.vel.x || player.vel.z)) player.yaw = Math.atan2(player.vel.x, player.vel.z);
       playerGroup.rotation.y = globalThis.TripleObbyControls.modelYawForFacing(player.yaw);

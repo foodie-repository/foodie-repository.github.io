@@ -3,6 +3,32 @@ renderer.render(scene, camera);
 const arrowInput = { forward: false, back: false, left: false, right: false };
 const joystickInput = { x: 0, y: 0, active: false, pointerId: null };
 let arrowFacingMode = false;
+const dragFacing = { pointerId: null, lastX: 0 };
+const facingSurface = renderer.domElement;
+
+function endFacingDrag(e) {
+  if (dragFacing.pointerId === null) return;
+  if (e?.pointerId !== undefined && e.pointerId !== dragFacing.pointerId) return;
+  dragFacing.pointerId = null;
+}
+
+facingSurface.addEventListener('pointerdown', e => {
+  if (state.mode === 'finish') return;
+  if (e.pointerType === 'mouse' && e.button !== 0) return;
+  dragFacing.pointerId = e.pointerId;
+  dragFacing.lastX = e.clientX;
+  if (facingSurface.setPointerCapture) facingSurface.setPointerCapture(e.pointerId);
+}, { passive: true });
+
+facingSurface.addEventListener('pointermove', e => {
+  if (dragFacing.pointerId !== e.pointerId) return;
+  const deltaX = e.clientX - dragFacing.lastX;
+  dragFacing.lastX = e.clientX;
+  player.yaw = globalThis.TripleObbyControls.applyDragYaw(player.yaw, deltaX);
+}, { passive: true });
+
+facingSurface.addEventListener('pointerup', endFacingDrag, { passive: true });
+facingSurface.addEventListener('pointercancel', endFacingDrag, { passive: true });
 function bindKey(name, pressed) {
 if (name === 'w') input.forward = pressed;
 else if (name === 's') input.back = pressed;
@@ -53,6 +79,7 @@ joystickInput.y = 0;
 joystickInput.active = false;
 joystickInput.pointerId = null;
 arrowFacingMode = false;
+dragFacing.pointerId = null;
 input.jumpPressed = false;
 });
 document.querySelectorAll('.portalBtn').forEach(btn => btn.addEventListener('click', () => startMap(btn.dataset.map)));
