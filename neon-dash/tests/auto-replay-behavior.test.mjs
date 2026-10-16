@@ -11,8 +11,8 @@ test('secret code still toggles AUTO availability', () => {
   assert.match(html, /function validateAutoCode\(value\) \{ return String\(value \?\? ''\)\.trim\(\) === '뀨'; \}/);
 });
 
-test('official AUTO selects OFFICIAL_REPLAY', () => {
-  assert.match(html, /game\.kind==='official'\s*\?\s*OFFICIAL_REPLAY/);
+test('official AUTO selects the replay for the selected official level', () => {
+  assert.match(html, /game\.kind==='official'\?getOfficialReplay\(game\.officialLevelId\)/);
 });
 
 test('custom AUTO selects a fingerprint-matching stored replay', () => {
