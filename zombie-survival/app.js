@@ -63,9 +63,9 @@
 
   const player={
     pos:new THREE.Vector3(0,1.72,28),yaw:Math.PI,pitch:-.05,hp:100,max:100,speed:8.4,sprint:1.55,
-    idx:0,cool:0,reload:0,reloadIdx:-1,inv:0,states:W.map(w=>({a:w.clip,r:w.res})),cameraKick:0
+    idx:0,cool:0,reload:0,reloadIdx:-1,inv:0,states:W.map(w=>({a:w.clip,r:w.res})),cameraKick:0,velY:0,groundY:1.72,grounded:true,jumpV:6.2,gravity:14.5
   };
-  const keys=new Set(), move={x:0,y:0};
+  const keys=new Set(), move={x:0,y:0,tx:0,ty:0};
   let running=false,fireHeld=false,state='menu',locked=false,wave=0,score=0,kills=0,elapsed=0,nextWaveT=0;
   const zombies=[],shots=[],pickups=[];
   const ray=new THREE.Raycaster();
@@ -164,12 +164,23 @@
   function slide(pos,dx,dz,r=.7){const nx=clamp(pos.x+dx,-46,46),nz=clamp(pos.z+dz,-46,46);if(!blocked(nx,pos.z,r))pos.x=nx;if(!blocked(pos.x,nz,r))pos.z=nz}
 
   function buildZombie(type){
-    const c=Z[type],g=new THREE.Group();
-    const body=new THREE.Mesh(new THREE.CapsuleGeometry(.52*c.sc,1.1*c.sc,5,10),new THREE.MeshStandardMaterial({color:c.c,emissive:c.c,emissiveIntensity:.05}));
-    const head=new THREE.Mesh(new THREE.SphereGeometry(.35*c.sc,12,12),new THREE.MeshStandardMaterial({color:0xcaffd0})); head.position.y=1.15*c.sc; g.add(body,head);
-    const eyeMat=new THREE.MeshBasicMaterial({color:0xff364d}); for(const x of[-.12,.12]){const e=new THREE.Mesh(new THREE.SphereGeometry(.055*c.sc,6,6),eyeMat);e.position.set(x*c.sc,1.2*c.sc,.3*c.sc);g.add(e)}
-    const a=Math.random()*Math.PI*2,d=27+Math.random()*13; g.position.set(Math.cos(a)*d,.9*c.sc,Math.sin(a)*d); scene.add(g);
-    const z={g,type,c,hp:c.hp+wave*(c.boss?28:4),sp:c.sp+wave*.035,cd:0,rcd:1+Math.random(),alive:true}; g.traverse(o=>{if(o.isMesh)o.userData.z=z}); zombies.push(z);
+    const c=Z[type],g=new THREE.Group(),sc=c.sc;
+    const skin=new THREE.MeshStandardMaterial({color:0xc9edc8,roughness:.92});
+    const shirt=new THREE.MeshStandardMaterial({color:c.c,emissive:c.c,emissiveIntensity:c.boss?.18:.045,roughness:.8});
+    const pants=new THREE.MeshStandardMaterial({color:0x283241,roughness:.92});
+    const torso=new THREE.Mesh(new THREE.BoxGeometry(.72*sc,.92*sc,.34*sc),shirt);torso.position.y=1.28*sc;g.add(torso);
+    const pelvis=new THREE.Mesh(new THREE.BoxGeometry(.56*sc,.32*sc,.30*sc),pants);pelvis.position.y=.66*sc;g.add(pelvis);
+    const head=new THREE.Mesh(new THREE.SphereGeometry(.28*sc,14,14),skin);head.position.y=1.92*sc;g.add(head);
+    const armGeo=new THREE.BoxGeometry(.16*sc,.76*sc,.16*sc),legGeo=new THREE.BoxGeometry(.18*sc,.82*sc,.18*sc);
+    const la=new THREE.Mesh(armGeo,shirt),ra=new THREE.Mesh(armGeo,shirt),ll=new THREE.Mesh(legGeo,pants),rl=new THREE.Mesh(legGeo,pants);
+    la.position.set(-.46*sc,1.20*sc,0);ra.position.set(.46*sc,1.20*sc,0);ll.position.set(-.16*sc,.17*sc,0);rl.position.set(.16*sc,.17*sc,0);g.add(la,ra,ll,rl);
+    const eyeMat=new THREE.MeshBasicMaterial({color:c.boom?0xffcc44:c.boss?0xd7a6ff:0xff364d});
+    for(const x of[-.09,.09]){const e=new THREE.Mesh(new THREE.SphereGeometry(.035*sc,6,6),eyeMat);e.position.set(x*sc,1.96*sc,.245*sc);g.add(e)}
+    if(c.boom){const core=new THREE.Mesh(new THREE.SphereGeometry(.18*sc,10,10),new THREE.MeshBasicMaterial({color:0xff713c}));core.position.set(0,1.27*sc,.22*sc);g.add(core)}
+    if(c.boss){const crown=new THREE.Mesh(new THREE.TorusGeometry(.28*sc,.045*sc,8,20),new THREE.MeshBasicMaterial({color:0xe7c4ff}));crown.rotation.x=Math.PI/2;crown.position.y=2.28*sc;g.add(crown)}
+    const a=Math.random()*Math.PI*2,d=27+Math.random()*13;g.position.set(Math.cos(a)*d,0,Math.sin(a)*d);scene.add(g);
+    const z={g,type,c,hp:c.hp+wave*(c.boss?28:4),sp:c.sp+wave*.035,cd:0,rcd:1+Math.random(),alive:true,walk:Math.random()*6.28,limbs:{la,ra,ll,rl}};
+    g.traverse(o=>{if(o.isMesh)o.userData.z=z});zombies.push(z);
   }
   function allowedTypes(){return Object.keys(Z).filter(k=>k!=='boss'&&Z[k].min<=wave)}
   function startWave(){wave++;const types=allowedTypes(),n=5+wave*2;for(let i=0;i<n;i++)buildZombie(types[Math.floor(Math.random()*types.length)]);if(wave%5===0)buildZombie('boss');msg(wave%5===0?`웨이브 ${wave} · 보스 출현!`:`웨이브 ${wave}`);uiUpdate()}
@@ -186,6 +197,7 @@
   function finishReload(){
     const i=player.reloadIdx;if(i<0)return;const w=W[i],s=player.states[i],n=Math.min(w.clip-s.a,s.r);s.a+=n;s.r-=n;player.reloadIdx=-1;anim.reloadTotal=0;msg('재장전 완료');
   }
+  function jump(){if(state!=='playing'||!player.grounded)return;player.velY=player.jumpV;player.grounded=false;msg('점프',300)}
   function fire(){
     if(state!=='playing'||player.cool||player.reload)return;const w=W[player.idx],s=player.states[player.idx];if(s.a<=0){reload();return}
     s.a--;player.cool=w.rate;anim.fire=1;anim.action=1;anim.flash=1;player.cameraKick=Math.min(.22,player.cameraKick+w.recoil);
@@ -199,7 +211,7 @@
   function gameOver(){state='gameover';best=Math.max(best,score);localStorage.setItem(bestKey,best);ui.overText.innerHTML=`점수 <b>${score}</b> · 처치 <b>${kills}</b> · 웨이브 <b>${wave}</b> · 생존 <b>${elapsed.toFixed(1)}초</b>`;ui.over.style.display='flex';document.exitPointerLock?.();resetMobileInputs()}
   function start(){
     zombies.splice(0).forEach(z=>scene.remove(z.g));shots.splice(0).forEach(s=>scene.remove(s.m));pickups.splice(0).forEach(p=>scene.remove(p.g));
-    player.pos.set(0,1.72,28);player.yaw=Math.PI;player.pitch=-.05;player.hp=100;player.idx=0;player.cool=player.reload=player.inv=player.cameraKick=0;player.reloadIdx=-1;player.states=W.map(w=>({a:w.clip,r:w.res}));
+    player.pos.set(0,1.72,28);player.yaw=Math.PI;player.pitch=-.05;player.hp=100;player.idx=0;player.cool=player.reload=player.inv=player.cameraKick=0;player.velY=0;player.grounded=true;player.reloadIdx=-1;player.states=W.map(w=>({a:w.clip,r:w.res}));
     anim.fire=anim.action=anim.flash=anim.reloadTotal=0;wave=score=kills=0;elapsed=0;nextWaveT=0;state='playing';ui.start.style.display=ui.over.style.display=ui.pause.style.display='none';buildGun();startWave();if(!mobile)renderer.domElement.requestPointerLock?.();uiUpdate();
   }
   function pause(){if(state!=='playing')return;state='paused';ui.pause.style.display='flex';document.exitPointerLock?.();resetMobileInputs()}
@@ -207,17 +219,19 @@
   function menu(){state='menu';ui.pause.style.display=ui.over.style.display='none';ui.start.style.display='flex';resetMobileInputs()}
   function uiUpdate(){const w=W[player.idx],s=player.states[player.idx];ui.wave.textContent=wave;ui.left.textContent=zombies.length;ui.score.textContent=score;ui.kills.textContent=kills;ui.hpText.textContent=`${Math.ceil(player.hp)} / ${player.max}`;ui.hpBar.style.width=`${player.hp}%`;ui.weaponName.textContent=w.n;ui.weaponName.style.color=`#${w.c.toString(16).padStart(6,'0')}`;ui.ammo.textContent=`${s.a} / ${s.r}`;ui.time.textContent=`${elapsed.toFixed(1)}초`;ui.best.textContent=`${best}점`;[...ui.weaponBar.children].forEach((b,i)=>{b.classList.toggle('active',i===player.idx);const e=b.querySelector('em');if(e)e.textContent=`${player.states[i].a}/${player.states[i].r}`})}
 
-  W.forEach((w,i)=>{const b=document.createElement('button');b.className='weaponSlot';b.innerHTML=`<span>${i+1}</span><b>${w.n}</b><em>${w.clip}/${w.res}</em>`;b.onpointerdown=e=>{e.preventDefault();select(i)};ui.weaponBar.appendChild(b)});
+  W.forEach((w,i)=>{const b=document.createElement('button');b.className='weaponSlot';b.innerHTML=`<span>${i+1}</span><b>${w.n}</b><em>${w.clip}/${w.res}</em>`;b.onpointerdown=e=>{e.preventDefault();e.stopPropagation();select(i)};ui.weaponBar.appendChild(b)});
   if(mobile)$('mobileUI').appendChild(ui.weaponBar);
 
   function update(dt){
     elapsed+=dt;player.cool=Math.max(0,player.cool-dt);player.inv=Math.max(0,player.inv-dt);const old=player.reload;player.reload=Math.max(0,player.reload-dt);if(old>0&&!player.reload)finishReload();
+    move.x+=(move.tx-move.x)*Math.min(1,dt*12);move.y+=(move.ty-move.y)*Math.min(1,dt*12);
     let x=move.x,z=move.y;if(keys.has('KeyW'))z--;if(keys.has('KeyS'))z++;if(keys.has('KeyA'))x--;if(keys.has('KeyD'))x++;
     if(x||z){const l=Math.hypot(x,z)||1;x/=l;z/=l;const sn=Math.sin(player.yaw),cs=Math.cos(player.yaw),spd=player.speed*((running||keys.has('ShiftLeft')||keys.has('ShiftRight'))?player.sprint:1);slide(player.pos,(x*cs-z*sn)*spd*dt,(z*cs+x*sn)*spd*dt)}
+    if(!player.grounded||player.velY!==0){player.velY-=player.gravity*dt;player.pos.y+=player.velY*dt;if(player.pos.y<=player.groundY){player.pos.y=player.groundY;player.velY=0;player.grounded=true}}
     updateWeaponAnim(dt);
     camera.position.copy(player.pos);camera.rotation.y=player.yaw;camera.rotation.x=player.pitch-player.cameraKick;if(fireHeld)fire();
     for(const zed of [...zombies]){
-      const p=zed.g.position,dx=player.pos.x-p.x,dz=player.pos.z-p.z,d=Math.hypot(dx,dz),nx=dx/(d||1),nz=dz/(d||1);zed.cd-=dt;zed.rcd-=dt;
+      const p=zed.g.position,dx=player.pos.x-p.x,dz=player.pos.z-p.z,d=Math.hypot(dx,dz),nx=dx/(d||1),nz=dz/(d||1);zed.cd-=dt;zed.rcd-=dt;zed.walk+=dt*(4.5+zed.sp*.55);if(zed.limbs){const swing=Math.sin(zed.walk)*.58;zed.limbs.la.rotation.x=swing;zed.limbs.ra.rotation.x=-swing;zed.limbs.ll.rotation.x=-swing;zed.limbs.rl.rotation.x=swing}
       if(zed.c.boom&&d<3){removeZombie(zed);hitPlayer(zed.c.d);continue}
       if(zed.c.ranged&&!zed.c.boss){if(d>13)slide(p,nx*zed.sp*dt,nz*zed.sp*dt,.5);else if(d<8)slide(p,-nx*zed.sp*.7*dt,-nz*zed.sp*.7*dt,.5);if(d<21&&zed.rcd<=0){enemyShot(zed);zed.rcd=zed.c.atk}}
       else{if(d>1.5)slide(p,nx*zed.sp*dt,nz*zed.sp*dt,.55);else if(zed.cd<=0){hitPlayer(zed.c.d);zed.cd=zed.c.atk}}
@@ -228,29 +242,31 @@
     if(!zombies.length&&nextWaveT>0){nextWaveT-=dt;if(nextWaveT<=0)startWave()}uiUpdate();
   }
 
-  document.addEventListener('keydown',e=>{if(['KeyF','KeyR','KeyQ','KeyE','KeyP','Escape','KeyW','KeyA','KeyS','KeyD','ShiftLeft','ShiftRight','Digit1','Digit2','Digit3','Digit4','Digit5'].includes(e.code))e.preventDefault();keys.add(e.code);if(e.code==='KeyF')fireHeld=true;if(e.code==='KeyR')reload();if(e.code==='KeyQ')select(player.idx-1);if(e.code==='KeyE')select(player.idx+1);if(/^Digit[1-5]$/.test(e.code))select(+e.code.slice(-1)-1);if((e.code==='KeyP'||e.code==='Escape')&&state==='playing')pause();else if((e.code==='KeyP'||e.code==='Escape')&&state==='paused')resume()});
+  document.addEventListener('keydown',e=>{if(['KeyF','KeyR','KeyQ','KeyE','KeyP','Escape','KeyW','KeyA','KeyS','KeyD','ShiftLeft','ShiftRight','Digit1','Digit2','Digit3','Digit4','Digit5','Space'].includes(e.code))e.preventDefault();keys.add(e.code);if(e.code==='KeyF')fireHeld=true;if(e.code==='KeyR')reload();if(e.code==='Space')jump();if(e.code==='KeyQ')select(player.idx-1);if(e.code==='KeyE')select(player.idx+1);if(/^Digit[1-5]$/.test(e.code))select(+e.code.slice(-1)-1);if((e.code==='KeyP'||e.code==='Escape')&&state==='playing')pause();else if((e.code==='KeyP'||e.code==='Escape')&&state==='paused')resume()});
   document.addEventListener('keyup',e=>{keys.delete(e.code);if(e.code==='KeyF')fireHeld=false});
   renderer.domElement.onclick=()=>{if(state==='playing'&&!mobile)renderer.domElement.requestPointerLock?.()};
   document.addEventListener('pointerlockchange',()=>locked=document.pointerLockElement===renderer.domElement);
   document.addEventListener('mousemove',e=>{if(!locked||state!=='playing')return;player.yaw-=e.movementX*.00255;player.pitch=clamp(player.pitch-e.movementY*.0021,-1.14,1.14)});
 
-  let joyId=null,lookId=null,lx=0,ly=0;const joy=$('joystickBase'),knob=$('joystickKnob'),lookZone=$('lookZone'),fireBtn=$('fireBtn'),runBtn=$('sprintBtn');
-  function resetJoy(){joyId=null;move.x=move.y=0;knob.style.transform='translate(0,0)'}
-  joy.onpointerdown=e=>{joyId=e.pointerId;joy.setPointerCapture?.(e.pointerId);e.preventDefault()};
-  joy.onpointermove=e=>{if(e.pointerId!==joyId)return;const r=joy.getBoundingClientRect(),dx=e.clientX-r.left-r.width/2,dy=e.clientY-r.top-r.height/2,max=r.width*.32,len=Math.hypot(dx,dy)||1,k=Math.min(1,max/len),x=dx*k,y=dy*k;move.x=x/max;move.y=y/max;knob.style.transform=`translate(${x}px,${y}px)`;e.preventDefault()};
-  ['pointerup','pointercancel','lostpointercapture'].forEach(v=>joy.addEventListener(v,resetJoy));
+  let joyId=null,lookId=null,lx=0,ly=0,jcx=0,jcy=0;const moveZone=$('moveZone'),joy=$('joystickBase'),knob=$('joystickKnob'),lookZone=$('lookZone'),fireBtn=$('fireBtn'),runBtn=$('sprintBtn');
+  function resetJoy(){joyId=null;move.tx=move.ty=0;joy.style.display='none';knob.style.transform='translate(0,0)'}
+  function updateJoy(e){const max=44,dx=e.clientX-jcx,dy=e.clientY-jcy,len=Math.hypot(dx,dy)||1,k=Math.min(1,max/len),x=dx*k,y=dy*k;knob.style.transform=`translate(${x}px,${y}px)`;const nx=x/max,ny=y/max,mag=Math.hypot(nx,ny),dead=.16;if(mag<=dead){move.tx=move.ty=0;return}const t=(mag-dead)/(1-dead),curve=t*t*(3-2*t);move.tx=nx/mag*curve;move.ty=ny/mag*curve}
+  moveZone.onpointerdown=e=>{if(state!=='playing')return;joyId=e.pointerId;jcx=e.clientX;jcy=e.clientY;const r=moveZone.getBoundingClientRect();joy.style.display='block';joy.style.left=(jcx-r.left-66)+'px';joy.style.top=(jcy-r.top-66)+'px';joy.style.bottom='auto';moveZone.setPointerCapture?.(e.pointerId);updateJoy(e);e.preventDefault()};
+  moveZone.onpointermove=e=>{if(e.pointerId!==joyId)return;updateJoy(e);e.preventDefault()};
+  ['pointerup','pointercancel','lostpointercapture'].forEach(v=>moveZone.addEventListener(v,e=>{if(e.pointerId===joyId)resetJoy()}));
   lookZone.onpointerdown=e=>{if(state!=='playing')return;lookId=e.pointerId;lx=e.clientX;ly=e.clientY;lookZone.setPointerCapture?.(e.pointerId);e.preventDefault()};
   lookZone.addEventListener('pointermove',e=>{if(e.pointerId!==lookId)return;player.yaw-=(e.clientX-lx)*.006;player.pitch=clamp(player.pitch-(e.clientY-ly)*.005,-1.1,1.1);lx=e.clientX;ly=e.clientY;e.preventDefault()});
   ['pointerup','pointercancel','lostpointercapture'].forEach(v=>lookZone.addEventListener(v,e=>{if(e.pointerId===lookId)lookId=null}));
   fireBtn.addEventListener('pointerdown',e=>{fireHeld=true;fire();fireBtn.setPointerCapture?.(e.pointerId);e.preventDefault()});
   ['pointerup','pointercancel','pointerleave','lostpointercapture'].forEach(v=>fireBtn.addEventListener(v,()=>fireHeld=false));
-  $('reloadBtn').onpointerdown=e=>{reload();e.preventDefault()};
+  $('reloadBtn').onpointerdown=e=>{e.preventDefault();e.stopPropagation();reload()};
   runBtn.onpointerdown=e=>{running=true;runBtn.setPointerCapture?.(e.pointerId);e.preventDefault()};
   ['pointerup','pointercancel','pointerleave','lostpointercapture'].forEach(v=>runBtn.addEventListener(v,()=>running=false));
-  $('nextWeaponBtn').onpointerdown=e=>{select(player.idx+1);e.preventDefault()};
+  $('nextWeaponBtn').onpointerdown=e=>{e.preventDefault();e.stopPropagation();select(player.idx+1)};
+  $('jumpBtn').onpointerdown=e=>{e.preventDefault();e.stopPropagation();jump()};
   $('pauseBtn').onpointerdown=e=>{pause();e.preventDefault()};
   $('fullscreenBtn').onpointerdown=async e=>{e.preventDefault();try{if(!document.fullscreenElement){await document.documentElement.requestFullscreen?.({navigationUI:'hide'});try{await screen.orientation?.lock?.('landscape')}catch(_){}}else await document.exitFullscreen?.()}catch(_){msg('전체화면을 사용할 수 없습니다')}};
-  function resetMobileInputs(){resetJoy();fireHeld=false;running=false;lookId=null}
+  function resetMobileInputs(){resetJoy();move.x=move.y=move.tx=move.ty=0;fireHeld=false;running=false;lookId=null}
   document.addEventListener('visibilitychange',()=>{if(document.hidden)resetMobileInputs()});addEventListener('blur',resetMobileInputs);
   $('startBtn').onclick=start;$('restartBtn').onclick=start;$('resumeBtn').onclick=resume;$('menuBtn').onclick=menu;$('pauseMenuBtn').onclick=menu;
   addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio||1,mobile?1.35:2))});
@@ -258,5 +274,5 @@
   let last=performance.now();
   function loop(now){const dt=Math.min(.033,(now-last)/1000);last=now;if(state==='playing')update(dt);else updateWeaponAnim(dt);renderer.render(scene,camera);requestAnimationFrame(loop)}
   buildGun();uiUpdate();requestAnimationFrame(loop);
-  window.__ZOMBIE_GAME_INFO__={version:'5.0-weapon-motion',attackKey:'F',weapons:W.map(x=>x.id),zombies:Object.keys(Z),mobile:true,mobileControls:'enhanced',fireMotion:true,reloadMotion:true};
+  window.__ZOMBIE_GAME_INFO__={version:'6.0-mobile-game',attackKey:'F',jumpKey:'Space',weapons:W.map(x=>x.id),zombies:Object.keys(Z),mobile:true,mobileControls:'dynamic-smooth',fireMotion:true,reloadMotion:true,jump:true,humanoidZombies:true};
 })();
