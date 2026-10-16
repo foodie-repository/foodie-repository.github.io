@@ -39,12 +39,12 @@ test('jumpscare auto-hides after 1500ms and resumes play',()=>{
   assert.match(html,/setTimeout\(\(\)=>\{[\s\S]{0,420}\},1500\);/);
 });
 
-test('jumpscare image fills the viewport',()=>{
-  assert.match(html,/\.ghost-jumpscare img\{[^}]*width:100vw[^}]*height:100vh[^}]*object-fit:cover/);
+test('jumpscare visual fills the viewport',()=>{
+  assert.match(html,/\.ghost-jumpscare svg\{[^}]*width:100vw[^}]*height:100vh/);
 });
 
 test('jumpscare uses embedded original ghost visual with no remote dependency',()=>{
-  assert.match(html,/data:image\/svg\+xml/);
+  assert.match(html,/id="ghostJumpscare"[\s\S]{0,400}<svg[^>]+viewBox=/);
   assert.doesNotMatch(html,/ghost\.png/);
 });
 
@@ -55,4 +55,13 @@ test('jumpscare element is parsed before the main script',()=>{
   assert.ok(overlayPos>=0);
   assert.ok(scriptPos>=0);
   assert.ok(overlayPos<scriptPos,'ghost overlay must exist before script executes');
+});
+
+
+test('jumpscare uses inline SVG and force-display state',()=>{
+  assert.match(html,/id="ghostJumpscare"[\s\S]{0,400}<svg[^>]+viewBox=/);
+  assert.match(html,/document\.documentElement\.classList\.add\('jumpscare-active'\)/);
+  assert.match(html,/document\.documentElement\.classList\.remove\('jumpscare-active'\)/);
+  assert.match(html,/html\.jumpscare-active\s+#ghostJumpscare\{display:grid!important/);
+  assert.doesNotMatch(html,/data:image\/svg\+xml/);
 });
