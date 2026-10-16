@@ -23,7 +23,7 @@ test('typing in form controls does not trigger jumpscare',()=>{
 });
 
 test('jumpscare auto-hides after 1200ms',()=>{
-  assert.match(html,/setTimeout\([^)]*=>[\s\S]{0,220}1200\)/);
+  assert.match(html,/setTimeout\(\(\)=>\{[\s\S]{0,260}\},1200\);/);
 });
 
 test('jumpscare uses embedded original ghost visual with no remote dependency',()=>{
