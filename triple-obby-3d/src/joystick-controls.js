@@ -18,24 +18,26 @@
     return Object.freeze({ x, y });
   }
 
-  function stepJoystickControls(input, yaw, dt, turnSpeed = 2.6) {
-    const active = Boolean(input?.active);
-    if (!active) {
-      return Object.freeze({ yaw: normalizeYaw(yaw), drive: 0, moveX: 0, moveZ: 0 });
+  function stepJoystickControls(input, yaw) {
+    const nextYaw = normalizeYaw(yaw);
+    if (!input?.active) {
+      return Object.freeze({ yaw: nextYaw, drive: 0, moveX: 0, moveZ: 0 });
     }
 
-    const x = Math.max(-1, Math.min(1, Number(input?.x) || 0));
-    const y = Math.max(-1, Math.min(1, Number(input?.y) || 0));
-    const safeDt = Math.max(0, Number.isFinite(dt) ? dt : 0);
-    const nextYaw = normalizeYaw(yaw - x * turnSpeed * safeDt);
-    const drive = Math.abs(y) < 0.08 ? 0 : -y;
+    let strafe = Math.max(-1, Math.min(1, Number(input?.x) || 0));
+    let drive = -(Math.max(-1, Math.min(1, Number(input?.y) || 0)));
+    if (Math.abs(strafe) < 0.08) strafe = 0;
+    if (Math.abs(drive) < 0.08) drive = 0;
 
-    return Object.freeze({
-      yaw: nextYaw,
-      drive,
-      moveX: Math.sin(nextYaw) * drive,
-      moveZ: Math.cos(nextYaw) * drive,
-    });
+    let moveX = Math.sin(nextYaw) * drive + Math.cos(nextYaw) * strafe;
+    let moveZ = Math.cos(nextYaw) * drive - Math.sin(nextYaw) * strafe;
+    const length = Math.hypot(moveX, moveZ);
+    if (length > 1) {
+      moveX /= length;
+      moveZ /= length;
+    }
+
+    return Object.freeze({ yaw: nextYaw, drive, moveX, moveZ });
   }
 
   globalThis.TripleObbyControls = Object.freeze({

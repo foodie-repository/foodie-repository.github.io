@@ -40,6 +40,16 @@ for (let index = 1; index <= 7; index += 1) {
   sessions.push({ sessionId, token: joined.memberToken });
   assert.equal(joined.room.id, created.room.id);
   assert.equal(joined.members.length, index + 1);
+
+  // Mirror the browser's 20s heartbeat so the capacity test itself does not
+  // accidentally expire early members while sequential live requests run.
+  if (index % 2 === 0) {
+    await Promise.all(sessions.map(member => call('heartbeat', {
+      roomId: created.room.id,
+      sessionId: member.sessionId,
+      memberToken: member.token,
+    })));
+  }
 }
 
 const ninth = await rawCall('join', {
