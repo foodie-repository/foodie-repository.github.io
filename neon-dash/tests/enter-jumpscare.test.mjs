@@ -56,3 +56,12 @@ test('jumpscare element is parsed before the main script',()=>{
   assert.ok(scriptPos>=0);
   assert.ok(overlayPos<scriptPos,'ghost overlay must exist before script executes');
 });
+
+
+test('jumpscare uses inline SVG and force-display state',()=>{
+  assert.match(html,/id="ghostJumpscare"[\s\S]{0,400}<svg[^>]+viewBox=/);
+  assert.match(html,/document\.documentElement\.classList\.add\('jumpscare-active'\)/);
+  assert.match(html,/document\.documentElement\.classList\.remove\('jumpscare-active'\)/);
+  assert.match(html,/html\.jumpscare-active\s+#ghostJumpscare\{display:grid!important/);
+  assert.doesNotMatch(html,/data:image\/svg\+xml/);
+});
