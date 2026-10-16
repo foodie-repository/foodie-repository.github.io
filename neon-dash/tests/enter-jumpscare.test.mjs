@@ -39,12 +39,12 @@ test('jumpscare auto-hides after 1500ms and resumes play',()=>{
   assert.match(html,/setTimeout\(\(\)=>\{[\s\S]{0,420}\},1500\);/);
 });
 
-test('jumpscare image fills the viewport',()=>{
-  assert.match(html,/\.ghost-jumpscare img\{[^}]*width:100vw[^}]*height:100vh[^}]*object-fit:cover/);
+test('jumpscare visual fills the viewport',()=>{
+  assert.match(html,/\.ghost-jumpscare svg\{[^}]*width:100vw[^}]*height:100vh/);
 });
 
 test('jumpscare uses embedded original ghost visual with no remote dependency',()=>{
-  assert.match(html,/data:image\/svg\+xml/);
+  assert.match(html,/id="ghostJumpscare"[\s\S]{0,400}<svg[^>]+viewBox=/);
   assert.doesNotMatch(html,/ghost\.png/);
 });
 
