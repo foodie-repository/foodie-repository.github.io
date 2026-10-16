@@ -6,21 +6,29 @@
     return value;
   }
 
-  function stepArrowControls(input, yaw, dt, turnSpeed = 2.6) {
-    const safeDt = Math.max(0, Number.isFinite(dt) ? dt : 0);
-    const turn = Number(Boolean(input?.left)) - Number(Boolean(input?.right));
-    const nextYaw = normalizeYaw(yaw + turn * turnSpeed * safeDt);
+  function relativeMove(input, yaw) {
     const drive = Number(Boolean(input?.forward)) - Number(Boolean(input?.back));
+    const strafe = Number(Boolean(input?.right)) - Number(Boolean(input?.left));
+    let moveX = Math.sin(yaw) * drive + Math.cos(yaw) * strafe;
+    let moveZ = Math.cos(yaw) * drive - Math.sin(yaw) * strafe;
+    const length = Math.hypot(moveX, moveZ);
+    if (length > 1) {
+      moveX /= length;
+      moveZ /= length;
+    }
+    return { moveX, moveZ };
+  }
 
+  function stepArrowControls(input, yaw) {
+    const nextYaw = normalizeYaw(yaw);
+    const move = relativeMove(input, nextYaw);
     return Object.freeze({
       yaw: nextYaw,
-      moveX: Math.sin(nextYaw) * drive,
-      moveZ: Math.cos(nextYaw) * drive,
+      moveX: move.moveX,
+      moveZ: move.moveZ,
     });
   }
 
-  // Three.js avatars are modeled with their visual front toward local -Z.
-  // Gameplay yaw uses +Z as logical forward, so rendering needs a 180° offset.
   function modelYawForFacing(yaw) {
     return normalizeYaw((Number.isFinite(yaw) ? yaw : 0) + Math.PI);
   }
