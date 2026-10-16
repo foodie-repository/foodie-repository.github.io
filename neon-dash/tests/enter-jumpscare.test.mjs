@@ -22,8 +22,25 @@ test('typing in form controls does not trigger jumpscare',()=>{
   assert.match(html,/INPUT\|TEXTAREA\|SELECT/);
 });
 
-test('jumpscare auto-hides after 1200ms',()=>{
-  assert.match(html,/setTimeout\(\(\)=>\{[\s\S]{0,260}\},1200\);/);
+test('jumpscare pauses game simulation while visible',()=>{
+  assert.match(html,/let ghostJumpscareActive=false/);
+  assert.match(html,/if\(currentScreen==='play'&&!ghostJumpscareActive\)/);
+});
+
+test('jumpscare requests fullscreen and restores prior fullscreen state',()=>{
+  assert.match(html,/requestFullscreen\?\.\(\)/);
+  assert.match(html,/const wasFullscreen=!!document\.fullscreenElement/);
+  assert.match(html,/if\(!wasFullscreen&&document\.fullscreenElement\)document\.exitFullscreen\?\.\(\)/);
+});
+
+test('jumpscare auto-hides after 1500ms and resumes play',()=>{
+  assert.match(html,/ghostJumpscareActive=true/);
+  assert.match(html,/ghostJumpscareActive=false/);
+  assert.match(html,/setTimeout\(\(\)=>\{[\s\S]{0,420}\},1500\);/);
+});
+
+test('jumpscare image fills the viewport',()=>{
+  assert.match(html,/\.ghost-jumpscare img\{[^}]*width:100vw[^}]*height:100vh[^}]*object-fit:cover/);
 });
 
 test('jumpscare uses embedded original ghost visual with no remote dependency',()=>{
