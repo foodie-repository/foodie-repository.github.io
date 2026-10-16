@@ -27,7 +27,7 @@
         <div class="stat"><small>점수</small><b id="score">0</b></div>
         <div class="stat"><small>처치</small><b id="kills">0</b></div>
       </div>
-      <div class="controlsHelp glass"><b>PC 조작</b><br>WASD 이동 · 마우스 시점 · <b>F 공격</b> · R 재장전 · Shift 질주 · 1~5 무기 · Q/E 전환 · P 일시정지</div>
+      <div class="controlsHelp glass"><b>PC 조작</b><br>WASD 이동 · 마우스 시점 · <b>F 공격</b> · <b>Space 점프</b> · R 재장전 · Shift 질주 · 1~5 무기 · Q/E 전환 · P 일시정지</div>
     </div>
     <div id="weaponBar"></div>
     <div id="bottomHud">
@@ -45,8 +45,9 @@
 
   <div id="mobileUI">
     <div id="lookZone" aria-label="시점 조작 영역"></div>
-    <div id="joystickBase" aria-label="이동 조이스틱"><div id="joystickKnob"></div></div>
+    <div id="moveZone" aria-label="이동 영역"><div id="joystickBase" aria-label="이동 조이스틱"><div id="joystickKnob"></div></div></div>
     <button id="fireBtn" class="mobileBtn" aria-label="사격">FIRE</button>
+    <button id="jumpBtn" class="mobileBtn" aria-label="점프">JUMP</button>
     <button id="reloadBtn" class="mobileBtn" aria-label="재장전">R</button>
     <button id="sprintBtn" class="mobileBtn" aria-label="질주">RUN</button>
     <button id="nextWeaponBtn" class="mobileBtn" aria-label="다음 무기">NEXT</button>
@@ -58,12 +59,12 @@
   <div id="startOverlay" class="overlay">
     <div class="panel">
       <h1>3D 좀비 생존게임</h1>
-      <p>PC에서는 <strong>F키</strong>로 공격하고, 모바일에서는 FIRE 버튼으로 사격합니다. 총기별 <strong>발사 반동과 재장전 모션</strong>이 적용됩니다.</p>
+      <p><strong>모바일 게임 스타일 조이스틱</strong>, <strong>점프</strong>, 이동 중 무기 변경, <strong>사람 모양 좀비</strong>를 적용했습니다. PC에서는 F키로 공격하고 Space로 점프합니다.</p>
       <div class="featureGrid">
         <div class="feature"><b>5종 무기</b><span>권총·기관단총·산탄총·돌격소총·저격총. 숫자키 1~5 또는 화면 무기 칸으로 선택합니다.</span></div>
         <div class="feature"><b>총기 모션</b><span>권총 슬라이드, 산탄총 펌프액션, 저격총 볼트액션, 머즐 플래시와 탄창 재장전 모션을 지원합니다.</span></div>
-        <div class="feature"><b>7종 좀비</b><span>워커·러너·크롤러·탱커·스피터·폭발 좀비·보스가 웨이브에 따라 출현합니다.</span></div>
-        <div class="feature"><b>모바일 조작</b><span>왼쪽 조이스틱 이동, 오른쪽 화면 드래그 조준, FIRE·R·RUN·NEXT 버튼과 전체화면을 지원합니다.</span></div>
+        <div class="feature"><b>인간형 좀비</b><span>모든 좀비가 머리·몸통·팔·다리를 가진 사람 형태로 등장하고 걸을 때 팔과 다리가 움직입니다.</span></div>
+        <div class="feature"><b>모바일 조작</b><span>손가락을 놓은 위치에 조이스틱이 나타나며 데드존·곡선 응답·스무딩을 적용했습니다. FIRE·JUMP·R·RUN·NEXT를 동시에 사용할 수 있습니다.</span></div>
       </div>
       <div class="buttonRow"><button id="startBtn" class="mainButton">게임 시작</button></div>
       <p class="smallText">모바일 세로·가로 화면에서 총기 위치를 자동 보정합니다. 가로 화면에서 더 넓게 플레이할 수 있습니다.</p>
@@ -93,7 +94,7 @@
   </div>
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/0.160.1/three.min.js"></script>
-<script src="./mobile-weapon-fix.js?v=5.1-mobile-visible"></script>
-<script src="./app.js?v=5.1-mobile-visible"></script>
+<script src="./mobile-weapon-fix.js?v=6.0-mobile-game"></script>
+<script src="./app.js?v=6.0-mobile-game"></script>
 </body>
 </html>
