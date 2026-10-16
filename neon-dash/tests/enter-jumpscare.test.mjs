@@ -47,3 +47,12 @@ test('jumpscare uses embedded original ghost visual with no remote dependency',(
   assert.match(html,/data:image\/svg\+xml/);
   assert.doesNotMatch(html,/ghost\.png/);
 });
+
+
+test('jumpscare element is parsed before the main script',()=>{
+  const overlayPos=html.indexOf('id="ghostJumpscare"');
+  const scriptPos=html.indexOf('<script');
+  assert.ok(overlayPos>=0);
+  assert.ok(scriptPos>=0);
+  assert.ok(overlayPos<scriptPos,'ghost overlay must exist before script executes');
+});
