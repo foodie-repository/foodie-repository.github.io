@@ -732,7 +732,7 @@ function createNeonStartRuntime() {
     {id:'fo13', x:21510, y:290, w:125, h:OFFICIAL_FLIGHT_BOTTOM-290},
   ];
 
-  return doubleOfficialRuntime({
+  return softenNeonSecondHalfTail(doubleOfficialRuntime({
     id:'neon-start',
     name:'Neon Start',
     music:'neon-rush',
@@ -748,7 +748,7 @@ function createNeonStartRuntime() {
     isCustom:false,
     fingerprint:null,
     sourceLevel:null,
-  });
+  }));
 }
 
 
@@ -970,6 +970,14 @@ function createFinalEclipseRuntime() {
     {id:'fe-fo22',x:17200,y:295,w:105,h:OFFICIAL_FLIGHT_BOTTOM-295},
   ];
   return doubleOfficialRuntime(officialRuntimeBase('final-eclipse','Final Eclipse','dark-pulse',18500,{blocks,spikes,pads,orbs,portals,flightObstacles}));
+}
+
+function softenNeonSecondHalfTail(runtime) {
+  const cutoff=runtime.levelEnd-3020;
+  for(const key of ['blocks','spikes','pads','orbs','portals','flightObstacles']){
+    runtime[key]=runtime[key].filter(item=>!item.id.endsWith('-r2')||item.x<cutoff);
+  }
+  return runtime;
 }
 
 function doubleOfficialRuntime(runtime) {
