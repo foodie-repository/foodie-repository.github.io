@@ -71,3 +71,8 @@ test('uploaded ghost photo is embedded as JPEG',()=>{
   assert.match(html,/id="ghostJumpscare"[\s\S]{0,260}<img[^>]+src="data:image\/jpeg;base64,/);
   assert.doesNotMatch(html,/id="ghostJumpscare"[\s\S]{0,260}<svg/);
 });
+
+
+test('uploaded ghost photo has stable image id',()=>{
+  assert.match(html,/id="ghostJumpscareImage"/);
+});
