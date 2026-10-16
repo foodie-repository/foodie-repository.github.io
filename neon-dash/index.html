@@ -642,7 +642,7 @@ const OFFICIAL_GROUND_Y = 430;
 const OFFICIAL_FLIGHT_TOP = 58;
 const OFFICIAL_FLIGHT_BOTTOM = OFFICIAL_GROUND_Y;
 
-function createNeonStartRuntimeBase() {
+function createNeonStartRuntime() {
   const floors = [
     [-300, 1550],
     [1430, 1170],
@@ -732,7 +732,7 @@ function createNeonStartRuntimeBase() {
     {id:'fo13', x:21510, y:290, w:125, h:OFFICIAL_FLIGHT_BOTTOM-290},
   ];
 
-  return {
+  return doubleOfficialRuntime({
     id:'neon-start',
     name:'Neon Start',
     music:'neon-rush',
@@ -748,7 +748,7 @@ function createNeonStartRuntimeBase() {
     isCustom:false,
     fingerprint:null,
     sourceLevel:null,
-  };
+  });
 }
 
 
@@ -773,7 +773,7 @@ function officialRuntimeBase(id,name,music,levelEnd,{blocks=[],spikes=[],pads=[]
   };
 }
 
-function createPulseFactoryRuntimeBase() {
+function createPulseFactoryRuntime() {
   const blocks=[
     {id:'pf-b1',x:1350,y:365,w:90,h:65},
     {id:'pf-b2',x:2150,y:350,w:100,h:80},
@@ -806,10 +806,10 @@ function createPulseFactoryRuntimeBase() {
     {id:'pf-fo3',x:8050,y:OFFICIAL_FLIGHT_TOP,w:130,h:175},
     {id:'pf-fo4',x:8400,y:290,w:125,h:OFFICIAL_FLIGHT_BOTTOM-290},
   ];
-  return officialRuntimeBase('pulse-factory','Pulse Factory','hyper-drive',12000,{blocks,spikes,pads,orbs,portals,flightObstacles});
+  return doubleOfficialRuntime(officialRuntimeBase('pulse-factory','Pulse Factory','hyper-drive',12000,{blocks,spikes,pads,orbs,portals,flightObstacles}));
 }
 
-function createSkyCircuitRuntimeBase() {
+function createSkyCircuitRuntime() {
   const blocks=[
     {id:'sc-b1',x:1200,y:360,w:90,h:70},
     {id:'sc-b2',x:2050,y:345,w:100,h:85},
@@ -854,10 +854,10 @@ function createSkyCircuitRuntimeBase() {
     {id:'sc-fo15',x:12700,y:OFFICIAL_FLIGHT_TOP,w:105,h:150},
     {id:'sc-fo16',x:13000,y:300,w:105,h:OFFICIAL_FLIGHT_BOTTOM-300},
   ];
-  return officialRuntimeBase('sky-circuit','Sky Circuit','neon-rush',14500,{blocks,spikes,pads,orbs,portals,flightObstacles});
+  return doubleOfficialRuntime(officialRuntimeBase('sky-circuit','Sky Circuit','neon-rush',14500,{blocks,spikes,pads,orbs,portals,flightObstacles}));
 }
 
-function createWaveStormRuntimeBase() {
+function createWaveStormRuntime() {
   const blocks=[
     {id:'ws-b1',x:1250,y:360,w:90,h:70},
     {id:'ws-b2',x:2150,y:340,w:105,h:90},
@@ -910,10 +910,10 @@ function createWaveStormRuntimeBase() {
     {id:'ws-fo24',x:13100,y:OFFICIAL_FLIGHT_TOP,w:110,h:185},
     {id:'ws-fo25',x:13400,y:295,w:105,h:OFFICIAL_FLIGHT_BOTTOM-295},
   ];
-  return officialRuntimeBase('wave-storm','Wave Storm','hyper-drive',15500,{blocks,spikes,pads,orbs,portals,flightObstacles});
+  return doubleOfficialRuntime(officialRuntimeBase('wave-storm','Wave Storm','hyper-drive',15500,{blocks,spikes,pads,orbs,portals,flightObstacles}));
 }
 
-function createFinalEclipseRuntimeBase() {
+function createFinalEclipseRuntime() {
   const blocks=[
     {id:'fe-b1',x:1200,y:360,w:90,h:70},
     {id:'fe-b2',x:1950,y:340,w:105,h:90},
@@ -969,7 +969,7 @@ function createFinalEclipseRuntimeBase() {
     {id:'fe-fo21',x:16900,y:OFFICIAL_FLIGHT_TOP,w:110,h:180},
     {id:'fe-fo22',x:17200,y:295,w:105,h:OFFICIAL_FLIGHT_BOTTOM-295},
   ];
-  return officialRuntimeBase('final-eclipse','Final Eclipse','dark-pulse',18500,{blocks,spikes,pads,orbs,portals,flightObstacles});
+  return doubleOfficialRuntime(officialRuntimeBase('final-eclipse','Final Eclipse','dark-pulse',18500,{blocks,spikes,pads,orbs,portals,flightObstacles}));
 }
 
 function doubleOfficialRuntime(runtime) {
@@ -992,11 +992,6 @@ function doubleOfficialRuntime(runtime) {
   };
 }
 
-function createNeonStartRuntime(){return doubleOfficialRuntime(createNeonStartRuntimeBase());}
-function createPulseFactoryRuntime(){return doubleOfficialRuntime(createPulseFactoryRuntimeBase());}
-function createSkyCircuitRuntime(){return doubleOfficialRuntime(createSkyCircuitRuntimeBase());}
-function createWaveStormRuntime(){return doubleOfficialRuntime(createWaveStormRuntimeBase());}
-function createFinalEclipseRuntime(){return doubleOfficialRuntime(createFinalEclipseRuntimeBase());}
 
 // Temporary compatibility alias until all official-start callers use the registry.
 function createOfficialRuntime() {
