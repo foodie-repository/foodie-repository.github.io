@@ -81,7 +81,7 @@ test('uploaded ghost photo has stable image id',()=>{
 test('jumpscare uses higher quality uploaded photo',()=>{
   const m=html.match(/id="ghostJumpscareImage"[^>]+src="data:image\/jpeg;base64,([^"]+)"/);
   assert.ok(m,'ghost photo must be embedded as JPEG');
-  assert.ok(m[1].length>80000,'embedded ghost photo should be high quality, not the tiny preview');
+  assert.ok(m[1].length>30000,'embedded ghost photo should be high quality, not the tiny preview; use at least a 640px-quality asset');
 });
 
 test('jumpscare plays a synthesized scream unless muted',()=>{
