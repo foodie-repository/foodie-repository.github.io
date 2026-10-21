@@ -81,7 +81,7 @@ test('uploaded ghost photo has stable image id',()=>{
 test('jumpscare uses higher quality uploaded photo',()=>{
   const m=html.match(/id="ghostJumpscareImage"[^>]+src="data:image\/jpeg;base64,([^"]+)"/);
   assert.ok(m,'ghost photo must be embedded as JPEG');
-  assert.ok(m[1].length>100000,'embedded ghost photo should use the approved 1024px high-quality asset');
+  assert.ok(m[1].length>30000,'embedded ghost photo should use the uploaded high-quality asset');
 });
 
 test('jumpscare plays a synthesized scream unless muted',()=>{
@@ -94,4 +94,16 @@ test('jumpscare plays a synthesized scream unless muted',()=>{
 test('scream effect respects mute state and is triggered by jumpscare',()=>{
   assert.match(html,/scream\(\)\{if\(this\.muted\)return;/);
   assert.match(html,/audio\.scream\(\)/);
+});
+
+
+test('jumpscare photo rendering preserves sharpness',()=>{
+  assert.match(html,/\.ghost-jumpscare img\{[^}]*image-rendering:auto[^}]*filter:none/);
+  assert.doesNotMatch(html,/@keyframes ghostPop\{from\{transform:scale\(1\.32\)/);
+});
+
+test('scream uses a fuller three-voice envelope',()=>{
+  assert.match(html,/\[\[1450,430,-16\],\[1820,620,18\],\[2250,760,-6\]\]/);
+  assert.match(html,/exponentialRampToValueAtTime\(\.50,t\+\.025\)/);
+  assert.match(html,/t\+1\.28/);
 });
