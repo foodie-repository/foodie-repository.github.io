@@ -81,11 +81,17 @@ test('uploaded ghost photo has stable image id',()=>{
 test('jumpscare uses higher quality uploaded photo',()=>{
   const m=html.match(/id="ghostJumpscareImage"[^>]+src="data:image\/jpeg;base64,([^"]+)"/);
   assert.ok(m,'ghost photo must be embedded as JPEG');
-  assert.ok(m[1].length>30000,'embedded ghost photo should be high quality, not the tiny preview; use at least a 640px-quality asset');
+  assert.ok(m[1].length>100000,'embedded ghost photo should use the approved 1024px high-quality asset');
 });
 
 test('jumpscare plays a synthesized scream unless muted',()=>{
   assert.match(html,/scream\(\)\{/);
   assert.match(html,/if\(this\.muted\)return;/);
+  assert.match(html,/audio\.scream\(\)/);
+});
+
+
+test('scream effect respects mute state and is triggered by jumpscare',()=>{
+  assert.match(html,/scream\(\)\{if\(this\.muted\)return;/);
   assert.match(html,/audio\.scream\(\)/);
 });
