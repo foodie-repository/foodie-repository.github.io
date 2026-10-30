@@ -2,216 +2,188 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Upgrade official maps 2–5 with real functional signature blocks, press-to-toggle Wave controls, overlap cleanup, and regenerated deterministic AUTO replays while leaving Neon Start and the ghost jumpscare unchanged.
+**Goal:** Upgrade official maps 2–5 with functional signature blocks, press-to-toggle Wave controls, cleaned collision geometry, and regenerated deterministic AUTO replays while preserving map 1 and the ghost jumpscare.
 
-**Architecture:** Keep the single-file `neon-dash/index.html` production structure. Extend the existing runtime object model with deterministic special-block state and shared press-edge input handling, then update only official maps 2–5 and regenerate their replay payloads/fingerprints under the existing 120 Hz fixed-step engine.
+**Architecture:** Keep production in the existing single `neon-dash/index.html`. Extend the runtime with deterministic special-block state, centralize Wave press-edge handling, audit map geometry before replay generation, and regenerate official replays only for maps 2–5. Tests extract deterministic pure helpers where possible and exercise the real official runtime data.
 
-**Tech Stack:** HTML5 Canvas, vanilla JavaScript, Web Audio API, localStorage, Node.js built-in `node:test` + `vm`, GitHub Pages.
+**Tech Stack:** HTML5 Canvas, vanilla JavaScript, Web Audio API, localStorage, fixed-step 120 Hz replay engine, Node.js built-in `node:test`.
 
 **Spec:** `docs/superpowers/specs/2026-10-22-neon-dash-functional-blocks-toggle-wave-design.md`
 
 ## Global Constraints
 
-- Neon Start geometry, fingerprint, replay, and difficulty remain unchanged.
-- Ghost jumpscare behavior and assets remain unchanged.
-- Wave changes direction exactly once per press edge; release does not steer.
-- Functional blocks are deterministic and replay-safe.
-- No randomness in moving/electric/collapse behavior.
-- No heuristic AUTO fallback, invulnerability, teleporting, or collision bypass.
-- Custom-map editor/replay behavior remains functional.
-- Official maps 2–5 must remain physically solvable under normal collision rules.
-- Maps 2–5 must have unnecessary overlapping collision geometry removed.
-- AUTO replays for maps 2–5 must be regenerated and verified at 60/90/120/144 Hz.
+- Neon Start remains unchanged in runtime, fingerprint, and replay.
+- Ghost jumpscare remains unchanged.
+- Maps 2–5 become roughly 3× harder through geometry, timing, transitions, and special mechanics—not 3× player speed.
+- Wave steering changes to press-edge toggle; release does not steer.
+- AUTO remains deterministic replay-only.
+- No random special-block behavior.
+- All special-block state resets on restart.
+- No unnecessary overlapping solids, hidden duplicate collisions, or portal/solid overlaps.
+- Production stays a single HTML file.
+- Final deployment must include a cache-busting version URL.
 
 ## Review Focus
 
-- Key repeat / held pointer must not toggle Wave more than once per press edge.
-- Portal entry into Wave must always initialize the same direction.
-- Moving blocks must carry a standing cube without tunneling or double-collisions.
-- Electric/collapse state must reset cleanly on death/restart.
-- Geometry cleanup must not accidentally remove intentional readable hazards.
+- Press-repeat / key-repeat must not double-toggle Wave.
+- Touch press and keyboard press must share identical toggle semantics.
+- Moving/electric/collapse state must use simulation tick, not wall-clock time.
+- Special blocks must visually match their collision state.
+- Replay corruption must cause normal death rather than recovery.
 
 ---
 
-### Task 1: Centralize press-edge input and implement toggle Wave
+### Task 1: Centralize press-edge input and implement toggle Wave controls
 
 **Files:**
 - Modify: `neon-dash/index.html`
-- Create: `neon-dash/tests/toggle-wave.test.mjs`
+- Create: `neon-dash/tests/wave-toggle-input.test.mjs`
 
 **Interfaces:**
 - Produces:
-  - `handlePressEdge(source)`
+  - `handleInputPressEdge(source)`
   - `game.waveDirection`
-  - `WAVE_SPEED = 430`
+  - `resetWaveDirection()`
 
-- [ ] Write failing tests asserting:
-  - entering Wave initializes `waveDirection = +1`,
-  - one press flips +1→-1,
-  - next press flips -1→+1,
-  - release does not change direction,
-  - repeated keydown with no release does not repeatedly toggle,
-  - replay press uses the same edge path.
-- [ ] Run tests and verify RED.
-- [ ] Route manual/replay press transitions through `handlePressEdge`.
-- [ ] Replace hold-based Wave vertical velocity with `game.waveDirection * WAVE_SPEED`.
-- [ ] Reset direction on Wave portal entry/restart.
-- [ ] Run tests and verify GREEN.
+- [ ] Write failing tests:
+  - entering Wave initializes direction to +1,
+  - one press toggles +1→-1,
+  - second press toggles -1→+1,
+  - release leaves direction unchanged,
+  - held/repeat press does not toggle repeatedly,
+  - replay press uses same edge path.
+- [ ] Run tests; verify RED.
+- [ ] Implement shared press-edge handler and route keyboard/touch/replay press transitions through it.
+- [ ] Change Wave physics from held-state steering to `game.waveDirection * WAVE_SPEED`.
+- [ ] Reset direction on Wave entry/restart.
+- [ ] Run tests; verify GREEN.
 - [ ] Commit: `feat: add press-toggle wave controls`.
 
-### Task 2: Add shared functional-block runtime primitives
+### Task 2: Add deterministic special-block runtime state
 
 **Files:**
 - Modify: `neon-dash/index.html`
-- Create: `neon-dash/tests/functional-block-core.test.mjs`
+- Create: `neon-dash/tests/special-block-state.test.mjs`
 
 **Interfaces:**
 - Produces:
-  - `isBounceBlock(block)`
-  - `movingBlockY(block, simTick)`
-  - `isElectricBlockActive(block, simTick)`
-  - `isCollapseBlockSolid(block, gameState)`
-  - attempt state for triggered/collapsed blocks.
+  - `specialBlockStateAtTick(block, simTick)`
+  - `game.collapseTriggered`
+  - `game.collapsedBlocks`
 
-- [ ] Write failing pure-logic tests for deterministic movement/electric/collapse calculations.
+- [ ] Write failing tests for:
+  - moving-block position deterministic by tick,
+  - electric active/inactive deterministic by tick,
+  - collapse block trigger/reset behavior,
+  - no wall-clock dependency.
 - [ ] Run RED.
-- [ ] Add attempt state reset in `resetRun()`.
-- [ ] Add pure helpers and runtime block-state projection.
+- [ ] Implement tick-based special-block state helpers.
+- [ ] Reset attempt state on restart.
 - [ ] Run GREEN.
-- [ ] Commit: `feat: add deterministic functional block primitives`.
+- [ ] Commit: `feat: add deterministic special block state`.
 
-### Task 3: Implement Bounce Block in Pulse Factory
+### Task 3: Implement Pulse Factory Bounce Blocks
 
 **Files:**
 - Modify: `neon-dash/index.html`
 - Create: `neon-dash/tests/pulse-factory-bounce.test.mjs`
 
 **Interfaces:**
-- Consumes functional-block core.
-- Produces Pulse Factory `kind:'bounce-block'` geometry.
+- Produces `kind:'bounce-block'` collision behavior.
 
 - [ ] Write failing tests:
-  - Pulse Factory contains multiple bounce blocks,
-  - top landing applies configured launch impulse,
-  - side/bottom collision remains solid,
-  - same contact does not retrigger every tick.
+  - top landing launches with configured power,
+  - side/bottom behaves as solid collision,
+  - standing contact does not retrigger every tick,
+  - Pulse Factory contains multiple bounce-blocks.
 - [ ] Run RED.
-- [ ] Integrate bounce-block landing behavior into cube collision.
-- [ ] Replace selected standard blocks in Pulse Factory with bounce blocks and increase sequence density.
-- [ ] Add distinctive piston/gear rendering.
+- [ ] Add bounce blocks to Pulse Factory and increase obstacle density/timing complexity.
 - [ ] Run GREEN.
 - [ ] Commit: `feat: add Pulse Factory bounce blocks`.
 
-### Task 4: Implement Moving Block in Sky Circuit
+### Task 4: Implement Sky Circuit Moving Blocks
 
 **Files:**
 - Modify: `neon-dash/index.html`
-- Create: `neon-dash/tests/sky-circuit-moving-block.test.mjs`
+- Create: `neon-dash/tests/sky-circuit-moving.test.mjs`
 
 **Interfaces:**
-- Produces deterministic vertical moving-block projection/carry behavior.
+- Produces deterministic vertical moving block collision + player carry.
 
 - [ ] Write failing tests:
-  - Sky Circuit contains moving blocks,
-  - same tick always yields same Y,
-  - movement stays within `minY/maxY`,
-  - player standing on top inherits platform delta Y,
-  - collision uses projected current Y.
+  - block oscillates between minY/maxY,
+  - same tick yields same Y,
+  - standing player inherits vertical platform delta,
+  - no geometry overlap with portals/solids.
 - [ ] Run RED.
-- [ ] Add projected moving blocks to platform/collision/render paths.
-- [ ] Update Sky Circuit geometry around timed moving-platform landings.
-- [ ] Add rails/arrows rendering.
+- [ ] Add moving blocks and tighten ship/landing sequences.
 - [ ] Run GREEN.
 - [ ] Commit: `feat: add Sky Circuit moving blocks`.
 
-### Task 5: Implement Electric Block in Wave Storm
+### Task 5: Implement Wave Storm Electric Blocks
 
 **Files:**
 - Modify: `neon-dash/index.html`
-- Create: `neon-dash/tests/wave-storm-electric-block.test.mjs`
+- Create: `neon-dash/tests/wave-storm-electric.test.mjs`
 
 **Interfaces:**
-- Produces deterministic active/inactive electric hazards.
+- Produces active/inactive lethal electric blocks.
 
 - [ ] Write failing tests:
-  - Wave Storm contains electric blocks,
-  - active state repeats exactly by `periodTicks/activeTicks/phaseTicks`,
-  - active collision is lethal,
-  - inactive collision is non-lethal,
-  - visual state matches collision state.
+  - active state lethal,
+  - inactive state non-lethal,
+  - state deterministic from tick,
+  - render state matches collision state.
 - [ ] Run RED.
-- [ ] Add electric collision/render logic.
-- [ ] Redesign Wave Storm corridors around frequent toggle-Wave inputs and timed electric windows.
+- [ ] Add electric blocks, increase Wave toggle density, and tighten legal corridors.
 - [ ] Run GREEN.
 - [ ] Commit: `feat: add Wave Storm electric blocks`.
 
-### Task 6: Implement Collapse Block in Final Eclipse
+### Task 6: Implement Final Eclipse Collapse Blocks
 
 **Files:**
 - Modify: `neon-dash/index.html`
-- Create: `neon-dash/tests/final-eclipse-collapse-block.test.mjs`
+- Create: `neon-dash/tests/final-eclipse-collapse.test.mjs`
 
 **Interfaces:**
-- Produces deterministic trigger→delay→collapsed lifecycle.
+- Produces trigger→countdown→non-solid collapse behavior.
 
 - [ ] Write failing tests:
-  - landing triggers countdown once,
-  - solid until delay expires,
-  - non-solid after collapse,
-  - state resets on restart,
-  - repeated contact does not restart timer.
+  - top landing triggers collapse,
+  - block remains solid until delay expires,
+  - becomes non-solid after delay,
+  - reset restores block,
+  - repeated contact does not restart countdown.
 - [ ] Run RED.
-- [ ] Add collapse state/collision/render logic.
-- [ ] Update Final Eclipse with chained collapse-block momentum sections and denser transitions.
+- [ ] Add collapse blocks and denser final-stage transitions.
 - [ ] Run GREEN.
 - [ ] Commit: `feat: add Final Eclipse collapse blocks`.
 
-### Task 7: Audit and remove unnecessary overlaps in maps 2–5
+### Task 7: Geometry overlap audit and cleanup
 
 **Files:**
 - Modify: `neon-dash/index.html`
-- Create: `neon-dash/tests/official-overlap-cleanup.test.mjs`
+- Create: `neon-dash/tests/official-overlap-audit.test.mjs`
 
 **Interfaces:**
-- Consumes all updated runtimes.
+- Consumes maps 2–5 runtime constructors.
 
-- [ ] Write failing overlap audit tests for:
-  - solid-vs-solid redundant overlaps,
-  - special-block vs standard-block duplicates,
-  - hidden spikes fully inside blocks,
-  - cube portal spawn overlap,
-  - duplicate effective collision rectangles.
-- [ ] Run RED.
-- [ ] Clean geometry in Pulse Factory, Sky Circuit, Wave Storm, Final Eclipse.
-- [ ] Preserve only intentional visible combinations.
+- [ ] Write failing audit:
+  - no duplicate solid rectangles,
+  - no unnecessary solid-solid overlaps,
+  - no portal spawn inside solids,
+  - no special block stacked exactly on normal block,
+  - no fully hidden spikes inside solids.
+- [ ] Run RED against current changed maps.
+- [ ] Remove/reposition unnecessary overlaps without reducing intended difficulty.
 - [ ] Run GREEN.
 - [ ] Commit: `fix: clean official map collision overlaps`.
 
-### Task 8: Rebalance maps 2–5 to ~3× current effective difficulty
+### Task 8: Regenerate fingerprints and AUTO replays for maps 2–5
 
 **Files:**
 - Modify: `neon-dash/index.html`
-- Create: `neon-dash/tests/official-difficulty-density.test.mjs`
-
-**Interfaces:**
-- Produces final map geometry before replay generation.
-
-- [ ] Add structural difficulty tests comparing old baseline metadata/counts saved in the test:
-  - higher obstacle/event density,
-  - shorter average recovery spans,
-  - more portal transitions where appropriate,
-  - tighter legal corridor clearances.
-- [ ] Run RED.
-- [ ] Tune maps 2–5 without changing player speed multiplier.
-- [ ] Confirm no impossible gaps/corridors.
-- [ ] Run GREEN.
-- [ ] Commit: `feat: rebalance official maps 2 through 5`.
-
-### Task 9: Regenerate fingerprints and AUTO replays for maps 2–5
-
-**Files:**
-- Modify: `neon-dash/index.html`
-- Modify/Create: replay verification tests under `neon-dash/tests/`
+- Modify/Create: `neon-dash/tests/advanced-official-replays.test.mjs`
 
 **Interfaces:**
 - Produces new:
@@ -219,37 +191,51 @@
   - `SKY_CIRCUIT_REPLAY`
   - `WAVE_STORM_REPLAY`
   - `FINAL_ECLIPSE_REPLAY`
-  - verified tick/fingerprint metadata.
+  - verified tick metadata and fingerprints.
 
-- [ ] Write failing replay-fingerprint tests after geometry changes.
-- [ ] Generate legal 120 Hz input-only replay for each changed map.
-- [ ] Verify each replay reaches 100%.
-- [ ] Verify identical final tick at 60/90/120/144 Hz render schedules.
-- [ ] Remove one critical press from each replay and verify normal death.
-- [ ] Assert Neon Start fingerprint/replay is byte-for-byte unchanged.
-- [ ] Commit: `feat: regenerate AUTO replays for advanced maps`.
+- [ ] Write failing replay tests against changed fingerprints.
+- [ ] Generate legal 120 Hz replay for Pulse Factory.
+- [ ] Generate legal 120 Hz replay for Sky Circuit.
+- [ ] Generate legal 120 Hz replay for Wave Storm using toggle presses.
+- [ ] Generate legal 120 Hz replay for Final Eclipse.
+- [ ] Verify each at 60/90/120/144 Hz with identical final tick.
+- [ ] Remove one critical press from each replay and confirm normal death.
+- [ ] Assert Neon Start fingerprint/replay unchanged.
+- [ ] Commit: `feat: regenerate advanced official auto replays`.
 
-### Task 10: Full regression, merge, and new version link
+### Task 9: Render functional block identities
+
+**Files:**
+- Modify: `neon-dash/index.html`
+- Create/Modify: `neon-dash/tests/special-block-render.test.mjs`
+
+- [ ] Write failing render assertions for each special kind.
+- [ ] Add:
+  - Bounce: piston/gear launch motif,
+  - Moving: vertical arrows/rail,
+  - Electric: active glow / inactive dim state,
+  - Collapse: crack progression / hidden collapsed state.
+- [ ] Ensure collision/render state use same tick/state helpers.
+- [ ] Run GREEN.
+- [ ] Commit: `style: render functional official blocks`.
+
+### Task 10: Full regression, merge, and version link
 
 **Files:**
 - Modify only if regressions are found.
 
-**Interfaces:**
-- Produces deployable `main` build and cache-busting URL.
-
-- [ ] Run all `neon-dash/tests/*.test.mjs`.
-- [ ] Parse-check production inline JavaScript with `new Function(script)`.
+- [ ] Run full `node --test neon-dash/tests/*.test.mjs`.
+- [ ] Parse-check inline production script with `new Function`.
 - [ ] Verify:
-  - toggle Wave input,
-  - 4 functional block types,
-  - overlap cleanup,
-  - maps 2–5 AUTO clears,
   - Neon Start unchanged,
   - ghost jumpscare unchanged,
-  - custom editor/replay/map codes unchanged.
-- [ ] Merge through PR into `main`.
-- [ ] Fetch `main` and verify exact production blob.
+  - Wave toggle behavior,
+  - special blocks 2–5,
+  - no unnecessary overlaps,
+  - AUTO 2–5 deterministic at 60/90/120/144,
+  - custom maps/editor/map codes still work.
+- [ ] Merge feature branch to `main`.
+- [ ] Fetch deployed `main` and verify markers/fingerprints.
 - [ ] Provide:
   - normal URL,
-  - `https://foodie-repository.github.io/neon-dash/?v=<merge-sha-prefix>`.
-
+  - cache-busting URL `?v=<merge-sha-prefix>`.
