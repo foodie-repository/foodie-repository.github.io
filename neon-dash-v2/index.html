@@ -1219,10 +1219,44 @@ function upgradeOfficialRuntime(runtime){
   }
   const extras=NEON_CHALLENGE_OBSTACLES[runtime.id];
   if(extras){runtime.spikes.push(...extras.spikes.map(o=>({...o})));runtime.flightObstacles.push(...extras.flightObstacles.map(o=>({...o})));}
+
+  // Two optional advanced routes per official stage, one in each repeated half.
+  // All the power blocks are above the verified AUTO route.
+  for(let section=0;section<2;section++){
+    const offset=runtime.speedCycleLength*section;
+    const tag=runtime.id+'-power-'+section;
+    runtime.powerBlocks.push(
+      {id:tag+'-triple',x:315+offset,y:304,w:34,h:34,type:'triple-jump'},
+      {id:tag+'-gravity-up',x:440+offset,y:306,w:34,h:34,type:'gravity-switch'},
+      {id:tag+'-gravity-down',x:810+offset,y:52,w:34,h:34,type:'gravity-switch'}
+    );
+  }
   const uniqueSpikes=[];
   for(const spike of runtime.spikes)if(!uniqueSpikes.some(existing=>rectsOverlap(existing,spike)))uniqueSpikes.push(spike);
   runtime.spikes=uniqueSpikes;
   return runtime;
+}
+
+function applyPowerBlocks(){
+  if(player.mode!=='cube'||!game.runtime?.powerBlocks?.length){game.activePowerContacts.clear();return;}
+  const box=playerRect(3),contacts=new Set();
+  for(const p of game.runtime.powerBlocks){
+    if(!rectsOverlap(box,p))continue;
+    contacts.add(p.id);
+    if(game.activePowerContacts.has(p.id))continue;
+    if(p.type==='gravity-switch'){
+      player.gravitySign*=-1;
+      player.vy=0;player.grounded=false;game.standingBlockId=null;game.coyote=0;game.jumpBuffer=0;
+      player.airJumpsRemaining=0;
+      audio.portal();burst(player.worldX+20,player.y+20,18,'portal');
+    }else if(p.type==='triple-jump'){
+      player.vy=jumpVelocity()*player.gravitySign;
+      player.grounded=false;game.coyote=0;game.jumpBuffer=0;
+      player.airJumpsRemaining=2;
+      audio.pad();burst(player.worldX+20,player.y+20,15,'jump');
+    }
+  }
+  game.activePowerContacts=contacts;
 }
 function activeSolidBlocks(){
   return game.runtime.blocks.filter(b=>!b.collapsedUntil||b.collapsedUntil<=game.elapsed);
@@ -1257,6 +1291,7 @@ function officialRuntimeFingerprint(runtime) {
     portals:runtime.portals.map(o=>[o.x,o.y,o.w,o.h,o.type]),
     flightObstacles:runtime.flightObstacles.map(o=>[o.x,o.y,o.w,o.h]),
   };
+  if(runtime.id!=='neon-start')canonical.powerBlocks=(runtime.powerBlocks||[]).map(o=>[o.x,o.y,o.w,o.h,o.type]);
   return `og1-${fnv1a(JSON.stringify(canonical))}`;
 }
 
@@ -1909,8 +1944,8 @@ function drawEditor() {
 
 // ---------------- Game ----------------
 const W=gameCanvas.width,H=gameCanvas.height,GROUND_Y=430,PLAYER_SIZE=40,PLAYER_SCREEN_X=190,GRAVITY=2300,FLIGHT_TOP=58,FLIGHT_BOTTOM=GROUND_Y;
-const game={active:false,runtime:null,kind:'official',levelId:null,officialLevelId:null,returnToEditor:false,attempt:1,best:0,dead:false,won:false,deathTimer:0,inputHeld:false,jumpBuffer:0,coyote:.08,cameraX:0,particles:[],usedOrbs:new Set(),lastPad:null,lastTime:performance.now(),beatPulse:0,flash:0,autoMode:false,simAccumulator:0,simTick:0,replayMode:'off',replayEvents:[],replayCursor:0,recordedEvents:[],activeReplay:null,waveTrail:[],waveUp:false,elapsed:0,standingBlockId:null};
-const player={worldX:180,y:GROUND_Y-PLAYER_SIZE,prevY:GROUND_Y-PLAYER_SIZE,vy:0,grounded:true,rotation:0,mode:'cube'};
+const game={active:false,runtime:null,kind:'official',levelId:null,officialLevelId:null,returnToEditor:false,attempt:1,best:0,dead:false,won:false,deathTimer:0,inputHeld:false,jumpBuffer:0,coyote:.08,cameraX:0,particles:[],usedOrbs:new Set(),lastPad:null,lastTime:performance.now(),beatPulse:0,flash:0,autoMode:false,simAccumulator:0,simTick:0,replayMode:'off',replayEvents:[],replayCursor:0,recordedEvents:[],activeReplay:null,waveTrail:[],waveUp:false,elapsed:0,standingBlockId:null,activePowerContacts:new Set()};
+const player={worldX:180,y:GROUND_Y-PLAYER_SIZE,prevY:GROUND_Y-PLAYER_SIZE,vy:0,grounded:true,rotation:0,mode:'cube',gravitySign:1,airJumpsRemaining:0};
 
 function setInputHeld(nextHeld, source='manual') {
   const state={held:game.inputHeld,mode:game.replayMode,events:game.recordedEvents};
@@ -2021,7 +2056,7 @@ function startGame(runtime, options={}) {
   setScreen('play');resetRun(false);game.active=true;game.lastTime=performance.now();
   if(autoUnavailable)toastMessage(game.kind==='custom'?'직접 클리어 후 AUTO 사용 가능':'공식 AUTO 리플레이를 사용할 수 없습니다.');
 }
-function resetRun(increment=true){if(increment)game.attempt++;player.worldX=game.runtime?.startX||180;player.y=GROUND_Y-PLAYER_SIZE;player.prevY=player.y;player.vy=0;player.grounded=true;player.rotation=0;player.mode='cube';game.dead=false;game.won=false;game.deathTimer=0;setInputHeld(false,'system');game.jumpBuffer=0;game.coyote=.08;game.cameraX=0;game.particles=[];game.usedOrbs=new Set();game.lastPad=null;game.flash=0;game.waveUp=false;game.elapsed=0;game.standingBlockId=null;for(const b of (game.runtime?.blocks||[])){if(b.behavior==='moving')b.y=b.baseY;b.collapseAt=null;b.collapsedUntil=0;b.electrified=false;}resetWaveTrail();game.simAccumulator=0;game.simTick=0;game.replayCursor=0;if(game.replayMode==='record')game.recordedEvents=[];hideGameMessage();updateHud();}
+function resetRun(increment=true){if(increment)game.attempt++;player.worldX=game.runtime?.startX||180;player.y=GROUND_Y-PLAYER_SIZE;player.prevY=player.y;player.vy=0;player.grounded=true;player.rotation=0;player.mode='cube';player.gravitySign=1;player.airJumpsRemaining=0;game.activePowerContacts=new Set();game.dead=false;game.won=false;game.deathTimer=0;setInputHeld(false,'system');game.jumpBuffer=0;game.coyote=.08;game.cameraX=0;game.particles=[];game.usedOrbs=new Set();game.lastPad=null;game.flash=0;game.waveUp=false;game.elapsed=0;game.standingBlockId=null;for(const b of (game.runtime?.blocks||[])){if(b.behavior==='moving')b.y=b.baseY;b.collapseAt=null;b.collapsedUntil=0;b.electrified=false;}resetWaveTrail();game.simAccumulator=0;game.simTick=0;game.replayCursor=0;if(game.replayMode==='record')game.recordedEvents=[];hideGameMessage();updateHud();}
 function stopGameInput(){setInputHeld(false,'system');}
 function showGameMessage(title,text){gameMessageTitle.textContent=title;gameMessageText.textContent=text;gameMessage.classList.remove('hidden');}
 function hideGameMessage(){gameMessage.classList.add('hidden');}
@@ -2029,9 +2064,10 @@ function burst(x,y,count,kind){for(let i=0;i<count;i++){const angle=Math.PI*2*i/
 function kill(){if(game.dead||game.won)return;const replayFailed=game.replayMode==='play';resetWaveTrail();game.dead=true;game.deathTimer=.72;const pct=progressPercent(player.worldX-game.runtime.startX,game.runtime.levelEnd-game.runtime.startX);if(game.kind==='official')game.best=setOfficialBest(game.officialLevelId,pct);audio.crash();burst(player.worldX+20,player.y+20,28,'crash');game.flash=1;if(replayFailed){stopReplay('invalid');return;}showGameMessage('CRASH!',`${pct.toFixed(0)}% · 곧 다시 시작합니다`);}
 function completeCustomVerification(){if(game.autoMode)return;if(!game.levelId)return;const stored=store.get(game.levelId);if(!stored)return;const verified=attachVerifiedReplay(stored,game.recordedEvents);store.save(verified);if(editorModel?.level.id===verified.id)editorModel.level=normalizeLevel(verified);}
 function finish(){if(game.won)return;game.won=true;if(game.kind==='official')game.best=setOfficialBest(game.officialLevelId,100);else completeCustomVerification();audio.finish();burst(player.worldX+20,player.y+20,44,'finish');const clearText=game.kind==='official'?`ATTEMPT ${game.attempt}`:(game.autoMode?'AUTO 클리어 · 공유 인증은 직접 플레이로 해야 합니다.':'클리어 인증 완료! 이제 맵 코드를 공유할 수 있습니다.');showGameMessage('LEVEL CLEAR',clearText);if(game.returnToEditor){returnToEditorTimer=setTimeout(()=>{game.active=false;setScreen('editor');syncEditorUI();drawEditor();toastMessage(game.autoMode?'AUTO 클리어입니다. 직접 플레이로 클리어해야 공유 인증됩니다.':'클리어 인증이 완료됐습니다.');},1200);}}
-function switchMode(next){if(player.mode===next)return;if(player.mode==='wave'&&next!=='wave')resetWaveTrail();player.mode=next;player.rotation=0;game.jumpBuffer=0;game.coyote=0;if(next==='ship'||next==='wave'){player.y=224;player.prevY=224;player.vy=0;player.grounded=false;if(next==='wave'){game.waveUp=game.inputHeld;resetWaveTrail();addWaveTrailPoint();}}else{player.y=GROUND_Y-PLAYER_SIZE;player.prevY=player.y;player.vy=0;player.grounded=true;game.coyote=.08;}audio.portal();burst(player.worldX+20,player.y+20,22,'portal');game.flash=Math.max(game.flash,.45);}
-function performGroundJump(){if(game.dead||game.won||!game.active||player.mode!=='cube')return false;player.vy=jumpVelocity();player.grounded=false;game.coyote=0;game.jumpBuffer=0;audio.jump();burst(player.worldX+20,player.y+40,6,'jump');return true;}
-function tryBufferedJump(){if(game.jumpBuffer<=0||game.dead||game.won||!game.active)return false;const cx=player.worldX+20,cy=player.y+20;if(!player.grounded){const orb=game.runtime.orbs.find(o=>!game.usedOrbs.has(o.id)&&isPointNear(cx,cy,o.x,o.y,72));if(orb){game.usedOrbs.add(orb.id);player.vy=orb.power;game.jumpBuffer=0;audio.orb();burst(orb.x,orb.y,16,'orb');return true;}}if(player.grounded||game.coyote>0)return performGroundJump();return false;}
+function switchMode(next){if(player.mode===next)return;if(player.mode==='wave'&&next!=='wave')resetWaveTrail();player.mode=next;player.rotation=0;player.gravitySign=1;player.airJumpsRemaining=0;game.activePowerContacts.clear();game.jumpBuffer=0;game.coyote=0;if(next==='ship'||next==='wave'){player.y=224;player.prevY=224;player.vy=0;player.grounded=false;if(next==='wave'){game.waveUp=game.inputHeld;resetWaveTrail();addWaveTrailPoint();}}else{player.y=GROUND_Y-PLAYER_SIZE;player.prevY=player.y;player.vy=0;player.grounded=true;game.coyote=.08;}audio.portal();burst(player.worldX+20,player.y+20,22,'portal');game.flash=Math.max(game.flash,.45);}
+function performGroundJump(){if(game.dead||game.won||!game.active||player.mode!=='cube')return false;player.vy=jumpVelocity()*player.gravitySign;player.grounded=false;game.coyote=0;game.jumpBuffer=0;audio.jump();burst(player.worldX+20,player.y+40,6,'jump');return true;}
+function performAirJump(){if(player.mode!=='cube'||player.airJumpsRemaining<=0)return false;player.airJumpsRemaining--;player.vy=jumpVelocity()*player.gravitySign;player.grounded=false;game.jumpBuffer=0;game.coyote=0;audio.jump();burst(player.worldX+20,player.y+20,8,'jump');return true;}
+function tryBufferedJump(){if(game.jumpBuffer<=0||game.dead||game.won||!game.active)return false;const cx=player.worldX+20,cy=player.y+20;if(!player.grounded){const orb=game.runtime.orbs.find(o=>!game.usedOrbs.has(o.id)&&isPointNear(cx,cy,o.x,o.y,72));if(orb){game.usedOrbs.add(orb.id);player.vy=orb.power*player.gravitySign;game.jumpBuffer=0;audio.orb();burst(orb.x,orb.y,16,'orb');return true;}}if(player.airJumpsRemaining>0&&!player.grounded&&game.coyote<=0)return performAirJump();if(player.grounded||game.coyote>0)return performGroundJump();return false;}
 function actionStart(e){if(currentScreen!=='play'||!game.active||ghostJumpscareActive)return;if(e?.cancelable)e.preventDefault();audio.ensureStarted();if(game.dead||game.won){if(!game.returnToEditor)resetRun(true);return;}if(player.mode==='wave'&&!game.inputHeld)game.waveUp=!game.waveUp;setInputHeld(true,'manual');}
 function actionEnd(e){if(e?.cancelable)e.preventDefault();if(ghostJumpscareActive)return;setInputHeld(false,'manual');}
 const ghostJumpscare=document.getElementById('ghostJumpscare');
@@ -2096,17 +2132,18 @@ function updateGame(dt){
     if(!game.dead){for(const obstacle of [...game.runtime.flightObstacles,...activeSolidBlocks()]){if(rectsOverlap(pr,obstacle)){kill();break;}}}
     if(!game.dead){for(const sp of game.runtime.spikes){const hit={x:sp.x+7,y:sp.y+9,w:sp.w-14,h:sp.h-9};if(rectsOverlap(pr,hit)){kill();break;}}}
   }else{
-    player.vy+=GRAVITY*dt;player.y+=player.vy*dt;const wasGrounded=player.grounded;player.grounded=false;let landing=null;const prevBottom=player.prevY+PLAYER_SIZE,currBottom=player.y+PLAYER_SIZE;const platforms=[...game.runtime.floors,...activeSolidBlocks()];
-    for(const plat of platforms){const horizontal=player.worldX+PLAYER_SIZE-5>plat.x&&player.worldX+5<plat.x+plat.w;if(!horizontal)continue;if(player.vy>=0&&prevBottom<=plat.y+8&&currBottom>=plat.y){if(!landing||plat.y<landing.y)landing=plat;}}
-    if(landing){player.y=landing.y-PLAYER_SIZE;player.vy=0;player.grounded=true;game.coyote=.08;game.standingBlockId=landing.kind==='block'?landing.id:null;if(!wasGrounded){const q=Math.PI/2;player.rotation=Math.round(player.rotation/q)*q;}if(landing.behavior==='electric'&&landing.electrified)kill();if(landing.behavior==='collapse'&&landing.collapseAt==null)landing.collapseAt=game.elapsed;if(landing.behavior==='bounce'&&!wasGrounded&&!game.dead){player.vy=-1050;player.grounded=false;game.coyote=0;game.standingBlockId=null;audio.pad();burst(player.worldX+20,player.y+40,10,'jump');}}else{game.standingBlockId=null;player.rotation+=dt*5.4;}
+    player.vy+=GRAVITY*player.gravitySign*dt;player.y+=player.vy*dt;const wasGrounded=player.grounded;player.grounded=false;let landing=null;const prevBottom=player.prevY+PLAYER_SIZE,currBottom=player.y+PLAYER_SIZE;const ceiling=player.gravitySign<0?[{id:'gravity-ceiling',x:-300,y:0,w:game.runtime.levelEnd+900,h:FLIGHT_TOP,kind:'ceiling'}]:[];const platforms=[...game.runtime.floors,...activeSolidBlocks(),...ceiling];
+    for(const plat of platforms){const horizontal=player.worldX+PLAYER_SIZE-5>plat.x&&player.worldX+5<plat.x+plat.w;if(!horizontal)continue;if(player.gravitySign>0){if(player.vy>=0&&prevBottom<=plat.y+8&&currBottom>=plat.y){if(!landing||plat.y<landing.y)landing=plat;}}else{if(player.vy<=0&&player.prevY>=plat.y+plat.h-8&&player.y<=plat.y+plat.h){if(!landing||plat.y+plat.h>landing.y+landing.h)landing=plat;}}}
+    if(landing){player.y=player.gravitySign>0?landing.y-PLAYER_SIZE:landing.y+landing.h;player.vy=0;player.grounded=true;game.coyote=.08;player.airJumpsRemaining=0;game.standingBlockId=landing.kind==='block'?landing.id:null;if(!wasGrounded){const q=Math.PI/2;player.rotation=Math.round(player.rotation/q)*q;}if(landing.behavior==='electric'&&landing.electrified)kill();if(landing.behavior==='collapse'&&landing.collapseAt==null)landing.collapseAt=game.elapsed;if(landing.behavior==='bounce'&&!wasGrounded&&!game.dead){player.vy=-1050*player.gravitySign;player.grounded=false;game.coyote=0;game.standingBlockId=null;audio.pad();burst(player.worldX+20,player.y+40,10,'jump');}}else{game.standingBlockId=null;player.rotation+=dt*5.4;}
     if(!game.dead){const pr=playerRect(5),landingId=landing?.id||null;for(const block of activeSolidBlocks()){if(block.id!==landingId&&rectsOverlap(pr,block)){kill();break;}}}
     if(!game.dead){const pr=playerRect(7);for(const s of game.runtime.spikes){const hit={x:s.x+7,y:s.y+9,w:s.w-14,h:s.h-9};if(rectsOverlap(pr,hit)){kill();break;}}}
-    if(!game.dead&&player.grounded){const feet={x:player.worldX+7,y:player.y+PLAYER_SIZE-6,w:PLAYER_SIZE-14,h:9};const pad=game.runtime.pads.find(p=>rectsOverlap(feet,p));if(pad&&game.lastPad!==pad.id){player.vy=pad.power;player.grounded=false;game.coyote=0;game.jumpBuffer=0;game.lastPad=pad.id;audio.pad();burst(pad.x+pad.w/2,pad.y,14,'pad');}else if(!pad)game.lastPad=null;}
+    if(!game.dead&&player.grounded){const feet={x:player.worldX+7,y:player.y+PLAYER_SIZE-6,w:PLAYER_SIZE-14,h:9};const pad=game.runtime.pads.find(p=>rectsOverlap(feet,p));if(pad&&game.lastPad!==pad.id){player.vy=pad.power*player.gravitySign;player.grounded=false;game.coyote=0;game.jumpBuffer=0;game.lastPad=pad.id;audio.pad();burst(pad.x+pad.w/2,pad.y,14,'pad');}else if(!pad)game.lastPad=null;}
   }
+  if(!game.dead)applyPowerBlocks();
   if(!game.dead&&shouldAutoJump(player.mode,player.grounded,game.inputHeld))performGroundJump();else if(!game.dead&&player.mode==='cube')tryBufferedJump();
-  if(player.mode==='cube'&&player.y>H+110)kill();if(player.worldX>=game.runtime.levelEnd)finish();game.cameraX=Math.max(0,player.worldX-PLAYER_SCREEN_X);updateHud();
+  if(player.mode==='cube'&&(player.y>H+110||player.y<FLIGHT_TOP-80))kill();if(player.worldX>=game.runtime.levelEnd)finish();game.cameraX=Math.max(0,player.worldX-PLAYER_SCREEN_X);updateHud();
 }
-function updateHud(){if(!game.runtime)return;const pct=game.won?100:progressPercent(player.worldX-game.runtime.startX,game.runtime.levelEnd-game.runtime.startX);progressFill.style.width=`${pct}%`;progressText.textContent=`${Math.floor(pct)}%`;attemptText.textContent=`ATTEMPT ${game.attempt}`;bestText.textContent=game.kind==='official'?`BEST ${Math.floor(game.best)}%`:(isLevelVerified(store.get(game.levelId)||{})?'VERIFIED':'CUSTOM');}
+function updateHud(){if(!game.runtime)return;if(skillStatus)skillStatus.textContent=player.mode==='cube'?((player.gravitySign<0?'중력 ↑  ':'')+(player.airJumpsRemaining>0?'추가 점프 '+player.airJumpsRemaining+'회':'')):'';const pct=game.won?100:progressPercent(player.worldX-game.runtime.startX,game.runtime.levelEnd-game.runtime.startX);progressFill.style.width=`${pct}%`;progressText.textContent=`${Math.floor(pct)}%`;attemptText.textContent=`ATTEMPT ${game.attempt}`;bestText.textContent=game.kind==='official'?`BEST ${Math.floor(game.best)}%`:(isLevelVerified(store.get(game.levelId)||{})?'VERIFIED':'CUSTOM');}
 
 const stars=Array.from({length:70},(_,i)=>({x:(i*137.21)%W,y:35+((i*83.73)%315),r:1+(i%3)*.5,a:.18+(i%5)*.08}));
 function drawBackground(){const pulse=game.beatPulse,g=ctx.createLinearGradient(0,0,0,H);g.addColorStop(0,`rgb(${10+pulse*10},${11+pulse*4},${40+pulse*18})`);g.addColorStop(.55,'#0b1030');g.addColorStop(1,'#060818');ctx.fillStyle=g;ctx.fillRect(0,0,W,H);ctx.save();for(const s of stars){const sx=(s.x-(game.cameraX*.06)%W+W)%W;ctx.globalAlpha=s.a+pulse*.12;ctx.fillStyle='#dbeafe';ctx.beginPath();ctx.arc(sx,s.y,s.r,0,Math.PI*2);ctx.fill();}ctx.restore();const horizon=325;ctx.save();ctx.globalAlpha=.18+pulse*.06;ctx.strokeStyle='#6366f1';ctx.lineWidth=1;const off=-((game.cameraX*.18)%48);for(let x=off;x<W;x+=48){ctx.beginPath();ctx.moveTo(x,horizon);ctx.lineTo(W/2+(x-W/2)*1.55,H);ctx.stroke();}for(let y=horizon;y<H;y+=24){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}ctx.restore();}
@@ -2137,12 +2174,22 @@ function drawThemedBlock(p,x){
 }
 function drawPlatforms(){for(const p of [...game.runtime.floors,...activeSolidBlocks()]){const x=px(p.x);if(x>W+100||x+p.w<-100)continue;const isBlock=p.kind==='block';const blockTheme=game.runtime?.blockTheme||'neon';const topColor=isBlock?(blockTheme==='gear'?'#fb923c':blockTheme==='electric'?'#38bdf8':blockTheme==='lightning'?'#a3e635':blockTheme==='eclipse'?'#f43f5e':'#67e8f9'):'#22d3ee';const g=ctx.createLinearGradient(0,p.y,0,p.y+p.h);g.addColorStop(0,isBlock?'#19214d':'#111a3d');g.addColorStop(1,'#070a20');ctx.fillStyle=g;ctx.fillRect(x,p.y,p.w,p.h);ctx.fillStyle=topColor;ctx.globalAlpha=.9;ctx.fillRect(x,p.y,p.w,4);ctx.globalAlpha=1;if(isBlock){ctx.strokeStyle='rgba(148,163,184,.26)';ctx.lineWidth=2;ctx.strokeRect(x+6,p.y+8,Math.max(0,p.w-12),Math.max(0,p.h-14));drawThemedBlock(p,x);}}}
 function drawSpikes(){for(const s of game.runtime.spikes){const x=px(s.x);if(x<-60||x>W+60)continue;const g=ctx.createLinearGradient(x,s.y,x,s.y+s.h);g.addColorStop(0,'#f9a8d4');g.addColorStop(1,'#db2777');ctx.fillStyle=g;ctx.shadowColor='#ec4899';ctx.shadowBlur=12;ctx.beginPath();ctx.moveTo(x,s.y+s.h);ctx.lineTo(x+s.w/2,s.y);ctx.lineTo(x+s.w,s.y+s.h);ctx.closePath();ctx.fill();ctx.shadowBlur=0;}}
+function drawPowerBlocks(){
+  for(const p of game.runtime.powerBlocks||[]){
+    const x=px(p.x);if(x<-50||x>W+50)continue;
+    const flip=p.type==='gravity-switch',color=flip?'#c084fc':'#fde047';
+    ctx.save();ctx.shadowColor=color;ctx.shadowBlur=17;ctx.lineWidth=3;
+    ctx.fillStyle='#161332';ctx.strokeStyle=color;ctx.fillRect(x,p.y,p.w,p.h);ctx.strokeRect(x,p.y,p.w,p.h);
+    ctx.fillStyle=color;ctx.textAlign='center';ctx.textBaseline='middle';ctx.font='bold 20px system-ui';
+    ctx.fillText(flip?'⇅':'3×',x+p.w/2,p.y+p.h/2+1);ctx.restore();
+  }
+}
 function drawPadsOrbs(){for(const p of game.runtime.pads){const x=px(p.x);if(x<-100||x>W+100)continue;ctx.shadowColor='#fde047';ctx.shadowBlur=16;ctx.fillStyle='#facc15';ctx.beginPath();ctx.roundRect(x,p.y,p.w,p.h,6);ctx.fill();ctx.shadowBlur=0;}for(const o of game.runtime.orbs){const x=px(o.x);if(x<-80||x>W+80)continue;const used=game.usedOrbs.has(o.id);ctx.save();ctx.globalAlpha=used?.22:1;ctx.shadowColor='#fde047';ctx.shadowBlur=used?0:20+game.beatPulse*8;ctx.strokeStyle='#fde047';ctx.lineWidth=6;ctx.beginPath();ctx.arc(x,o.y,o.r+4,0,Math.PI*2);ctx.stroke();ctx.fillStyle='rgba(250,204,21,.2)';ctx.beginPath();ctx.arc(x,o.y,o.r-4,0,Math.PI*2);ctx.fill();ctx.restore();}}
-function drawFlightElements(){for(const o of game.runtime.flightObstacles){const x=px(o.x);if(x>W+120||x+o.w<-120)continue;const g=ctx.createLinearGradient(x,o.y,x+o.w,o.y+o.h);g.addColorStop(0,'#312e81');g.addColorStop(1,'#0f172a');ctx.fillStyle=g;ctx.fillRect(x,o.y,o.w,o.h);ctx.strokeStyle='#a78bfa';ctx.lineWidth=3;ctx.strokeRect(x+2,o.y+2,o.w-4,o.h-4);}for(const p of game.runtime.portals){const x=px(p.x);if(x<-100||x>W+100)continue;const cy=p.y+p.h/2;ctx.save();ctx.shadowColor=p.type==='ship'?'#22d3ee':'#f472b6';ctx.shadowBlur=22;ctx.strokeStyle=p.type==='ship'?'#67e8f9':'#f9a8d4';ctx.lineWidth=7;ctx.beginPath();ctx.ellipse(x,cy,18,p.h/2,0,0,Math.PI*2);ctx.stroke();ctx.restore();}if(player.mode==='ship'||player.mode==='wave'){ctx.fillStyle=player.mode==='wave'?'#a3e635':'#67e8f9';ctx.font='800 15px system-ui';ctx.textAlign='center';ctx.fillText(player.mode==='wave'?'WAVE · HOLD ↗  RELEASE ↘':'FLIGHT · HOLD TO RISE',W/2,34);ctx.textAlign='left';}}
+function drawFlightElements(){for(const o of game.runtime.flightObstacles){const x=px(o.x);if(x>W+120||x+o.w<-120)continue;const g=ctx.createLinearGradient(x,o.y,x+o.w,o.y+o.h);g.addColorStop(0,'#312e81');g.addColorStop(1,'#0f172a');ctx.fillStyle=g;ctx.fillRect(x,o.y,o.w,o.h);ctx.strokeStyle='#a78bfa';ctx.lineWidth=3;ctx.strokeRect(x+2,o.y+2,o.w-4,o.h-4);}for(const p of game.runtime.portals){const x=px(p.x);if(x<-100||x>W+100)continue;const cy=p.y+p.h/2;ctx.save();ctx.shadowColor=p.type==='ship'?'#22d3ee':'#f472b6';ctx.shadowBlur=22;ctx.strokeStyle=p.type==='ship'?'#67e8f9':'#f9a8d4';ctx.lineWidth=7;ctx.beginPath();ctx.ellipse(x,cy,18,p.h/2,0,0,Math.PI*2);ctx.stroke();ctx.restore();}if(player.mode==='ship'||player.mode==='wave'){ctx.fillStyle=player.mode==='wave'?'#a3e635':'#67e8f9';ctx.font='800 15px system-ui';ctx.textAlign='center';ctx.fillText(player.mode==='wave'?'WAVE · TAP TO SWITCH ↗ ↘':'FLIGHT · HOLD TO RISE',W/2,34);ctx.textAlign='left';}}
 function drawFinish(){const x=px(game.runtime.levelEnd);if(x<-100||x>W+140)return;ctx.save();ctx.shadowColor='#a78bfa';ctx.shadowBlur=24;ctx.strokeStyle='#c4b5fd';ctx.lineWidth=8;ctx.beginPath();ctx.arc(x,GROUND_Y-92,58,0,Math.PI*2);ctx.stroke();ctx.restore();}
 function drawPlayer(){if(game.dead&&game.particles.length>10)return;const x=px(player.worldX),cx=x+20,cy=player.y+20;ctx.save();ctx.translate(cx,cy);ctx.rotate(player.rotation);ctx.shadowColor='#22d3ee';ctx.shadowBlur=20+game.beatPulse*8;const g=ctx.createLinearGradient(-20,-20,20,20);g.addColorStop(0,'#67e8f9');g.addColorStop(.55,'#8b5cf6');g.addColorStop(1,'#f472b6');ctx.fillStyle=g;if(player.mode==='ship'){ctx.beginPath();ctx.moveTo(22,0);ctx.lineTo(-16,-15);ctx.lineTo(-9,0);ctx.lineTo(-16,15);ctx.closePath();ctx.fill();ctx.shadowBlur=0;ctx.strokeStyle='rgba(255,255,255,.8)';ctx.lineWidth=2;ctx.stroke();ctx.fillStyle=game.inputHeld?'#fde047':'#f472b6';ctx.beginPath();ctx.moveTo(-13,-7);ctx.lineTo(-29,0);ctx.lineTo(-13,7);ctx.closePath();ctx.fill();}else if(player.mode==='wave'){ctx.shadowColor='#a3e635';ctx.fillStyle='#a3e635';ctx.beginPath();ctx.moveTo(24,0);ctx.lineTo(-15,-15);ctx.lineTo(-7,0);ctx.lineTo(-15,15);ctx.closePath();ctx.fill();ctx.shadowBlur=0;ctx.strokeStyle='rgba(255,255,255,.9)';ctx.lineWidth=2;ctx.stroke();ctx.fillStyle='#0f172a';ctx.beginPath();ctx.moveTo(7,0);ctx.lineTo(-7,-6);ctx.lineTo(-3,0);ctx.lineTo(-7,6);ctx.closePath();ctx.fill();}else{drawCustomCube(ctx);}ctx.restore();}
 function drawParticles(){ctx.save();for(const p of game.particles){const x=px(p.x),a=clamp(p.life/p.maxLife,0,1);ctx.globalAlpha=a;ctx.fillStyle=p.kind==='crash'?'#f472b6':p.kind==='orb'||p.kind==='pad'?'#fde047':p.kind==='finish'||p.kind==='portal'?'#c4b5fd':'#67e8f9';ctx.fillRect(x-p.size/2,p.y-p.size/2,p.size,p.size);}ctx.restore();}
-function drawGame(){if(!game.runtime)return;drawBackground();drawPlatforms();drawPadsOrbs();drawFlightElements();drawSpikes();drawFinish();drawParticles();drawWaveTrail();drawPlayer();if(game.flash>0){ctx.fillStyle=`rgba(255,255,255,${game.flash*.24})`;ctx.fillRect(0,0,W,H);}}
+function drawGame(){if(!game.runtime)return;drawBackground();drawPlatforms();drawPadsOrbs();drawPowerBlocks();drawFlightElements();drawSpikes();drawFinish();drawParticles();drawWaveTrail();drawPlayer();if(game.flash>0){ctx.fillStyle=`rgba(255,255,255,${game.flash*.24})`;ctx.fillRect(0,0,W,H);}}
 function frame(now){
   const frameDt=Math.max(0,(now-game.lastTime)/1000);
   game.lastTime=now;
