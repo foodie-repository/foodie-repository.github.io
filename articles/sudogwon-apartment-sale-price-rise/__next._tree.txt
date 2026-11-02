@@ -1,2 +1,2 @@
-:HL["/_next/static/chunks/068lcg78.6b43.css","style"]
-0:{"tree":{"name":"","param":null,"prefetchHints":16,"slots":{"children":{"name":"articles","param":null,"prefetchHints":0,"slots":{"children":{"name":"sudogwon-apartment-sale-price-rise","param":null,"prefetchHints":0,"slots":{"children":{"name":"__PAGE__","param":null,"prefetchHints":0,"slots":null}}}}}}},"staleTime":300,"buildId":"6EKqBQH6Cqk_X8vs5Jc1s"}
+:HL["/_next/static/chunks/11bp5wknq~gtk.css","style"]
+0:{"tree":{"name":"","param":null,"prefetchHints":16,"slots":{"children":{"name":"articles","param":null,"prefetchHints":0,"slots":{"children":{"name":"sudogwon-apartment-sale-price-rise","param":null,"prefetchHints":0,"slots":{"children":{"name":"__PAGE__","param":null,"prefetchHints":0,"slots":null}}}}}}},"staleTime":300,"buildId":"nakLPBfBZ0sqf7vgmUKch"}
