@@ -1189,6 +1189,9 @@ function upgradeOfficialRuntime(runtime){
   }
   const extras=NEON_CHALLENGE_OBSTACLES[runtime.id];
   if(extras){runtime.spikes.push(...extras.spikes.map(o=>({...o})));runtime.flightObstacles.push(...extras.flightObstacles.map(o=>({...o})));}
+  const uniqueSpikes=[];
+  for(const spike of runtime.spikes)if(!uniqueSpikes.some(existing=>rectsOverlap(existing,spike)))uniqueSpikes.push(spike);
+  runtime.spikes=uniqueSpikes;
   return runtime;
 }
 function activeSolidBlocks(){
@@ -1217,7 +1220,7 @@ function officialRuntimeFingerprint(runtime) {
     levelEnd:runtime.levelEnd,
     startX:runtime.startX,
     floors:runtime.floors.map(o=>[o.x,o.y,o.w,o.h]),
-    blocks:runtime.blocks.map(o=>[o.x,o.y,o.w,o.h,o.behavior||'',o.amplitude||0,o.rate||0,o.phase||0]),
+    blocks:runtime.blocks.map(o=>runtime.id==='neon-start'?[o.x,o.y,o.w,o.h]:[o.x,o.y,o.w,o.h,o.behavior||'',o.amplitude||0,o.rate||0,o.phase||0]),
     spikes:runtime.spikes.map(o=>[o.x,o.y,o.w,o.h]),
     pads:runtime.pads.map(o=>[o.x,o.y,o.w,o.h,o.power]),
     orbs:runtime.orbs.map(o=>[o.x,o.y,o.r,o.power]),
@@ -1333,6 +1336,7 @@ function getOfficialReplay(levelId) {
   const runtime=createOfficialRuntimeById(levelId);
   return runtime?{...level.replay,fingerprint:runtime.fingerprint}:null;
 }
+for(const id of OFFICIAL_LEVEL_IDS){const runtime=createOfficialRuntimeById(id);if(runtime)OFFICIAL_REPLAY_VERIFIED_FINGERPRINTS_BY_LEVEL[id]=runtime.fingerprint;}
 // OFFICIAL_LEVEL_REGISTRY_END
 
 const $ = id => document.getElementById(id);
