@@ -1217,6 +1217,31 @@ function upgradeOfficialRuntime(runtime){
     if(b.behavior==='electric'){b.period=2.5;b.duty=1.12;b.phase=selected.indexOf(sourceId)*.85;}
     if(b.behavior==='collapse'){b.collapseAt=null;b.collapsedUntil=0;}
   }
+
+  // Mechanic ladder: each later stage retains earlier block behavior.
+  const progressiveStage={'pulse-factory':2,'sky-circuit':3,'wave-storm':4,'final-eclipse':5}[runtime.id]||1;
+  const returningMechanics={
+    'sky-circuit':[{type:'bounce',x:1757}],
+    'wave-storm':[{type:'bounce',x:1720},{type:'moving',x:1979}],
+    'final-eclipse':[{type:'bounce',x:1202},{type:'moving',x:1646},{type:'electric',x:2164}]
+  }[runtime.id]||[];
+  for(let section=0;section<2;section++){
+    const offset=runtime.speedCycleLength*section;
+    for(const item of returningMechanics){
+      const b={id:runtime.id+'-carry-'+section+'-'+item.type,
+        x:item.x+offset,y:310,w:56,h:28,kind:'block',behavior:item.type};
+      if(item.type==='moving'){b.baseY=b.y;b.amplitude=8;b.rate=1.5;b.phase=.4+section*.75;}
+      if(item.type==='electric'){b.period=2.8;b.duty=.95;b.phase=.65+section*.2;}
+      const exclusion={...b,x:b.x-10,y:b.y-10,w:b.w+20,h:b.h+20};
+      if(![...runtime.blocks,...runtime.spikes,...runtime.flightObstacles,...runtime.portals].some(o=>rectsOverlap(exclusion,o)))runtime.blocks.push(b);
+    }
+  }
+  runtime.stageNumber=progressiveStage;
+  runtime.unlockedMechanics=['기본 블록','가시','점프 패드·링',
+    ...(progressiveStage>=2?['바운스','중력 반전']:[]),
+    ...(progressiveStage>=3?['이동 블록','3단 점프']:[]),
+    ...(progressiveStage>=4?['감전 블록','Wave']:[]),
+    ...(progressiveStage>=5?['붕괴 블록']:[])];
   const extras=NEON_CHALLENGE_OBSTACLES[runtime.id];
   if(extras){runtime.spikes.push(...extras.spikes.map(o=>({...o})));runtime.flightObstacles.push(...extras.flightObstacles.map(o=>({...o})));}
 
@@ -1225,8 +1250,8 @@ function upgradeOfficialRuntime(runtime){
   for(let section=0;section<2;section++){
     const offset=runtime.speedCycleLength*section;
     const tag=runtime.id+'-power-'+section;
+    if(progressiveStage>=3)runtime.powerBlocks.push({id:tag+'-triple',x:315+offset,y:304,w:34,h:34,type:'triple-jump'});
     runtime.powerBlocks.push(
-      {id:tag+'-triple',x:315+offset,y:304,w:34,h:34,type:'triple-jump'},
       {id:tag+'-gravity-up',x:440+offset,y:306,w:34,h:34,type:'gravity-switch'},
       {id:tag+'-gravity-down',x:810+offset,y:52,w:34,h:34,type:'gravity-switch'}
     );
@@ -1237,6 +1262,28 @@ function upgradeOfficialRuntime(runtime){
   return runtime;
 }
 
+
+function gravityCeilingPlatform(){
+  return {id:'gravity-ceiling',x:-300,y:0,w:(game.runtime?.levelEnd||4000)+900,h:FLIGHT_TOP,kind:'ceiling'};
+}
+function drawGravityCeiling(){
+  if(player.mode!=='cube'||player.gravitySign>=0)return;
+  const ceiling=gravityCeilingPlatform();
+  const g=ctx.createLinearGradient(0,0,0,ceiling.h);
+  g.addColorStop(0,'#10103b');g.addColorStop(.82,'#292061');g.addColorStop(1,'#6d28d9');
+  ctx.save();ctx.fillStyle=g;ctx.fillRect(0,0,W,ceiling.h);
+  const tileW=64,offset=((game.cameraX%tileW)+tileW)%tileW;
+  ctx.strokeStyle='rgba(192,132,252,.38)';ctx.lineWidth=1.6;
+  for(let x=-offset;x<W+tileW;x+=tileW){
+    ctx.strokeRect(x+3,4,tileW-6,ceiling.h-12);
+    ctx.fillStyle='rgba(216,180,254,.18)';ctx.fillRect(x+9,12,tileW-18,6);
+  }
+  ctx.shadowColor='#c084fc';ctx.shadowBlur=14;
+  ctx.fillStyle='#e9d5ff';ctx.fillRect(0,ceiling.h-6,W,6);
+  ctx.shadowBlur=0;ctx.textAlign='center';ctx.font='bold 12px system-ui';
+  ctx.fillStyle='#fff';ctx.fillText('↑ 중력 반전 · 천장 바닥 활성화',W/2,37);
+  ctx.restore();
+}
 function applyPowerBlocks(){
   if(player.mode!=='cube'||!game.runtime?.powerBlocks?.length){game.activePowerContacts.clear();return;}
   const box=playerRect(3),contacts=new Set();
@@ -1336,7 +1383,7 @@ var OFFICIAL_LEVELS = [
     name:'Pulse Factory',
     difficulty:2,
     difficultyLabel:'보통',
-    description:'바운스 · 중력 반전 · 3단 점프',
+    description:'기본 블록 + 바운스 블록 + 중력 반전',
     music:'hyper-drive',
     accent:'factory',
     createRuntime:createPulseFactoryRuntime,
@@ -1347,7 +1394,7 @@ var OFFICIAL_LEVELS = [
     name:'Sky Circuit',
     difficulty:3,
     difficultyLabel:'어려움',
-    description:'이동 발판 · 중력 반전 · 3단 점프',
+    description:'기본 + 바운스 + 이동 블록 + 중력 + 3단 점프',
     music:'neon-rush',
     accent:'sky',
     createRuntime:createSkyCircuitRuntime,
@@ -1358,7 +1405,7 @@ var OFFICIAL_LEVELS = [
     name:'Wave Storm',
     difficulty:4,
     difficultyLabel:'매우 어려움',
-    description:'감전 블록 · 중력 반전 · 3단 점프 · WAVE',
+    description:'기존 기능 전부 + 감전 블록 + Wave',
     music:'hyper-drive',
     accent:'wave',
     createRuntime:createWaveStormRuntime,
@@ -1369,7 +1416,7 @@ var OFFICIAL_LEVELS = [
     name:'Final Eclipse',
     difficulty:5,
     difficultyLabel:'극한',
-    description:'붕괴 블록 · 중력 반전 · 3단 점프 · 최종 극한',
+    description:'1~4단계 기능 전부 + 붕괴 블록',
     music:'dark-pulse',
     accent:'eclipse',
     createRuntime:createFinalEclipseRuntime,
@@ -2050,7 +2097,7 @@ function startGame(runtime, options={}) {
   const officialLevel=game.kind==='official'?getOfficialLevel(game.officialLevelId):null;
   playLevelName.textContent=runtime.name;
   playModeLabel.textContent=game.kind==='official'
-    ? (officialLevel?`공식 맵 · ${'★'.repeat(officialLevel.difficulty)} · ${officialLevel.difficultyLabel}`:'공식 맵')
+    ? (officialLevel?`공식 맵 · ${'★'.repeat(officialLevel.difficulty)} · ${officialLevel.difficultyLabel} · 이전 기능 누적`:'공식 맵')
     : game.returnToEditor?'테스트 플레이':'사용자 제작 맵';
   audio.ensureStarted();audio.setTrack(runtime.music||'neon-rush');
   setScreen('play');resetRun(false);game.active=true;game.lastTime=performance.now();
@@ -2132,7 +2179,7 @@ function updateGame(dt){
     if(!game.dead){for(const obstacle of [...game.runtime.flightObstacles,...activeSolidBlocks()]){if(rectsOverlap(pr,obstacle)){kill();break;}}}
     if(!game.dead){for(const sp of game.runtime.spikes){const hit={x:sp.x+7,y:sp.y+9,w:sp.w-14,h:sp.h-9};if(rectsOverlap(pr,hit)){kill();break;}}}
   }else{
-    player.vy+=GRAVITY*player.gravitySign*dt;player.y+=player.vy*dt;if(player.gravitySign>0&&player.y<FLIGHT_TOP){player.y=FLIGHT_TOP;player.vy=Math.max(0,player.vy);}const wasGrounded=player.grounded;player.grounded=false;let landing=null;const prevBottom=player.prevY+PLAYER_SIZE,currBottom=player.y+PLAYER_SIZE;const ceiling=player.gravitySign<0?[{id:'gravity-ceiling',x:-300,y:0,w:game.runtime.levelEnd+900,h:FLIGHT_TOP,kind:'ceiling'}]:[];const platforms=[...game.runtime.floors,...activeSolidBlocks(),...ceiling];
+    player.vy+=GRAVITY*player.gravitySign*dt;player.y+=player.vy*dt;if(player.gravitySign>0&&player.y<FLIGHT_TOP){player.y=FLIGHT_TOP;player.vy=Math.max(0,player.vy);}const wasGrounded=player.grounded;player.grounded=false;let landing=null;const prevBottom=player.prevY+PLAYER_SIZE,currBottom=player.y+PLAYER_SIZE;const ceiling=player.gravitySign<0?[gravityCeilingPlatform()]:[];const platforms=[...game.runtime.floors,...activeSolidBlocks(),...ceiling];
     for(const plat of platforms){const horizontal=player.worldX+PLAYER_SIZE-5>plat.x&&player.worldX+5<plat.x+plat.w;if(!horizontal)continue;if(player.gravitySign>0){if(player.vy>=0&&prevBottom<=plat.y+8&&currBottom>=plat.y){if(!landing||plat.y<landing.y)landing=plat;}}else{if(player.vy<=0&&player.prevY>=plat.y+plat.h-8&&player.y<=plat.y+plat.h){if(!landing||plat.y+plat.h>landing.y+landing.h)landing=plat;}}}
     if(landing){player.y=player.gravitySign>0?landing.y-PLAYER_SIZE:landing.y+landing.h;player.vy=0;player.grounded=true;game.coyote=.08;player.airJumpsRemaining=0;game.standingBlockId=landing.kind==='block'?landing.id:null;if(!wasGrounded){const q=Math.PI/2;player.rotation=Math.round(player.rotation/q)*q;}if(landing.behavior==='electric'&&landing.electrified)kill();if(landing.behavior==='collapse'&&landing.collapseAt==null)landing.collapseAt=game.elapsed;if(landing.behavior==='bounce'&&!wasGrounded&&!game.dead){player.vy=-1050*player.gravitySign;player.grounded=false;game.coyote=0;game.standingBlockId=null;audio.pad();burst(player.worldX+20,player.y+40,10,'jump');}}else{game.standingBlockId=null;player.rotation+=dt*5.4;}
     if(!game.dead){const pr=playerRect(5),landingId=landing?.id||null;for(const block of activeSolidBlocks()){if(block.id!==landingId&&rectsOverlap(pr,block)){kill();break;}}}
@@ -2143,7 +2190,7 @@ function updateGame(dt){
   if(!game.dead&&shouldAutoJump(player.mode,player.grounded,game.inputHeld))performGroundJump();else if(!game.dead&&player.mode==='cube')tryBufferedJump();
   if(player.mode==='cube'&&(player.y>H+110||player.y<FLIGHT_TOP-80))kill();if(player.worldX>=game.runtime.levelEnd)finish();game.cameraX=Math.max(0,player.worldX-PLAYER_SCREEN_X);updateHud();
 }
-function updateHud(){if(!game.runtime)return;if(skillStatus)skillStatus.textContent=player.mode==='cube'?((player.gravitySign<0?'중력 ↑  ':'')+(player.airJumpsRemaining>0?'추가 점프 '+player.airJumpsRemaining+'회':'')):'';const pct=game.won?100:progressPercent(player.worldX-game.runtime.startX,game.runtime.levelEnd-game.runtime.startX);progressFill.style.width=`${pct}%`;progressText.textContent=`${Math.floor(pct)}%`;attemptText.textContent=`ATTEMPT ${game.attempt}`;bestText.textContent=game.kind==='official'?`BEST ${Math.floor(game.best)}%`:(isLevelVerified(store.get(game.levelId)||{})?'VERIFIED':'CUSTOM');}
+function updateHud(){if(!game.runtime)return;if(skillStatus)skillStatus.textContent=player.mode==='cube'?((player.gravitySign<0?'중력 ↑ · 천장 바닥 ON  ':'')+(player.airJumpsRemaining>0?'추가 점프 '+player.airJumpsRemaining+'회':'')):'';const pct=game.won?100:progressPercent(player.worldX-game.runtime.startX,game.runtime.levelEnd-game.runtime.startX);progressFill.style.width=`${pct}%`;progressText.textContent=`${Math.floor(pct)}%`;attemptText.textContent=`ATTEMPT ${game.attempt}`;bestText.textContent=game.kind==='official'?`BEST ${Math.floor(game.best)}%`:(isLevelVerified(store.get(game.levelId)||{})?'VERIFIED':'CUSTOM');}
 
 const stars=Array.from({length:70},(_,i)=>({x:(i*137.21)%W,y:35+((i*83.73)%315),r:1+(i%3)*.5,a:.18+(i%5)*.08}));
 function drawBackground(){const pulse=game.beatPulse,g=ctx.createLinearGradient(0,0,0,H);g.addColorStop(0,`rgb(${10+pulse*10},${11+pulse*4},${40+pulse*18})`);g.addColorStop(.55,'#0b1030');g.addColorStop(1,'#060818');ctx.fillStyle=g;ctx.fillRect(0,0,W,H);ctx.save();for(const s of stars){const sx=(s.x-(game.cameraX*.06)%W+W)%W;ctx.globalAlpha=s.a+pulse*.12;ctx.fillStyle='#dbeafe';ctx.beginPath();ctx.arc(sx,s.y,s.r,0,Math.PI*2);ctx.fill();}ctx.restore();const horizon=325;ctx.save();ctx.globalAlpha=.18+pulse*.06;ctx.strokeStyle='#6366f1';ctx.lineWidth=1;const off=-((game.cameraX*.18)%48);for(let x=off;x<W;x+=48){ctx.beginPath();ctx.moveTo(x,horizon);ctx.lineTo(W/2+(x-W/2)*1.55,H);ctx.stroke();}for(let y=horizon;y<H;y+=24){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}ctx.restore();}
@@ -2189,7 +2236,7 @@ function drawFlightElements(){for(const o of game.runtime.flightObstacles){const
 function drawFinish(){const x=px(game.runtime.levelEnd);if(x<-100||x>W+140)return;ctx.save();ctx.shadowColor='#a78bfa';ctx.shadowBlur=24;ctx.strokeStyle='#c4b5fd';ctx.lineWidth=8;ctx.beginPath();ctx.arc(x,GROUND_Y-92,58,0,Math.PI*2);ctx.stroke();ctx.restore();}
 function drawPlayer(){if(game.dead&&game.particles.length>10)return;const x=px(player.worldX),cx=x+20,cy=player.y+20;ctx.save();ctx.translate(cx,cy);ctx.rotate(player.rotation);if(player.mode==='cube'&&player.gravitySign<0)ctx.scale(1,-1);ctx.shadowColor='#22d3ee';ctx.shadowBlur=20+game.beatPulse*8;const g=ctx.createLinearGradient(-20,-20,20,20);g.addColorStop(0,'#67e8f9');g.addColorStop(.55,'#8b5cf6');g.addColorStop(1,'#f472b6');ctx.fillStyle=g;if(player.mode==='ship'){ctx.beginPath();ctx.moveTo(22,0);ctx.lineTo(-16,-15);ctx.lineTo(-9,0);ctx.lineTo(-16,15);ctx.closePath();ctx.fill();ctx.shadowBlur=0;ctx.strokeStyle='rgba(255,255,255,.8)';ctx.lineWidth=2;ctx.stroke();ctx.fillStyle=game.inputHeld?'#fde047':'#f472b6';ctx.beginPath();ctx.moveTo(-13,-7);ctx.lineTo(-29,0);ctx.lineTo(-13,7);ctx.closePath();ctx.fill();}else if(player.mode==='wave'){ctx.shadowColor='#a3e635';ctx.fillStyle='#a3e635';ctx.beginPath();ctx.moveTo(24,0);ctx.lineTo(-15,-15);ctx.lineTo(-7,0);ctx.lineTo(-15,15);ctx.closePath();ctx.fill();ctx.shadowBlur=0;ctx.strokeStyle='rgba(255,255,255,.9)';ctx.lineWidth=2;ctx.stroke();ctx.fillStyle='#0f172a';ctx.beginPath();ctx.moveTo(7,0);ctx.lineTo(-7,-6);ctx.lineTo(-3,0);ctx.lineTo(-7,6);ctx.closePath();ctx.fill();}else{drawCustomCube(ctx);}ctx.restore();}
 function drawParticles(){ctx.save();for(const p of game.particles){const x=px(p.x),a=clamp(p.life/p.maxLife,0,1);ctx.globalAlpha=a;ctx.fillStyle=p.kind==='crash'?'#f472b6':p.kind==='orb'||p.kind==='pad'?'#fde047':p.kind==='finish'||p.kind==='portal'?'#c4b5fd':'#67e8f9';ctx.fillRect(x-p.size/2,p.y-p.size/2,p.size,p.size);}ctx.restore();}
-function drawGame(){if(!game.runtime)return;drawBackground();drawPlatforms();drawPadsOrbs();drawPowerBlocks();drawFlightElements();drawSpikes();drawFinish();drawParticles();drawWaveTrail();drawPlayer();if(game.flash>0){ctx.fillStyle=`rgba(255,255,255,${game.flash*.24})`;ctx.fillRect(0,0,W,H);}}
+function drawGame(){if(!game.runtime)return;drawBackground();drawGravityCeiling();drawPlatforms();drawPadsOrbs();drawPowerBlocks();drawFlightElements();drawSpikes();drawFinish();drawParticles();drawWaveTrail();drawPlayer();if(game.flash>0){ctx.fillStyle=`rgba(255,255,255,${game.flash*.24})`;ctx.fillRect(0,0,W,H);}}
 function frame(now){
   const frameDt=Math.max(0,(now-game.lastTime)/1000);
   game.lastTime=now;
