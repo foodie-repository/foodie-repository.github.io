@@ -764,7 +764,7 @@ function createNeonStartRuntime() {
     {id:'fo13', x:21510, y:290, w:125, h:OFFICIAL_FLIGHT_BOTTOM-290},
   ];
 
-  return softenNeonSecondHalfTail(doubleOfficialRuntime({
+  return finishSingleRoute(softenFlightCorridors(softenNeonSecondHalfTail(doubleOfficialRuntime({
     id:'neon-start',
     name:'Neon Start',
     music:'neon-rush',
@@ -780,7 +780,7 @@ function createNeonStartRuntime() {
     isCustom:false,
     fingerprint:null,
     sourceLevel:null,
-  }));
+  }))));
 }
 
 
@@ -1245,24 +1245,60 @@ function upgradeOfficialRuntime(runtime){
   const extras=NEON_CHALLENGE_OBSTACLES[runtime.id];
   if(extras){runtime.spikes.push(...extras.spikes.map(o=>({...o})));runtime.flightObstacles.push(...extras.flightObstacles.map(o=>({...o})));}
 
-  // Two optional advanced routes per official stage, one in each repeated half.
-  // All the power blocks are above the verified AUTO route.
-  for(let section=0;section<2;section++){
-    const offset=runtime.speedCycleLength*section;
-    const tag=runtime.id+'-power-'+section;
-    if(progressiveStage>=3)runtime.powerBlocks.push({id:tag+'-triple',x:315+offset,y:304,w:34,h:34,type:'triple-jump'});
-    runtime.powerBlocks.push(
-      {id:tag+'-gravity-up',x:440+offset,y:306,w:34,h:34,type:'gravity-switch'},
-      {id:tag+'-gravity-down',x:810+offset,y:52,w:34,h:34,type:'gravity-switch'}
-    );
-  }
+  // One continuous course: replace optional upper/lower branches with mandatory end section.
+  const oldEnd=runtime.levelEnd;
+  runtime.routeStart=oldEnd;
+  runtime.gravitySection={start:oldEnd+80,end:oldEnd+810};
+  runtime.powerBlocks.push(
+    {id:runtime.id+'-main-gravity-up',x:oldEnd+120,y:392,w:42,h:36,type:'gravity-switch'},
+    {id:runtime.id+'-main-gravity-down',x:oldEnd+560,y:58,w:42,h:40,type:'gravity-switch'}
+  );
+  if(progressiveStage>=3)runtime.powerBlocks.push(
+    {id:runtime.id+'-main-triple',x:oldEnd+1030,y:392,w:42,h:36,type:'triple-jump'}
+  );
+  runtime.levelEnd=oldEnd+1750;
+
+  softenFlightCorridors(runtime);
   const uniqueSpikes=[];
   for(const spike of runtime.spikes)if(!uniqueSpikes.some(existing=>rectsOverlap(existing,spike)))uniqueSpikes.push(spike);
   runtime.spikes=uniqueSpikes;
-  return runtime;
+  return finishSingleRoute(runtime);
 }
 
 
+// One real floor strip for every official stage; only meaningful landing blocks remain.
+function finishSingleRoute(runtime){
+  const fillers={
+    'neon-start':['b7','b9'],
+    'pulse-factory':['pf-hx-b2','pf-hx-b3','pf-hx-b9','pf-hx-b10','pf-hx-b13','pf-hx-b1','pf-hx-b8','pf-hx-b4','pf-hx-b12'],
+    'sky-circuit':['sc-hx-b7','sc-hx-b4','sc-hx-b3'],
+    'wave-storm':['ws-hx-b0'],
+    'final-eclipse':['fe-hx-b3','fe-hx-b4','fe-hx-b8','fe-hx-b9','fe-hx-b0']
+  };
+  const remove=new Set(fillers[runtime.id]||[]);
+  runtime.blocks=runtime.blocks.filter(block=>!remove.has(block.id.replace(/-r2$/,'')));
+  runtime.floors=[{id:runtime.id+'-single-floor',x:-300,y:OFFICIAL_GROUND_Y,
+    w:runtime.levelEnd+900,h:OFFICIAL_H-OFFICIAL_GROUND_Y+120,kind:'floor'}];
+  runtime.routeLayout='single';
+  return runtime;
+}
+function softenFlightCorridors(runtime){
+  // Widen overhead passages and reduce redundant narrow bonus obstacles.
+  const factor=runtime.id==='neon-start'?.72:runtime.id==='pulse-factory'?.77:.71;
+  runtime.flightObstacles=runtime.flightObstacles.filter(o=>{
+    if(!o.id.includes('-bonus-f'))return true;
+    const match=o.id.match(/bonus-f(\d+)/);
+    return !match || Number(match[1])%3===0;
+  }).map(ob=>{
+    const o={...ob};
+    const bottom=o.y+o.h;
+    const height=Math.max(35,Math.round(o.h*factor));
+    if(o.y<=OFFICIAL_FLIGHT_TOP+2)o.h=height;
+    else{o.y=bottom-height;o.h=height;}
+    return o;
+  });
+  return runtime;
+}
 function gravityCeilingPlatform(){
   return {id:'gravity-ceiling',x:-300,y:0,w:(game.runtime?.levelEnd||4000)+900,h:FLIGHT_TOP,kind:'ceiling'};
 }
@@ -1372,7 +1408,7 @@ var OFFICIAL_LEVELS = [
     name:'Neon Start',
     difficulty:1,
     difficultyLabel:'쉬움',
-    description:'기본 점프 · 가시 · 블록',
+    description:'한 길로 이어지는 기본 점프 · 넓어진 비행·Wave',
     music:'neon-rush',
     accent:'cyan',
     createRuntime:createNeonStartRuntime,
@@ -1383,7 +1419,7 @@ var OFFICIAL_LEVELS = [
     name:'Pulse Factory',
     difficulty:2,
     difficultyLabel:'보통',
-    description:'기본 블록 + 바운스 블록 + 중력 반전',
+    description:'기본 + 바운스 + 중력 반전 구간',
     music:'hyper-drive',
     accent:'factory',
     createRuntime:createPulseFactoryRuntime,
@@ -1394,7 +1430,7 @@ var OFFICIAL_LEVELS = [
     name:'Sky Circuit',
     difficulty:3,
     difficultyLabel:'어려움',
-    description:'기본 + 바운스 + 이동 블록 + 중력 + 3단 점프',
+    description:'이전 블록 누적 + 이동 + 3단 점프',
     music:'neon-rush',
     accent:'sky',
     createRuntime:createSkyCircuitRuntime,
@@ -1405,7 +1441,7 @@ var OFFICIAL_LEVELS = [
     name:'Wave Storm',
     difficulty:4,
     difficultyLabel:'매우 어려움',
-    description:'기존 기능 전부 + 감전 블록 + Wave',
+    description:'기존 기능 누적 + 감전 + 쉬워진 Wave',
     music:'hyper-drive',
     accent:'wave',
     createRuntime:createWaveStormRuntime,
@@ -1416,7 +1452,7 @@ var OFFICIAL_LEVELS = [
     name:'Final Eclipse',
     difficulty:5,
     difficultyLabel:'극한',
-    description:'1~4단계 기능 전부 + 붕괴 블록',
+    description:'1~4단계 기능 + 붕괴 · 하나의 경로',
     music:'dark-pulse',
     accent:'eclipse',
     createRuntime:createFinalEclipseRuntime,
@@ -1444,7 +1480,6 @@ function createOfficialRuntimeById(levelId) {
 function getOfficialReplay(levelId) {
   const level=getOfficialLevel(levelId);
   if(!level?.replay)return null;
-  if(levelId==='neon-start')return level.replay;
   const runtime=createOfficialRuntimeById(levelId);
   return runtime?{...level.replay,fingerprint:runtime.fingerprint}:null;
 }
