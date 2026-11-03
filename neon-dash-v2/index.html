@@ -764,7 +764,7 @@ function createNeonStartRuntime() {
     {id:'fo13', x:21510, y:290, w:125, h:OFFICIAL_FLIGHT_BOTTOM-290},
   ];
 
-  return softenFlightCorridors(softenNeonSecondHalfTail(doubleOfficialRuntime({
+  return finishSingleRoute(softenFlightCorridors(softenNeonSecondHalfTail(doubleOfficialRuntime({
     id:'neon-start',
     name:'Neon Start',
     music:'neon-rush',
@@ -780,7 +780,7 @@ function createNeonStartRuntime() {
     isCustom:false,
     fingerprint:null,
     sourceLevel:null,
-  })));
+  }))));
 }
 
 
@@ -1257,16 +1257,31 @@ function upgradeOfficialRuntime(runtime){
     {id:runtime.id+'-main-triple',x:oldEnd+1030,y:392,w:42,h:36,type:'triple-jump'}
   );
   runtime.levelEnd=oldEnd+1750;
-  runtime.floors.push({id:runtime.id+'-main-runway',x:oldEnd-90,y:OFFICIAL_GROUND_Y,
-    w:runtime.levelEnd-oldEnd+220,h:OFFICIAL_H-OFFICIAL_GROUND_Y+120,kind:'floor'});
+
   softenFlightCorridors(runtime);
   const uniqueSpikes=[];
   for(const spike of runtime.spikes)if(!uniqueSpikes.some(existing=>rectsOverlap(existing,spike)))uniqueSpikes.push(spike);
   runtime.spikes=uniqueSpikes;
-  return runtime;
+  return finishSingleRoute(runtime);
 }
 
 
+// One real floor strip for every official stage; only meaningful landing blocks remain.
+function finishSingleRoute(runtime){
+  const fillers={
+    'neon-start':['b7','b9'],
+    'pulse-factory':['pf-hx-b2','pf-hx-b3','pf-hx-b9','pf-hx-b10','pf-hx-b13','pf-hx-b1','pf-hx-b8','pf-hx-b4','pf-hx-b12'],
+    'sky-circuit':['sc-hx-b7','sc-hx-b4','sc-hx-b3'],
+    'wave-storm':['ws-hx-b0'],
+    'final-eclipse':['fe-hx-b3','fe-hx-b4','fe-hx-b8','fe-hx-b9','fe-hx-b0']
+  };
+  const remove=new Set(fillers[runtime.id]||[]);
+  runtime.blocks=runtime.blocks.filter(block=>!remove.has(block.id.replace(/-r2$/,'')));
+  runtime.floors=[{id:runtime.id+'-single-floor',x:-300,y:OFFICIAL_GROUND_Y,
+    w:runtime.levelEnd+900,h:OFFICIAL_H-OFFICIAL_GROUND_Y+120,kind:'floor'}];
+  runtime.routeLayout='single';
+  return runtime;
+}
 function softenFlightCorridors(runtime){
   // Widen overhead passages and reduce redundant narrow bonus obstacles.
   const factor=runtime.id==='neon-start'?.72:runtime.id==='pulse-factory'?.77:.71;
