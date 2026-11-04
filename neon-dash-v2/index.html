@@ -77,7 +77,7 @@
 <label>빛나는 색<input id="cubeGlowInput" type="color" value="#8b5cf6"></label>
 <label>얼굴 디자인<select id="cubeFaceSelect">
 <option value="classic">기본 얼굴</option><option value="happy">웃는 얼굴</option><option value="angry">화난 얼굴</option>
-<option value="robot">로봇</option><option value="star">별</option><option value="plain">무늬 없음</option>
+<option value="robot">로봇</option><option value="star">별</option><option value="plain">무늬 없음</option><option value="kirby">커비 (핑크 스킨)</option>
 </select></label></div></div>
 <p class="cube-customizer-note">공식 맵과 직접 만든 맵 모두에 적용됩니다. 이 기기에 자동 저장됩니다.</p>
 <div class="button-row"><button id="cubeResetBtn" class="secondary" type="button">기본 네모로</button><button id="cubeSaveBtn" class="primary" type="button">저장하고 메인으로</button></div>
@@ -1582,7 +1582,7 @@ const store = new LevelStore(storage);
 /* Cosmetic preferences are local-only and do not change replay fingerprints. */
 const CUBE_STYLE_KEY='neonDash:cubeStyle:v2';
 const CUBE_DEFAULT_STYLE={color:'#22d3ee',border:'#ffffff',glow:'#8b5cf6',face:'classic'};
-const CUBE_FACE_TYPES=['classic','happy','angry','robot','star','plain'];
+const CUBE_FACE_TYPES=['classic','happy','angry','robot','star','plain','kirby'];
 const cubePreviewCanvas=$('cubePreview');
 const cubeColorInput=$('cubeColorInput'),cubeBorderInput=$('cubeBorderInput'),cubeGlowInput=$('cubeGlowInput'),cubeFaceSelect=$('cubeFaceSelect');
 function safeColor(value,fallback){return /^#[0-9a-fA-F]{6}$/.test(String(value))?String(value):fallback;}
@@ -1594,8 +1594,32 @@ function loadCubeStyle(){
   }catch{return {...CUBE_DEFAULT_STYLE};}
 }
 let cubeStyle=loadCubeStyle();
+function drawKirbySkin(c){
+  c.save();c.shadowColor='#ff80b8';c.shadowBlur=14;
+  c.fillStyle='#d63e69';
+  c.beginPath();c.ellipse(-11,17,12,6,-.23,0,Math.PI*2);c.fill();
+  c.beginPath();c.ellipse(11,17,12,6,.23,0,Math.PI*2);c.fill();
+  c.fillStyle='#ff9fcb';
+  c.beginPath();c.ellipse(-18,2,7,9,-.35,0,Math.PI*2);c.fill();
+  c.beginPath();c.ellipse(18,2,7,9,.35,0,Math.PI*2);c.fill();
+  c.beginPath();c.arc(0,-2,18,0,Math.PI*2);c.fill();
+  c.shadowBlur=0;
+  c.fillStyle='#19223f';
+  c.beginPath();c.ellipse(-6,-7,2.9,7,0,0,Math.PI*2);c.fill();
+  c.beginPath();c.ellipse(6,-7,2.9,7,0,0,Math.PI*2);c.fill();
+  c.fillStyle='white';
+  c.beginPath();c.ellipse(-6.4,-9,1.35,3.1,0,0,Math.PI*2);c.fill();
+  c.beginPath();c.ellipse(5.6,-9,1.35,3.1,0,0,Math.PI*2);c.fill();
+  c.fillStyle='#ed6299';
+  c.beginPath();c.ellipse(-12,3,4,2.3,0,0,Math.PI*2);c.fill();
+  c.beginPath();c.ellipse(12,3,4,2.3,0,0,Math.PI*2);c.fill();
+  c.fillStyle='#9b1746';c.beginPath();c.ellipse(0,5,3,4.2,0,0,Math.PI*2);c.fill();
+  c.fillStyle='#ff8aaa';c.beginPath();c.ellipse(0,7.4,1.8,1.2,0,0,Math.PI*2);c.fill();
+  c.restore();
+}
 function drawCustomCube(c){
-  const s=cubeStyle;c.save();c.shadowColor=s.glow;c.shadowBlur=18;c.fillStyle=s.color;
+  const s=cubeStyle;
+  if(s.face==='kirby'){drawKirbySkin(c);return;}c.save();c.shadowColor=s.glow;c.shadowBlur=18;c.fillStyle=s.color;
   c.fillRect(-20,-20,40,40);c.shadowBlur=0;c.strokeStyle=s.border;c.lineWidth=2.8;c.strokeRect(-18,-18,36,36);
   c.fillStyle='#0b1028';c.strokeStyle='#0b1028';c.lineWidth=2.8;
   switch(s.face){
