@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover" />
 <meta name="theme-color" content="#80d7f0" />
-<title>뽀로로 샌드위치 타이쿤 · 키오스크 업데이트 🥪</title>
+<title>뽀로로 샌드위치 타이쿤 · 재료 상점 업데이트 🥪</title>
 <style>
 :root{--ink:#243850;--muted:#72849b;--sky:#8bdaf5;--blue:#368be7;--mint:#60c9a0;--red:#ff6971;--yellow:#ffd061;--paper:#fffdf7;--line:#e6eef3;--shadow:0 14px 34px rgba(36,73,109,.10)}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}html,body{margin:0;min-height:100%;font-family:"Pretendard","Apple SD Gothic Neo","Noto Sans KR",system-ui,sans-serif;color:var(--ink)}body{background:linear-gradient(180deg,#8cd9f3 0,#d0f2fb 295px,#f4fafc 297px,#f4fafc 100%);overflow-x:hidden}button{font:inherit;cursor:pointer}button:focus-visible{outline:3px solid #347de5;outline-offset:3px}button:disabled{cursor:not-allowed}#app{max-width:1170px;margin:0 auto;padding:18px 20px 48px;position:relative}.sky-decor{position:fixed;z-index:-1;inset:0;pointer-events:none;overflow:hidden}.cloud{position:absolute;width:90px;height:33px;border-radius:40px;background:#ffffffab;filter:blur(.3px)}.cloud:before,.cloud:after{content:"";position:absolute;border-radius:50%;background:inherit}.cloud:before{height:49px;width:50px;bottom:0;left:13px}.cloud:after{height:38px;width:42px;bottom:0;right:9px}.cloud.a{top:93px;left:9%;transform:scale(1.2)}.cloud.b{top:55px;right:13%}.cloud.c{top:220px;left:40%;transform:scale(.72)}
@@ -64,21 +64,58 @@ header{display:flex;gap:18px;align-items:center;justify-content:space-between;ma
 .burger-slot.active{border-color:#f4a843;background:#fff6de;box-shadow:0 3px 0 #f9d990}
 .burger-slot b{font-size:12px;font-weight:1000}.burger-slot small{font-size:10px;color:#7f9bac;font-weight:800}
 .burger-slot.active small{color:#9a793e}
-.menu-board{margin:4px 16px 13px;border:2px solid #fee2a2;border-radius:16px;overflow:hidden;background:#fffaf0}
-.menu-board summary{list-style:none;display:flex;justify-content:space-between;gap:8px;align-items:center;cursor:pointer;font-size:14px;font-weight:1000;padding:12px 13px;color:#9c671b}
-.menu-board summary::-webkit-details-marker{display:none}
-.menu-board summary:after{content:'▾';font-size:14px;margin-left:auto}
-.menu-board[open] summary:after{content:'▴'}
-.menu-board summary span{font-size:10px;color:#ac946e;font-weight:850;margin-left:auto}
-.menu-grid{padding:0 10px 11px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
-.menu-card{border:1px solid #f1dfbc;border-radius:12px;background:white;padding:10px 9px;min-width:0}
-.menu-card strong{font-size:12px;font-weight:1000;display:block;color:#5d7281;margin-bottom:5px}
-.menu-card .menu-items{font-size:11px;color:#7e8fa2;font-weight:820;line-height:1.65}
-.menu-card .menu-price{font-size:10px;color:#ba884a;margin-top:6px;font-weight:900}
+.menu-fab{position:fixed;right:max(14px, env(safe-area-inset-right));bottom:max(18px, env(safe-area-inset-bottom));z-index:25;border:none;border-radius:999px;background:linear-gradient(135deg,#ffd87c,#ffb347);color:#6e470c;padding:13px 16px;display:flex;align-items:center;gap:8px;font-size:14px;font-weight:1000;box-shadow:0 12px 26px rgba(104,78,11,.28),0 0 0 4px rgba(255,255,255,.52)}
+.menu-fab small{display:block;font-size:10px;font-weight:900;color:#8d6630;line-height:1.15;letter-spacing:-.2px}
+.menu-fab .fab-emoji{font-size:18px}
+.menu-fab:active{transform:translateY(2px)}
+.menu-fab.focus{animation:pulseMenu .8s 2}
+.menu-overlay{position:fixed;inset:0;background:rgba(25,43,70,.42);display:flex;align-items:center;justify-content:center;padding:20px;z-index:40;backdrop-filter:blur(2px)}
+.menu-overlay.hidden{display:none}
+.menu-panel{width:min(760px,100%);max-height:min(84vh,780px);background:#fffdf7;border:3px solid #ffe2a0;border-radius:26px;box-shadow:0 24px 48px rgba(25,46,76,.28);overflow:hidden;display:flex;flex-direction:column}
+.menu-panel-head{padding:16px 18px 14px;background:linear-gradient(180deg,#fff7df,#fff3cf);border-bottom:1px solid #f6deb2;display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.menu-panel-head h3{margin:0;font-size:24px;line-height:1.2;letter-spacing:-.8px;color:#7d5718}
+.menu-panel-head p{margin:6px 0 0;font-size:12px;font-weight:800;color:#9b7a43}
+.menu-close{border:none;background:#fff;border:2px solid #f1ddb1;color:#885f21;width:42px;height:42px;min-width:42px;border-radius:14px;font-size:20px;font-weight:1000;box-shadow:0 6px 14px rgba(125,87,24,.12)}
+.menu-grid{padding:16px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;overflow:auto}
+.menu-card{border:1px solid #f1dfbc;border-radius:16px;background:white;padding:12px 11px;min-width:0;box-shadow:0 3px 0 #fff4db inset}
+.menu-card strong{font-size:14px;font-weight:1000;display:block;color:#5d7281;margin-bottom:7px}
+.menu-card .menu-items{font-size:12px;color:#7e8fa2;font-weight:820;line-height:1.72}
+.menu-card .menu-price{font-size:11px;color:#ba884a;margin-top:8px;font-weight:900}
 .level-rule{font-size:11px;color:#7c9db1;font-weight:900;margin-top:7px}
-.menu-board.focus{animation:pulseMenu .8s 2}
-@keyframes pulseMenu{50%{box-shadow:0 0 0 5px #ffe397}}
-@media(max-width:540px){.ticket-bar{padding:10px 11px 3px}.ticket-top{font-size:12px}.kiosk-btn{padding:8px 8px;font-size:11px}.ticket-list{gap:5px;margin-top:8px}.ticket{padding:8px 5px;min-height:80px;border-radius:11px}.ticket-name{font-size:11px}.burger-slots{gap:5px;margin:0 11px 10px}.burger-slot{min-height:57px;padding:6px 3px}.burger-slot b{font-size:11px}.menu-board{margin:0 11px 11px}.menu-board summary{font-size:13px;padding:11px 10px}.menu-grid{grid-template-columns:1fr}}
+@keyframes pulseMenu{50%{box-shadow:0 0 0 8px rgba(255,227,151,.85),0 12px 26px rgba(104,78,11,.28)}}
+@media(max-width:540px){.ticket-bar{padding:10px 11px 3px}.ticket-top{font-size:12px}.kiosk-btn{padding:8px 8px;font-size:11px}.ticket-list{gap:5px;margin-top:8px}.ticket{padding:8px 5px;min-height:80px;border-radius:11px}.ticket-name{font-size:11px}.burger-slots{gap:5px;margin:0 11px 10px}.burger-slot{min-height:57px;padding:6px 3px}.burger-slot b{font-size:11px}.menu-fab{right:10px;bottom:12px;padding:11px 13px;font-size:13px}.menu-fab small{display:none}.menu-overlay{padding:10px}.menu-panel{max-height:86vh;border-radius:22px}.menu-panel-head{padding:14px 14px 12px}.menu-panel-head h3{font-size:20px}.menu-grid{grid-template-columns:1fr;padding:12px}}
+/* Twenty permanently unlockable ingredients & in-game market */
+.store-shortcut{background:linear-gradient(180deg,#ffda85,#ffbb55);border:2px solid #efa64d;border-radius:13px;padding:9px 11px;color:#89531a;font-weight:1000;font-size:12px;box-shadow:0 3px 0 #df953d;white-space:nowrap;display:flex;align-items:center;gap:6px}
+.store-shortcut span{font-size:10px;padding:2px 5px;border-radius:8px;background:#fff6db;color:#886028}
+.ingredient-tabs{display:flex;gap:7px;padding:0 16px 10px}
+.ing-tab{flex:1;min-height:40px;border:2px solid #e6edf5;border-radius:12px;background:#f8fafc;color:#7690a4;font-size:12px;font-weight:950}
+.ing-tab.active{background:#ecf9ff;color:#2b7eae;border-color:#8dd4f1}
+.ingredient-empty{grid-column:1/-1;border:2px dashed #e2d8ad;background:#fffcf2;border-radius:15px;padding:18px 10px;text-align:center;font-size:12px;font-weight:900;color:#a38547;display:flex;flex-direction:column;align-items:center;gap:9px}
+.ingredient-empty button{border:0;background:#ffc76b;color:#87541d;border-radius:11px;padding:9px 15px;font-weight:1000}
+.ing-btn.premium-owned{border-color:#f5dfa4;background:linear-gradient(#fffef1,#fff9e5)}
+.ing-btn.premium-owned:after{content:'★';position:absolute;top:3px;left:6px;color:#daa236;font-size:11px}
+.slice.bought-layer{background:linear-gradient(180deg,color-mix(in srgb,var(--layer-color) 72%,white),var(--layer-color));height:12px;border:1px solid rgba(48,52,52,.14);box-shadow:inset 0 -3px rgba(0,0,0,.10);border-radius:12px}
+.shop-overlay{position:fixed;inset:0;background:rgba(26,51,73,.62);z-index:55;display:flex;align-items:center;justify-content:center;padding:14px;backdrop-filter:blur(4px)}
+.shop-overlay.hidden{display:none}
+.shop-dialog{width:min(820px,100%);max-height:min(88vh,800px);display:flex;flex-direction:column;border:4px solid #fff;border-radius:24px;background:#fffdf7;box-shadow:0 28px 70px #13355166;overflow:hidden}
+.shop-top{background:linear-gradient(140deg,#ffe3a1,#fff4d4);padding:18px 20px 13px;display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
+.shop-overline{font-size:11px;font-weight:950;color:#bc7a25;letter-spacing:1px}
+.shop-top h2{font-size:25px;font-weight:1000;letter-spacing:-.8px;margin:4px 0;color:#82511d}
+.shop-top p{font-size:12px;font-weight:850;color:#a2804c;margin:0}
+.shop-close{height:42px;min-width:42px;border-radius:12px;background:#fff8e9;border:2px solid #ead6b7;color:#87571d;font-size:20px;font-weight:1000}
+.shop-status{padding:10px 20px;border-bottom:1px solid #faedcc;display:flex;gap:8px;flex-wrap:wrap;justify-content:space-between;align-items:center;color:#8c631d;font-size:13px;font-weight:900}
+.shop-status strong{color:#ad7115}
+.shop-grid{padding:14px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;overflow-y:auto;overscroll-behavior:contain}
+.market-item{display:flex;flex-direction:column;align-items:center;text-align:center;border:2px solid #f1e6cd;border-radius:16px;background:#fff;padding:13px 8px;gap:4px;min-width:0}
+.market-item.owned{background:#f1fcf1;border-color:#bce5b8}
+.market-emoji{font-size:35px;line-height:1.2}
+.market-item strong{font-size:14px;color:#526c7a;font-weight:1000}
+.market-desc{font-size:10px;color:#91a0ad;font-weight:800;min-height:27px;line-height:1.3}
+.market-item button{width:100%;padding:9px 4px;margin-top:auto;border:0;border-radius:11px;background:linear-gradient(#ffd777,#ffbc55);color:#78500e;font-size:12px;font-weight:1000}
+.market-item button:disabled{background:#eef1f2;color:#9aa6af}
+.market-item.owned button:disabled{background:#d8f0d7;color:#347e3a}
+.shop-footer{margin:0;border-top:1px solid #faedcc;padding:10px 14px;font-size:11px;color:#967a4c;text-align:center;font-weight:800}
+@media(max-width:540px){.ingredient-tabs{padding:0 11px 9px}.ing-tab{font-size:11px;min-height:37px}.store-shortcut{font-size:11px;padding:8px}.shop-overlay{padding:8px}.shop-dialog{max-height:92vh;border-radius:18px}.shop-top{padding:13px 14px 10px}.shop-top h2{font-size:21px}.shop-status{padding:9px 12px}.shop-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;padding:9px}.market-item{padding:10px 6px}.market-emoji{font-size:29px}.market-item strong{font-size:12px}.market-desc{font-size:9px}.shop-footer{font-size:10px}}
 </style>
 </head>
 <body>
@@ -115,22 +152,49 @@ header{display:flex;gap:18px;align-items:center;justify-content:space-between;ma
   <div class="burger-slots" id="burgerSlots" aria-label="햄버거 작업대 3개"></div>
   <div class="sandwich-area"><span class="work-light">FRESH & DELICIOUS</span><span class="work-sparkle">✧</span><div class="sandwich-view"><div class="plate"></div><div class="sandwich-body"><div class="bun-top"></div><div id="sandwichLayers" class="sandwich-layers"></div><div class="bun-bottom"></div></div><div class="tray-empty" id="trayEmpty">🥬 재료를 골라 주세요!</div></div><span class="sandwich-stack-badge">빵은 자동으로 준비돼요 🍞</span></div>
   <div class="selected-section" id="selectedIngs"><span class="selected-label">내 샌드위치</span><span class="selected-placeholder">아직 재료가 없어요</span></div>
-  <details class="menu-board" id="menuBoard"><summary>📖 메뉴판 보기 <span id="menuTip">레시피를 확인할 수 있어요</span></summary><div class="menu-grid" id="menuGrid"></div></details>
-  <div class="ingredients-head"><h3>🧺 신선한 재료</h3><small>레벨을 올리면 재료 잠금 해제!</small></div>
+  
+  <div class="ingredients-head"><h3>🧺 신선한 재료</h3><button type="button" class="store-shortcut" id="ingredientShopButton">🛒 재료 상점 <span id="storeCount">0/20</span></button></div>
+  <div class="ingredient-tabs" id="ingredientTabs" role="tablist" aria-label="재료 선택"><button type="button" class="ing-tab active" data-ingredient-tab="base" role="tab" aria-selected="true">🥬 기본 재료 8</button><button type="button" class="ing-tab" data-ingredient-tab="special" role="tab" aria-selected="false" id="purchasedTab">✨ 구매한 재료 (0)</button></div>
   <div class="ingredients" id="ingredients"></div>
   <div class="actions"><button class="muted-btn" id="undoButton" type="button">↶ 하나 빼기</button><button class="muted-btn" id="clearButton" type="button">↺ 초기화</button><button class="serve-btn" id="serveButton" type="button">🥪 샌드위치 전달!</button></div>
   <p class="hint" id="gameHint">Lv.1~3: 주문 재료 표시 · Lv.4부터: 메뉴 이름만 표시! 메뉴판을 확인하세요.</p>
  </section>
 </main>
 <section class="shop-section"><div class="panel"><div class="upgrade-heading"><div><h2>🛠️ 가게 업그레이드</h2><p>코인을 모아 더 큰 샌드위치 가게로 키워 보세요!</p></div><span class="round-pill">🧡 나만의 가게</span></div><div class="upgrade-grid" id="upgradeGrid"></div></div></section>
-<div class="footer-note">비공식 팬 제작 미니게임 · 키오스크/3개 작업대/메뉴판 추가 · 진행 상황은 현재 브라우저에 자동 저장됩니다.</div>
+<div class="footer-note">비공식 팬 제작 미니게임 · 20종 재료 상점 / 3개 조리대 / 키오스크 · 게임 진행은 현재 브라우저에 자동 저장됩니다.</div>
 </div>
+<button class="menu-fab" id="menuButton" type="button" aria-label="메뉴판 열기"><span class="fab-emoji">📖</span><span>메뉴판<small id="menuTip">레벨 4부터 더 중요해져요</small></span></button>
+<div class="menu-overlay hidden" id="menuOverlay" role="dialog" aria-modal="true" aria-labelledby="menuPanelTitle"><div class="menu-panel"><div class="menu-panel-head"><div><h3 id="menuPanelTitle">📖 샌드위치 메뉴판</h3><p id="menuPanelHint">메뉴 이름을 누가 주문했는지 확인하고 재료를 찾아보세요!</p></div><button class="menu-close" id="menuCloseButton" type="button" aria-label="메뉴판 닫기">✕</button></div><div class="menu-grid" id="menuGrid"></div></div></div>
+<div class="shop-overlay hidden" id="shopOverlay" role="dialog" aria-modal="true" aria-labelledby="shopTitle"><section class="shop-dialog" aria-label="재료 상점"><div class="shop-top"><div><div class="shop-overline">뽀롱마을 식재료 마켓</div><h2 id="shopTitle">🛒 재료 상점</h2><p>코인으로 구매하면 계속 사용할 수 있어요!</p></div><button class="shop-close" id="shopCloseButton" type="button" aria-label="재료 상점 닫기">✕</button></div><div class="shop-status"><strong>🪙 보유 코인 <span id="shopCoins">0</span></strong><span id="shopOwned">0 / 20개 보유</span></div><div class="shop-grid" id="shopGrid"></div><p class="shop-footer">✨ 구매한 재료만 특별 메뉴 주문에 등장합니다. 구매는 한 번만 하면 됩니다!</p></section></div>
 <div id="toastStack" class="toast-stack" role="status" aria-live="polite"></div>
 <div class="overlay hidden" id="overlay" role="dialog" aria-modal="true"><div class="modal" id="modalContent"></div></div>
 <script>
 (()=>{'use strict';
 const STORAGE_KEY='pororo_sandwich_tycoon_v1';
-const ALL_INGS=[{id:'lettuce',name:'양상추',emoji:'🥬',lvl:1},{id:'cheese',name:'치즈',emoji:'🧀',lvl:1},{id:'tomato',name:'토마토',emoji:'🍅',lvl:1},{id:'ham',name:'햄',emoji:'🍖',lvl:1},{id:'egg',name:'달걀',emoji:'🍳',lvl:2},{id:'bacon',name:'베이컨',emoji:'🥓',lvl:3},{id:'cucumber',name:'오이',emoji:'🥒',lvl:4},{id:'shrimp',name:'새우',emoji:'🍤',lvl:5}];
+const BASIC_INGS=[{id:'lettuce',name:'양상추',emoji:'🥬',lvl:1},{id:'cheese',name:'치즈',emoji:'🧀',lvl:1},{id:'tomato',name:'토마토',emoji:'🍅',lvl:1},{id:'ham',name:'햄',emoji:'🍖',lvl:1},{id:'egg',name:'달걀',emoji:'🍳',lvl:2},{id:'bacon',name:'베이컨',emoji:'🥓',lvl:3},{id:'cucumber',name:'오이',emoji:'🥒',lvl:4},{id:'shrimp',name:'새우',emoji:'🍤',lvl:5}];
+const PREMIUM_INGS=[
+ {id:'onion',name:'적양파',emoji:'🧅',price:90,color:'#d4a2dd',desc:'아삭한 풍미가 가득'},
+ {id:'pickle',name:'피클',emoji:'🥒',price:100,color:'#82ab43',desc:'새콤달콤한 한 입'},
+ {id:'avocado',name:'아보카도',emoji:'🥑',price:120,color:'#88c44d',desc:'부드럽고 고소한 맛'},
+ {id:'mushroom',name:'버섯',emoji:'🍄',price:140,color:'#9d785a',desc:'향긋한 구운 버섯'},
+ {id:'corn',name:'옥수수',emoji:'🌽',price:160,color:'#f2d453',desc:'톡톡 터지는 단맛'},
+ {id:'paprika',name:'파프리카',emoji:'🫑',price:190,color:'#ee8349',desc:'알록달록 아삭한 토핑'},
+ {id:'hashbrown',name:'해시브라운',emoji:'🥔',price:220,color:'#d8aa52',desc:'바삭한 감자 한 장'},
+ {id:'basil',name:'바질',emoji:'🌿',price:240,color:'#4e9b57',desc:'싱그러운 허브 향'},
+ {id:'jalapeno',name:'할라피뇨',emoji:'🌶️',price:270,color:'#54a552',desc:'매콤한 초록 고추'},
+ {id:'chicken',name:'닭가슴살',emoji:'🍗',price:300,color:'#e2af80',desc:'담백하고 든든한 속재료'},
+ {id:'olive',name:'블랙올리브',emoji:'🫒',price:340,color:'#49465b',desc:'짭짤한 특별 토핑'},
+ {id:'apple',name:'사과',emoji:'🍎',price:380,color:'#e58875',desc:'상큼한 과일 샌드'},
+ {id:'peanutbutter',name:'땅콩버터',emoji:'🥜',price:410,color:'#bb9058',desc:'고소한 크림 한 겹'},
+ {id:'beefpatty',name:'소고기 패티',emoji:'🥩',price:460,color:'#965044',desc:'육즙 가득 고기 패티'},
+ {id:'pineapple',name:'파인애플',emoji:'🍍',price:510,color:'#f1d359',desc:'달콤한 트로피컬 맛'},
+ {id:'creamcheese',name:'크림치즈',emoji:'🧀',price:570,color:'#fff0bd',desc:'진하고 부드러운 치즈'},
+ {id:'strawberry',name:'딸기',emoji:'🍓',price:640,color:'#e96172',desc:'새콤달콤 딸기 토핑'},
+ {id:'honey',name:'꿀',emoji:'🍯',price:720,color:'#e7b54b',desc:'달콤한 꿀 한 겹'},
+ {id:'porkcutlet',name:'돈가스',emoji:'🍖',price:850,color:'#c1824a',desc:'두툼한 바삭 돈가스'},
+ {id:'truffle',name:'트러플',emoji:'🍄',price:1100,color:'#715243',desc:'가장 귀한 향긋한 재료'}
+];
+const ALL_INGS=[...BASIC_INGS,...PREMIUM_INGS.map(x=>({...x,lvl:1,paid:true}))];
 const RECIPES=[
  {name:'치즈 쏙쏙 샌드',items:['cheese','lettuce'],level:1,price:39},
  {name:'뽀롱 햄치즈',items:['ham','cheese'],level:1,price:43},
@@ -143,7 +207,27 @@ const RECIPES=[
  {name:'아삭 오이 샌드',items:['cucumber','lettuce','ham'],level:4,price:78},
  {name:'크롱의 특제 샌드',items:['cucumber','egg','cheese','ham'],level:4,price:94},
  {name:'바다 친구 샌드',items:['shrimp','cucumber','tomato'],level:5,price:96},
- {name:'최고급 뽀롱 샌드',items:['shrimp','bacon','egg','lettuce'],level:5,price:116}
+ {name:'최고급 뽀롱 샌드',items:['shrimp','bacon','egg','lettuce'],level:5,price:116},
+ {name:'아삭 양파 샌드',items:['onion','ham','lettuce'],level:1,price:87,special:'onion'},
+ {name:'새콤 피클 샌드',items:['pickle','cheese','ham'],level:1,price:90,special:'pickle'},
+ {name:'아보카도 치즈 샌드',items:['avocado','cheese','lettuce'],level:1,price:99,special:'avocado'},
+ {name:'버섯 듬뿍 샌드',items:['mushroom','ham','tomato'],level:1,price:103,special:'mushroom'},
+ {name:'옥수수 달콤 샌드',items:['corn','cheese','lettuce'],level:1,price:111,special:'corn'},
+ {name:'파프리카 정원',items:['paprika','tomato','cheese'],level:1,price:118,special:'paprika'},
+ {name:'바삭 감자 샌드',items:['hashbrown','cheese','lettuce'],level:1,price:129,special:'hashbrown'},
+ {name:'바질 향긋 샌드',items:['basil','tomato','cheese'],level:1,price:136,special:'basil'},
+ {name:'매콤 할라피뇨',items:['jalapeno','ham','cheese'],level:1,price:142,special:'jalapeno'},
+ {name:'닭고기 파워 샌드',items:['chicken','tomato','lettuce'],level:1,price:157,special:'chicken'},
+ {name:'올리브 치즈 샌드',items:['olive','cheese','tomato'],level:1,price:161,special:'olive'},
+ {name:'상큼 사과 샌드',items:['apple','cheese','lettuce'],level:1,price:171,special:'apple'},
+ {name:'고소한 땅콩버터',items:['peanutbutter','cheese','lettuce'],level:1,price:183,special:'peanutbutter'},
+ {name:'소고기 왕패티 샌드',items:['beefpatty','cheese','tomato'],level:1,price:198,special:'beefpatty'},
+ {name:'파인애플 햄 샌드',items:['pineapple','ham','cheese'],level:1,price:211,special:'pineapple'},
+ {name:'크림치즈 구름 샌드',items:['creamcheese','tomato','lettuce'],level:1,price:230,special:'creamcheese'},
+ {name:'딸기 치즈 샌드',items:['strawberry','cheese','lettuce'],level:1,price:250,special:'strawberry'},
+ {name:'허니 치즈 샌드',items:['honey','cheese','lettuce'],level:1,price:269,special:'honey'},
+ {name:'바삭 돈가스 샌드',items:['porkcutlet','lettuce','tomato'],level:1,price:310,special:'porkcutlet'},
+ {name:'프리미엄 트러플 샌드',items:['truffle','ham','cheese'],level:1,price:365,special:'truffle'}
 ];
 const GUESTS=[{id:'pororo',name:'뽀로로',quotes:['맛있게 만들어 줘!','오늘도 샌드위치 최고!']},{id:'crong',name:'크롱',quotes:['크롱! 배가 고파!','크롱크롱! 부탁해!']},{id:'loopy',name:'루피',quotes:['예쁘고 맛있게 부탁해!','맛있는 냄새가 나!']},{id:'eddy',name:'에디',quotes:['완벽한 레시피를 기대할게!','실험보다 샌드위치지!']},{id:'petty',name:'패티',quotes:['맛있는 걸로 부탁해!','신선한 재료가 좋아!']},{id:'poby',name:'포비',quotes:['정말 맛있을 것 같아!','한 입만 먹어 볼게!']}];
 const UPGRADE_DATA=[
@@ -152,16 +236,18 @@ const UPGRADE_DATA=[
  {id:'auto',emoji:'🤖',name:'자동 계산대',desc:'7초마다 코인 자동 획득',base:230,max:6},
  {id:'decor',emoji:'🎈',name:'가게 꾸미기',desc:'주문 성공 시 팁 +6코인',base:170,max:8}
 ];
-const DEFAULT=()=>({coins:80,day:1,level:1,xp:0,served:0,missed:0,combo:0,dayVisits:0,dayServed:0,dayCoins:0,upgrades:{quality:0,patience:0,auto:0,decor:0},sound:true,tutorialSeen:false,autoClock:0});
-function load(){try{const v=JSON.parse(localStorage.getItem(STORAGE_KEY));if(!v||typeof v!=='object')return DEFAULT();const d=DEFAULT();return {...d,...v,upgrades:{...d.upgrades,...v.upgrades},coins:Math.max(0,Number(v.coins)||0),day:Math.max(1,Number(v.day)||1),level:Math.max(1,Number(v.level)||1)}}catch{return DEFAULT()}}
-let state=load(),order=null,orders=[null,null,null],slotStacks=[[],[],[]],activeSlot=0,stack=slotStacks[0],busy=false,paused=true,lastGuest=null,lastRecipe=null,lastTick=performance.now(),audio=null,sequence=0,changingDay=false;
+const DEFAULT=()=>({coins:80,day:1,level:1,xp:0,served:0,missed:0,combo:0,dayVisits:0,dayServed:0,dayCoins:0,upgrades:{quality:0,patience:0,auto:0,decor:0},sound:true,tutorialSeen:false,autoClock:0,purchasedIngredients:[]});
+function load(){try{const v=JSON.parse(localStorage.getItem(STORAGE_KEY));if(!v||typeof v!=='object')return DEFAULT();const d=DEFAULT();return {...d,...v,upgrades:{...d.upgrades,...v.upgrades},purchasedIngredients:Array.isArray(v.purchasedIngredients)?v.purchasedIngredients.filter(id=>PREMIUM_INGS.some(x=>x.id===id)):[],coins:Math.max(0,Number(v.coins)||0),day:Math.max(1,Number(v.day)||1),level:Math.max(1,Number(v.level)||1)}}catch{return DEFAULT()}}
+let state=load(),ingredientTab='base',shopOpen=false,order=null,orders=[null,null,null],slotStacks=[[],[],[]],activeSlot=0,stack=slotStacks[0],busy=false,paused=true,lastGuest=null,lastRecipe=null,lastTick=performance.now(),audio=null,sequence=0,changingDay=false;
 
 const $=id=>document.getElementById(id),fmt=n=>Math.floor(n).toLocaleString('ko-KR'),rand=a=>a[Math.floor(Math.random()*a.length)];
 function save(){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(state))}catch{}}
 function ing(id){return ALL_INGS.find(x=>x.id===id)}
+function owned(id){return state.purchasedIngredients.includes(id)}
+function availableRecipes(){return RECIPES.filter(r=>r.level<=state.level&&(!r.special||owned(r.special)))}
 function neededXp(){return 80+state.level*25}
 function priceFor(u){return Math.ceil(u.base*Math.pow(1.7,state.upgrades[u.id])/10)*10}
-function canPlay(){return !paused&&!busy&&!!order&&orders[activeSlot]===order}
+function canPlay(){return !paused&&!shopOpen&&!busy&&!!order&&orders[activeSlot]===order}
 function chime(freq=450,delay=0,typ='sine',duration=.10){if(!state.sound)return;try{const Ctx=window.AudioContext||window.webkitAudioContext;if(!Ctx)return;if(!audio)audio=new Ctx();if(audio.state==='suspended')audio.resume();const o=audio.createOscillator(),g=audio.createGain(),t=audio.currentTime+delay;o.type=typ;o.frequency.setValueAtTime(freq,t);g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.10,t+.015);g.gain.exponentialRampToValueAtTime(.0001,t+duration);o.connect(g).connect(audio.destination);o.start(t);o.stop(t+duration+.005)}catch{}}
 function successTone(){chime(523,0);chime(659,.10);chime(784,.20);chime(1046,.3)}
 function errorTone(){chime(205,0,'triangle',.16);chime(175,.14,'triangle',.17)}
@@ -201,11 +287,11 @@ function renderTickets(){
  $('ticketList').innerHTML=orders.map((o,i)=>`<button type="button" class="ticket ${i===activeSlot?'active':''} ${o?'':'empty'}" data-slot="${i}" aria-pressed="${i===activeSlot}" aria-label="${i+1}번 작업대 ${o?o.recipe.name:'빈 작업대'}"><span class="ticket-label">${o?(o.source==='kiosk'?'🖥️ 키오스크':'🐧 매장 손님'):'비어 있음'} · ${i+1}번</span><span class="ticket-name">${o?o.recipe.name:'주문 대기 중'}</span>${o?`<span class="ticket-time">⏳ ${Math.ceil(o.remaining)}초 · 재료 ${slotStacks[i].length}개</span>`:''}</button>`).join('');
  $('burgerSlots').innerHTML=orders.map((o,i)=>`<button type="button" class="burger-slot ${i===activeSlot?'active':''}" data-slot="${i}" aria-pressed="${i===activeSlot}"><b>🍔 ${i+1}번 버거</b><small>${slotStacks[i].length?'재료 '+slotStacks[i].length+'개':o?'만드는 중':'주문 대기'}${i===activeSlot?' · 선택됨':''}</small></button>`).join('');
  const isFull=roomAvailable()<0, dayFull=issued()>=8;
- $('kioskButton').disabled=paused||busy||isFull||dayFull;
+ $('kioskButton').disabled=paused||shopOpen||busy||isFull||dayFull;
  $('kioskNotice').textContent=dayFull?'오늘 받을 주문은 모두 접수했어요.':isFull?'작업대가 꽉 찼어요! 주문을 완료하세요.':'키오스크에서 추가 주문을 받아 최대 3개를 동시에 만들 수 있어요.';
 }
 function chooseSlot(index){
- if(index<0||index>2||paused||busy)return;
+ if(index<0||index>2||paused||shopOpen||busy)return;
  activeSlot=index;stack=slotStacks[index];order=orders[index];
  chime(410,0,'sine',.05);renderAll();
  if(!order)toast('이 작업대는 비어 있어요. 키오스크 주문을 받아 보세요!');
@@ -221,7 +307,7 @@ function renderOrder(){
    $('orderIngs').innerHTML=order.recipe.items.map(id=>{const v=ing(id),done=(selectedCounts[id]||0)>0;if(done)selectedCounts[id]--;return `<span class="order-tag ${done?'done':''}">${v.emoji} ${v.name}${done?' ✓':''}</span>`}).join('');
    $('levelRule').textContent='💡 Lv.1~3: 재료가 보이는 연습 단계';
  }else{
-   $('orderIngs').innerHTML='<span class="order-tag">🔎 필요한 재료는 아래 메뉴판에서 찾아보세요</span>';
+   $('orderIngs').innerHTML='<span class="order-tag">🔎 화면 구석의 📖 메뉴판을 열어 보세요</span>';
    $('levelRule').textContent='🌟 Lv.4 이상: 메뉴 이름만 알려 드려요!';
  }
  $('recipeCount').textContent=stack.length+' / '+order.recipe.items.length+'개';renderTimer();
@@ -231,7 +317,7 @@ function renderTimer(){
  $('timerFill').style.width=v+'%';$('timerFill').classList.toggle('low',v<31);$('timerText').textContent=Math.ceil(order.remaining)+'초 남음';
 }
 function renderSandwich(){
- const items=stack.slice();$('sandwichLayers').innerHTML=items.map(id=>`<div class="slice ${id}"></div>`).join('');
+ const items=stack.slice();$('sandwichLayers').innerHTML=items.map(id=>{const x=ing(id);return x.paid?`<div class="slice bought-layer" style="--layer-color:${x.color}"></div>`:`<div class="slice ${id}"></div>`}).join('');
  $('trayEmpty').style.display=items.length?'none':'block';
  $('selectedIngs').innerHTML='<span class="selected-label">'+(activeSlot+1)+'번 버거</span>'+(items.length?items.map(id=>`<span class="selected-chip">${ing(id).emoji} ${ing(id).name}</span>`).join(''):'<span class="selected-placeholder">아직 재료가 없어요</span>');
  $('undoButton').disabled=!canPlay()||!items.length;$('clearButton').disabled=!canPlay()||!items.length;
@@ -239,21 +325,66 @@ function renderSandwich(){
  $('serveButton').textContent='🥪 '+(activeSlot+1)+'번 버거 전달!';
 }
 function renderIngredients(){
- $('ingredients').innerHTML=ALL_INGS.map(x=>{const locked=state.level<x.lvl;return `<button type="button" data-ing="${x.id}" class="ing-btn ${locked?'locked':''}" ${locked||!canPlay()?'disabled':''} aria-label="${x.name}${locked?' 레벨 '+x.lvl+'에 잠금 해제':''}"><span class="ing-emoji">${x.emoji}</span><span class="ing-name">${x.name}</span>${locked?`<span class="ing-lock">🔒 Lv.${x.lvl}</span>`:''}</button>`}).join('');
+ const count=state.purchasedIngredients.length;
+ $('storeCount').textContent=count+'/20';
+ $('purchasedTab').textContent='✨ 구매한 재료 ('+count+')';
+ $('ingredientTabs').querySelectorAll('[data-ingredient-tab]').forEach(b=>{const a=b.dataset.ingredientTab===ingredientTab;b.classList.toggle('active',a);b.setAttribute('aria-selected',a?'true':'false')});
+ const all=ingredientTab==='base'?BASIC_INGS:PREMIUM_INGS.filter(x=>owned(x.id));
+ if(!all.length){$('ingredients').innerHTML='<div class="ingredient-empty">🛒 아직 구매한 재료가 없어요!<button type="button" data-open-shop="1">재료 상점에서 구매하기</button></div>';return}
+ $('ingredients').innerHTML=all.map(x=>{const locked=state.level<(x.lvl||1);return `<button type="button" data-ing="${x.id}" class="ing-btn ${locked?'locked':''} ${x.price?'premium-owned':''}" ${locked||!canPlay()?'disabled':''} aria-label="${x.name}${locked?' 레벨 '+x.lvl+'에 잠금 해제':''}"><span class="ing-emoji">${x.emoji}</span><span class="ing-name">${x.name}</span>${locked?`<span class="ing-lock">🔒 Lv.${x.lvl}</span>`:''}</button>`}).join('');
+}
+function renderShop(){
+ $('shopCoins').textContent=fmt(state.coins);
+ $('shopOwned').textContent=state.purchasedIngredients.length+' / 20개 보유';
+ $('shopGrid').innerHTML=PREMIUM_INGS.map(x=>{const isOwned=owned(x.id),afford=state.coins>=x.price;return `<article class="market-item ${isOwned?'owned':''}"><span class="market-emoji">${x.emoji}</span><strong>${x.name}</strong><span class="market-desc">${x.desc}</span><button type="button" data-buy="${x.id}" ${isOwned||!afford?'disabled':''}>${isOwned?'✅ 구매 완료':!afford?'🔒 '+fmt(x.price)+'코인':'🪙 '+fmt(x.price)+'코인 구매'}</button></article>`}).join('');
+}
+function openShop(){
+ if(shopOpen||!$('overlay').classList.contains('hidden'))return;
+ closeMenu();shopOpen=true;$('shopOverlay').classList.remove('hidden');renderShop();renderTickets();renderIngredients();renderSandwich();
+}
+function closeShop(){
+ if(!shopOpen)return;
+ shopOpen=false;$('shopOverlay').classList.add('hidden');lastTick=performance.now();renderAll();
+}
+function buyIngredient(id){
+ const x=PREMIUM_INGS.find(x=>x.id===id);
+ if(!shopOpen||!x||owned(id))return;
+ if(state.coins<x.price){toast('🪙 코인이 부족해요! 샌드위치를 팔아 모아보세요.','warn');return}
+ state.coins-=x.price;state.purchasedIngredients.push(id);ingredientTab='special';save();
+ chime(620);chime(940,.13);toast('🎉 '+x.name+' 구매 완료! 이제 특별 메뉴를 만들 수 있어요!');
+ renderHeader();renderIngredients();renderMenu();renderUpgrades();renderShop();
 }
 function renderMenu(){
- $('menuTip').textContent=state.level<4?'레벨 4부터 꼭 필요해요':'메뉴 이름을 찾아 재료를 확인하세요';
- $('menuGrid').innerHTML=RECIPES.filter(r=>r.level<=state.level).map(r=>`<article class="menu-card"><strong>🥪 ${r.name}</strong><div class="menu-items">${r.items.map(id=>ing(id).emoji+' '+ing(id).name).join(' · ')}</div><div class="menu-price">🪙 ${r.price} · Lv.${r.level}</div></article>`).join('');
+ $('menuTip').textContent=state.level<4?'레벨 4부터 더 중요해져요':'눌러서 크게 보고 재료를 확인하세요';
+ $('menuPanelHint').textContent=state.level<4?'지금은 주문 재료가 보이지만, 미리 메뉴를 익혀 두면 좋아요!':'레벨 4부터는 메뉴 이름만 보여요. 여기서 재료를 크게 확인하세요!';
+ $('menuGrid').innerHTML=availableRecipes().map(r=>`<article class="menu-card"><strong>🥪 ${r.name}</strong><div class="menu-items">${r.items.map(id=>ing(id).emoji+' '+ing(id).name).join(' · ')}</div><div class="menu-price">🪙 ${r.price} · Lv.${r.level}</div></article>`).join('');
 }
+function openMenu(force=false){
+ if($('overlay')&&!$('overlay').classList.contains('hidden')&&!force)return;
+ $('menuOverlay').classList.remove('hidden');
+ $('menuButton').setAttribute('aria-expanded','true');
+}
+function closeMenu(){
+ $('menuOverlay').classList.add('hidden');
+ $('menuButton').setAttribute('aria-expanded','false');
+}
+function pulseMenuButton(){
+ const b=$('menuButton');
+ b.classList.remove('focus');
+ void b.offsetWidth;
+ b.classList.add('focus');
+ setTimeout(()=>b.classList.remove('focus'),1700);
+}
+
 function renderUpgrades(){
  $('upgradeGrid').innerHTML=UPGRADE_DATA.map(u=>{const n=state.upgrades[u.id],max=n>=u.max,cost=priceFor(u);return `<article class="upgrade"><div class="upgrade-top"><span class="upgrade-icon">${u.emoji}</span><div><h3>${u.name}</h3><div class="desc">${u.desc}</div></div></div><div class="upgrade-bottom"><span class="up-level">Lv.${n} / ${u.max}</span><button data-upgrade="${u.id}" type="button" ${max||state.coins<cost?'disabled':''}>${max?'최고 단계':'🪙 '+fmt(cost)}</button></div></article>`}).join('');
 }
-function renderAll(){renderHeader();renderTickets();renderOrder();renderSandwich();renderIngredients();renderMenu();renderUpgrades()}
+function renderAll(){renderHeader();renderTickets();renderOrder();renderSandwich();renderIngredients();renderMenu();renderUpgrades();if(shopOpen)renderShop()}
 function newOrder(source='counter'){
  if(changingDay||issued()>=8||roomAvailable()===-1)return false;
  if(source==='counter'&&orders.some(x=>x&&x.source==='counter'))return false;
- const choices=RECIPES.filter(r=>r.level<=state.level&&r!==lastRecipe);
- const recipe=rand(choices.length?choices:RECIPES.filter(r=>r.level<=state.level));lastRecipe=recipe;
+ const available=availableRecipes();const choices=available.filter(r=>r!==lastRecipe);
+ const recipe=rand(choices.length?choices:available);lastRecipe=recipe;
  const guests=GUESTS.filter(g=>g.id!==lastGuest),guest=rand(guests);lastGuest=guest.id;
  const duration=(source==='kiosk'?65:Math.max(32,53-Math.min(state.level-1,7)*2))+state.upgrades.patience*5;
  const index=roomAvailable();orders[index]={id:++sequence,recipe,guest:source==='counter'?guest:null,source,quoteIndex:Math.floor(Math.random()*guest.quotes.length),duration,remaining:duration};
@@ -261,13 +392,13 @@ function newOrder(source='counter'){
  busy=false;paused=false;renderAll();return true;
 }
 function kioskOrder(){
- if(paused||busy){toast('지금은 주문을 받을 수 없어요.','warn');return}
+ if(paused||shopOpen||busy){toast('지금은 주문을 받을 수 없어요.','warn');return}
  if(roomAvailable()===-1){toast('작업대는 최대 3개까지예요!','warn');return}
  if(issued()>=8){toast('오늘의 주문 접수가 끝났어요!','warn');return}
  if(newOrder('kiosk')){chime(840);chime(1110,.14);toast('🖥️ 키오스크 주문이 접수됐어요! '+(activeSlot+1)+'번 작업대에서 만드세요.')}
 }
 function addIngredient(id){
- if(!canPlay())return;const x=ing(id);if(!x||x.lvl>state.level)return;
+ if(!canPlay())return;const x=ing(id);if(!x||x.lvl>state.level||(x.paid&&!owned(id)))return;
  if(stack.length>=5){toast('한 개의 버거에는 재료를 최대 5개까지 넣을 수 있어요!','warn');return}
  stack.push(id);chime(320+stack.length*90,0,'triangle',.07);renderOrder();renderSandwich();renderTickets();
 }
@@ -276,7 +407,7 @@ function increaseLevel(points){
  const before=state.level;state.xp+=points;let gained=[];
  while(state.xp>=neededXp()){state.xp-=neededXp();state.level++;const newStuff=ALL_INGS.filter(x=>x.lvl===state.level).map(x=>x.emoji+' '+x.name);if(newStuff.length)gained.push(...newStuff)}
  if(state.level>before){confetti();chime(880,.25);chime(1040,.37);chime(1200,.49);
-   if(before<4&&state.level>=4){$('menuBoard').open=true;setTimeout(()=>toast('🎉 레벨 4! 이제 주문에는 메뉴 이름만 보여요. 메뉴판을 확인하세요!', 'good'),300)}
+   if(before<4&&state.level>=4){pulseMenuButton();openMenu(true);setTimeout(()=>toast('🎉 레벨 4! 이제 주문에는 메뉴 이름만 보여요. 메뉴판을 확인하세요!', 'good'),300)}
    else setTimeout(()=>toast('🎉 레벨 '+state.level+'! '+(gained.length?'새 재료: '+gained.join(', '):'더 어려운 메뉴 도전!'),'good'),330);
  }
 }
@@ -311,7 +442,7 @@ function showModal(html){paused=true;$('modalContent').innerHTML=html;$('overlay
 function hideModal(){$('overlay').classList.add('hidden');paused=false;lastTick=performance.now();renderAll()}
 function showHelp(){
  const restart=state.tutorialSeen;
- showModal(`<div class="modal-emoji">🐧🍔</div><h2>뽀로로 샌드위치 타이쿤</h2><p>뽀롱뽀롱 마을에서 내 샌드위치 가게를 운영해 보세요!</p><div class="howto"><div>1️⃣ <b>레벨 1~3</b>은 주문에 필요한 재료가 보여요.</div><div>2️⃣ <b>레벨 4부터</b> 메뉴 이름만 보여요. 📖 메뉴판을 확인하세요.</div><div>3️⃣ <b>1~3번 작업대</b>를 눌러 최대 3개의 버거를 번갈아 만들 수 있어요.</div><div>4️⃣ <b>🖥️ 키오스크 주문 받기</b>를 누르면 추가 주문이 들어와요.</div><div>5️⃣ 8개의 주문을 처리하면 하루가 끝나요. 코인으로 가게를 업그레이드하세요!</div></div><button type="button" class="primary" id="startButton">${restart?'게임 계속하기 ▶':'가게 문 열기 ▶'}</button>${restart?'<button class="secondary-link" type="button" id="resetButton">처음부터 다시 시작하기</button>':''}`);
+ showModal(`<div class="modal-emoji">🐧🍔</div><h2>뽀로로 샌드위치 타이쿤</h2><p>뽀롱뽀롱 마을에서 내 샌드위치 가게를 운영해 보세요!</p><div class="howto"><div>1️⃣ <b>레벨 1~3</b>은 주문에 필요한 재료가 보여요.</div><div>2️⃣ <b>레벨 4부터</b> 메뉴 이름만 보여요. 📖 메뉴판을 확인하세요.</div><div>3️⃣ <b>1~3번 작업대</b>를 눌러 최대 3개의 버거를 번갈아 만들 수 있어요.</div><div>4️⃣ <b>🖥️ 키오스크 주문 받기</b>를 누르면 추가 주문이 들어와요.</div><div>5️⃣ 8개의 주문을 처리하면 하루가 끝나요. 코인으로 가게를 업그레이드하세요!</div><div>6️⃣ 🛒 <b>재료 상점</b>에서 20종의 특별 재료를 코인으로 영구 구매할 수 있어요.</div></div><button type="button" class="primary" id="startButton">${restart?'게임 계속하기 ▶':'가게 문 열기 ▶'}</button>${restart?'<button class="secondary-link" type="button" id="resetButton">처음부터 다시 시작하기</button>':''}`);
  $('startButton').onclick=()=>{state.tutorialSeen=true;save();hideModal();if(!waitingCount())newOrder()};
  const reset=$('resetButton');if(reset)reset.onclick=()=>{if(confirm('모든 코인, 레벨, 업그레이드가 삭제됩니다. 다시 시작할까요?')){state=DEFAULT();state.tutorialSeen=true;orders=[null,null,null];slotStacks=[[],[],[]];activeSlot=0;stack=slotStacks[0];order=null;changingDay=false;save();hideModal();newOrder();toast('새로운 가게를 시작했어요!')}};
 }
@@ -322,28 +453,39 @@ function endDay(){
  showModal(`<div class="modal-emoji">🎉🌟</div><h2>${day}일 차 영업 완료!</h2><p>오늘도 맛있는 샌드위치를 열심히 만들었어요!</p><div class="daily-summary"><div><small>성공한 주문</small><strong>🥪 ${served} / 8</strong></div><div><small>오늘 번 코인</small><strong>🪙 ${fmt(earned)}</strong></div></div><p>메뉴판과 키오스크를 활용해 내일도 도전해 보세요!</p><button type="button" class="primary" id="nextDayButton">☀️ ${state.day}일 차 시작하기</button>`);
  $('nextDayButton').onclick=()=>{hideModal();newOrder()};
 }
-$('ingredients').addEventListener('click',e=>{const b=e.target.closest('[data-ing]');if(b)addIngredient(b.dataset.ing)});
+$('ingredients').addEventListener('click',e=>{if(e.target.closest('[data-open-shop]')){openShop();return}const b=e.target.closest('[data-ing]');if(b)addIngredient(b.dataset.ing)});
+$('ingredientTabs').addEventListener('click',e=>{const b=e.target.closest('[data-ingredient-tab]');if(!b)return;ingredientTab=b.dataset.ingredientTab;renderIngredients()});
+$('ingredientShopButton').addEventListener('click',openShop);
+$('shopCloseButton').addEventListener('click',closeShop);
+$('shopOverlay').addEventListener('click',e=>{if(e.target===$('shopOverlay'))closeShop()});
+$('shopGrid').addEventListener('click',e=>{const b=e.target.closest('[data-buy]');if(b)buyIngredient(b.dataset.buy)});
 $('upgradeGrid').addEventListener('click',e=>{const b=e.target.closest('[data-upgrade]');if(b)upgrade(b.dataset.upgrade)});
 function slotClick(e){const b=e.target.closest('[data-slot]');if(b)chooseSlot(Number(b.dataset.slot))}
 $('ticketList').addEventListener('click',slotClick);
 $('burgerSlots').addEventListener('click',slotClick);
 $('kioskButton').addEventListener('click',kioskOrder);
+$('menuButton').addEventListener('click',()=>openMenu());
+$('menuCloseButton').addEventListener('click',closeMenu);
+$('menuOverlay').addEventListener('click',e=>{if(e.target===$('menuOverlay'))closeMenu()});
 $('undoButton').addEventListener('click',()=>{if(canPlay()&&stack.length){stack.pop();chime(255);renderOrder();renderSandwich();renderTickets()}});
 $('clearButton').addEventListener('click',()=>{if(canPlay()){slotStacks[activeSlot]=[];stack=slotStacks[activeSlot];chime(250);renderOrder();renderSandwich();renderTickets()}});
 $('serveButton').addEventListener('click',serve);
 $('soundButton').addEventListener('click',()=>{state.sound=!state.sound;save();renderHeader();if(state.sound)chime(600)});
 $('helpButton').addEventListener('click',showHelp);
 document.addEventListener('keydown',e=>{
+ if(e.key==='Escape'&&shopOpen){closeShop();return}
+ if(e.key==='Escape'&&!$('menuOverlay').classList.contains('hidden')){closeMenu();return}
  if(!canPlay()||e.ctrlKey||e.metaKey||e.altKey||['INPUT','TEXTAREA'].includes(e.target.tagName))return;
  const n=Number(e.key);if(n>=1&&n<=8&&e.key.length===1){const x=ALL_INGS[n-1];if(x)addIngredient(x.id)}
  if(e.key==='Enter'||e.key===' '){if(e.target.tagName==='BUTTON'||e.target.tagName==='SUMMARY')return;e.preventDefault();serve()}
  if(e.key==='Backspace'){stack.pop();renderOrder();renderSandwich();renderTickets()}
+ if(e.key==='Escape'&&!$('menuOverlay').classList.contains('hidden'))closeMenu()
 });
 document.addEventListener('visibilitychange',()=>{lastTick=performance.now()});
 let oncePerSecond=0;
 setInterval(()=>{
  const now=performance.now(),delta=Math.min(.5,(now-lastTick)/1000);lastTick=now;
- if(paused||busy||changingDay||!waitingCount())return;
+ if(paused||shopOpen||busy||changingDay||!waitingCount())return;
  for(let i=0;i<orders.length;i++){const o=orders[i];if(!o)continue;o.remaining-=delta;if(o.remaining<=0){o.remaining=0;timeoutOrder(i)}}
  if(order)renderTimer();oncePerSecond+=delta;
  if(oncePerSecond>=1){oncePerSecond=0;renderTickets();renderHeader()}
