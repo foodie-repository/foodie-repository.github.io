@@ -1646,12 +1646,20 @@ function loadCubeStyle(){
   }catch{return {...CUBE_DEFAULT_STYLE};}
 }
 let cubeStyle=loadCubeStyle();
-function drawKirbySkin(c){
-  c.save();c.shadowColor='#ff80b8';c.shadowBlur=14;
-  c.fillStyle='#d63e69';
+function drawKirbySkin(c, mode='cube'){
+  // Cosmetics only: all three forms share the game's existing hitbox and controls.
+  const palettes={
+    cube:{glow:'#ff80b8',shoes:'#d63e69',body:'#ff9fcb',cheeks:'#ed6299',mouth:'#9b1746',tongue:'#ff8aaa'},
+    ship:{glow:'#5bcaff',shoes:'#246ecb',body:'#81cfff',cheeks:'#4aaafa',mouth:'#174a89',tongue:'#74b8ff'},
+    wave:{glow:'#6bffa7',shoes:'#218c51',body:'#87efac',cheeks:'#42d787',mouth:'#176642',tongue:'#6deba5'}
+  };
+  const p=palettes[mode]||palettes.cube;
+  c.save();
+  c.shadowColor=p.glow;c.shadowBlur=14;
+  c.fillStyle=p.shoes;
   c.beginPath();c.ellipse(-11,17,12,6,-.23,0,Math.PI*2);c.fill();
   c.beginPath();c.ellipse(11,17,12,6,.23,0,Math.PI*2);c.fill();
-  c.fillStyle='#ff9fcb';
+  c.fillStyle=p.body;
   c.beginPath();c.ellipse(-18,2,7,9,-.35,0,Math.PI*2);c.fill();
   c.beginPath();c.ellipse(18,2,7,9,.35,0,Math.PI*2);c.fill();
   c.beginPath();c.arc(0,-2,18,0,Math.PI*2);c.fill();
@@ -1662,11 +1670,11 @@ function drawKirbySkin(c){
   c.fillStyle='white';
   c.beginPath();c.ellipse(-6.4,-9,1.35,3.1,0,0,Math.PI*2);c.fill();
   c.beginPath();c.ellipse(5.6,-9,1.35,3.1,0,0,Math.PI*2);c.fill();
-  c.fillStyle='#ed6299';
+  c.fillStyle=p.cheeks;
   c.beginPath();c.ellipse(-12,3,4,2.3,0,0,Math.PI*2);c.fill();
   c.beginPath();c.ellipse(12,3,4,2.3,0,0,Math.PI*2);c.fill();
-  c.fillStyle='#9b1746';c.beginPath();c.ellipse(0,5,3,4.2,0,0,Math.PI*2);c.fill();
-  c.fillStyle='#ff8aaa';c.beginPath();c.ellipse(0,7.4,1.8,1.2,0,0,Math.PI*2);c.fill();
+  c.fillStyle=p.mouth;c.beginPath();c.ellipse(0,5,3,4.2,0,0,Math.PI*2);c.fill();
+  c.fillStyle=p.tongue;c.beginPath();c.ellipse(0,7.4,1.8,1.2,0,0,Math.PI*2);c.fill();
   c.restore();
 }
 function drawCustomCube(c){
@@ -2382,7 +2390,11 @@ function drawDangerTiles(){
 function drawPadsOrbs(){for(const p of game.runtime.pads){const x=px(p.x);if(x<-100||x>W+100)continue;ctx.shadowColor='#fde047';ctx.shadowBlur=16;ctx.fillStyle='#facc15';ctx.beginPath();ctx.roundRect(x,p.y,p.w,p.h,6);ctx.fill();ctx.shadowBlur=0;}for(const o of game.runtime.orbs){const x=px(o.x);if(x<-80||x>W+80)continue;const used=game.usedOrbs.has(o.id);ctx.save();ctx.globalAlpha=used?.22:1;ctx.shadowColor='#fde047';ctx.shadowBlur=used?0:20+game.beatPulse*8;ctx.strokeStyle='#fde047';ctx.lineWidth=6;ctx.beginPath();ctx.arc(x,o.y,o.r+4,0,Math.PI*2);ctx.stroke();ctx.fillStyle='rgba(250,204,21,.2)';ctx.beginPath();ctx.arc(x,o.y,o.r-4,0,Math.PI*2);ctx.fill();ctx.restore();}}
 function drawFlightElements(){for(const o of game.runtime.flightObstacles){const x=px(o.x);if(x>W+120||x+o.w<-120)continue;const g=ctx.createLinearGradient(x,o.y,x+o.w,o.y+o.h);g.addColorStop(0,'#312e81');g.addColorStop(1,'#0f172a');ctx.fillStyle=g;ctx.fillRect(x,o.y,o.w,o.h);ctx.strokeStyle='#a78bfa';ctx.lineWidth=3;ctx.strokeRect(x+2,o.y+2,o.w-4,o.h-4);}for(const p of game.runtime.portals){const x=px(p.x);if(x<-100||x>W+100)continue;const cy=p.y+p.h/2;ctx.save();ctx.shadowColor=p.type==='ship'?'#22d3ee':'#f472b6';ctx.shadowBlur=22;ctx.strokeStyle=p.type==='ship'?'#67e8f9':'#f9a8d4';ctx.lineWidth=7;ctx.beginPath();ctx.ellipse(x,cy,18,p.h/2,0,0,Math.PI*2);ctx.stroke();ctx.restore();}if(player.mode==='ship'||player.mode==='wave'){ctx.fillStyle=player.mode==='wave'?'#a3e635':'#67e8f9';ctx.font='800 15px system-ui';ctx.textAlign='center';ctx.fillText(player.mode==='wave'?'WAVE · TAP TO SWITCH ↗ ↘':'FLIGHT · HOLD TO RISE',W/2,34);ctx.textAlign='left';}}
 function drawFinish(){const x=px(game.runtime.levelEnd);if(x<-100||x>W+140)return;ctx.save();ctx.shadowColor='#a78bfa';ctx.shadowBlur=24;ctx.strokeStyle='#c4b5fd';ctx.lineWidth=8;ctx.beginPath();ctx.arc(x,GROUND_Y-92,58,0,Math.PI*2);ctx.stroke();ctx.restore();}
-function drawPlayer(){if(game.dead&&game.particles.length>10)return;const x=px(player.worldX),cx=x+20,cy=player.y+20;ctx.save();ctx.translate(cx,cy);ctx.rotate(player.rotation);if(player.mode==='cube'&&player.gravitySign<0)ctx.scale(1,-1);ctx.shadowColor='#22d3ee';ctx.shadowBlur=20+game.beatPulse*8;const g=ctx.createLinearGradient(-20,-20,20,20);g.addColorStop(0,'#67e8f9');g.addColorStop(.55,'#8b5cf6');g.addColorStop(1,'#f472b6');ctx.fillStyle=g;if(player.mode==='ship'){ctx.beginPath();ctx.moveTo(22,0);ctx.lineTo(-16,-15);ctx.lineTo(-9,0);ctx.lineTo(-16,15);ctx.closePath();ctx.fill();ctx.shadowBlur=0;ctx.strokeStyle='rgba(255,255,255,.8)';ctx.lineWidth=2;ctx.stroke();ctx.fillStyle=game.inputHeld?'#fde047':'#f472b6';ctx.beginPath();ctx.moveTo(-13,-7);ctx.lineTo(-29,0);ctx.lineTo(-13,7);ctx.closePath();ctx.fill();}else if(player.mode==='wave'){ctx.shadowColor='#a3e635';ctx.fillStyle='#a3e635';ctx.beginPath();ctx.moveTo(24,0);ctx.lineTo(-15,-15);ctx.lineTo(-7,0);ctx.lineTo(-15,15);ctx.closePath();ctx.fill();ctx.shadowBlur=0;ctx.strokeStyle='rgba(255,255,255,.9)';ctx.lineWidth=2;ctx.stroke();ctx.fillStyle='#0f172a';ctx.beginPath();ctx.moveTo(7,0);ctx.lineTo(-7,-6);ctx.lineTo(-3,0);ctx.lineTo(-7,6);ctx.closePath();ctx.fill();}else{drawCustomCube(ctx);}ctx.restore();}
+function drawPlayer(){if(game.dead&&game.particles.length>10)return;const x=px(player.worldX),cx=x+20,cy=player.y+20;ctx.save();ctx.translate(cx,cy);ctx.rotate(player.rotation);if(player.mode==='cube'&&player.gravitySign<0)ctx.scale(1,-1);ctx.shadowColor='#22d3ee';ctx.shadowBlur=20+game.beatPulse*8;const g=ctx.createLinearGradient(-20,-20,20,20);g.addColorStop(0,'#67e8f9');g.addColorStop(.55,'#8b5cf6');g.addColorStop(1,'#f472b6');ctx.fillStyle=g;if(cubeStyle.face==='kirby'){
+  // Ship is blue, Wave is green, Cube remains pink.
+  if(player.mode!=='cube')ctx.scale(.8,.8);
+  drawKirbySkin(ctx,player.mode);
+}else if(player.mode==='ship'){ctx.beginPath();ctx.moveTo(22,0);ctx.lineTo(-16,-15);ctx.lineTo(-9,0);ctx.lineTo(-16,15);ctx.closePath();ctx.fill();ctx.shadowBlur=0;ctx.strokeStyle='rgba(255,255,255,.8)';ctx.lineWidth=2;ctx.stroke();ctx.fillStyle=game.inputHeld?'#fde047':'#f472b6';ctx.beginPath();ctx.moveTo(-13,-7);ctx.lineTo(-29,0);ctx.lineTo(-13,7);ctx.closePath();ctx.fill();}else if(player.mode==='wave'){ctx.shadowColor='#a3e635';ctx.fillStyle='#a3e635';ctx.beginPath();ctx.moveTo(24,0);ctx.lineTo(-15,-15);ctx.lineTo(-7,0);ctx.lineTo(-15,15);ctx.closePath();ctx.fill();ctx.shadowBlur=0;ctx.strokeStyle='rgba(255,255,255,.9)';ctx.lineWidth=2;ctx.stroke();ctx.fillStyle='#0f172a';ctx.beginPath();ctx.moveTo(7,0);ctx.lineTo(-7,-6);ctx.lineTo(-3,0);ctx.lineTo(-7,6);ctx.closePath();ctx.fill();}else{drawCustomCube(ctx);}ctx.restore();}
 function drawParticles(){ctx.save();for(const p of game.particles){const x=px(p.x),a=clamp(p.life/p.maxLife,0,1);ctx.globalAlpha=a;ctx.fillStyle=p.kind==='crash'?'#f472b6':p.kind==='orb'||p.kind==='pad'?'#fde047':p.kind==='finish'||p.kind==='portal'?'#c4b5fd':'#67e8f9';ctx.fillRect(x-p.size/2,p.y-p.size/2,p.size,p.size);}ctx.restore();}
 function drawGame(){if(!game.runtime)return;drawBackground();drawGravityCeiling();drawPlatforms();drawPadsOrbs();drawPowerBlocks();drawDangerTiles();drawFlightElements();drawSpikes();drawFinish();drawParticles();drawWaveTrail();drawPlayer();if(game.flash>0){ctx.fillStyle=`rgba(255,255,255,${game.flash*.24})`;ctx.fillRect(0,0,W,H);}}
 function frame(now){
