@@ -92,7 +92,7 @@
         <canvas id="gameCanvas" width="960" height="540" aria-label="Neon Dash 플레이 화면"></canvas>
         <div id="gameMessage" class="game-message hidden"><div><strong id="gameMessageTitle"></strong><span id="gameMessageText"></span></div></div>
       </div>
-      <div class="play-footer"><span id="attemptText">ATTEMPT 1</span><span id="bestText">BEST 0%</span><span>큐브: 점프 · 중력 블록: 위아래 반전 · 3단 점프: 공중에서 추가 2회 · WAVE: 탭으로 방향 전환</span></div>
+      <div class="play-footer"><span id="attemptText">ATTEMPT 1</span><span id="bestText">BEST 0%</span><span>큐브: 점프 · 중력 블록: 위아래 반전 · ⇅ 중력: 블록을 밟거나 위로 지나가면 반전 · 3단 점프 · WAVE: 탭으로 방향 전환</span></div>
     </section>
 
     <section id="screen-levels" class="screen" data-screen="levels">
@@ -1375,7 +1375,7 @@ function applyPowerBlocks(){
   if(player.mode!=='cube'||!game.runtime?.powerBlocks?.length){game.activePowerContacts.clear();return;}
   const box=playerRect(3),contacts=new Set();
   for(const p of game.runtime.powerBlocks){
-    if(!rectsOverlap(box,p))continue;
+    if(!rectsOverlap(box,p)&&!(p.type==='gravity-switch'&&box.x<p.x+p.w&&box.x+box.w>p.x&&(p.triggerColumn||box.y+box.h<=p.y+8)))continue;
     contacts.add(p.id);
     if(game.activePowerContacts.has(p.id))continue;
     if(p.type==='gravity-switch'){
@@ -1492,7 +1492,17 @@ function createOfficialRuntimeById(levelId) {
    );
    runtime.challengeVariant='overdrive';
  }
- runtime.id=level.id;runtime.name=level.name;runtime.music=level.music;
+ // Intermediate gravity gates: two switches per official map except level 1.
+// The first reverses the player's gravity, the second restores it before the next obstacle.
+const gravityMidpoints={"pulse-factory":[11560],"sky-circuit":[14340],"wave-storm":[15480],"final-eclipse":[18420]};
+for(const [i,x] of (gravityMidpoints[baseId]||[]).entries()){
+  const gap=baseId==='sky-circuit'?350:520;
+  runtime.powerBlocks.push(
+    {id:level.id+'-mid-gravity-up-'+i,x,y:405,w:52,h:25,type:'gravity-switch',triggerColumn:true},
+    {id:level.id+'-mid-gravity-down-'+i,x:x+gap,y:58,w:52,h:40,type:'gravity-switch',triggerColumn:true}
+  );
+}
+runtime.id=level.id;runtime.name=level.name;runtime.music=level.music;
  runtime.stageNumber=level.difficulty;
  runtime.fingerprint=officialRuntimeFingerprint(runtime);
  return runtime;
