@@ -2332,6 +2332,19 @@ function drawPowerBlocks(){
     const x=px(p.x);if(x<-50||x>W+50)continue;
     const flip=p.type==='gravity-switch',color=flip?'#c084fc':'#fde047';
     ctx.save();ctx.shadowColor=color;ctx.shadowBlur=17;ctx.lineWidth=3;
+    // Mid-course switches sense the player's vertical crossing path; show the
+    // complete trigger column so jumps over the tile are visually predictable.
+    if(p.triggerColumn){
+      const column=ctx.createLinearGradient(x,0,x+p.w,0);
+      column.addColorStop(0,'rgba(192,132,252,.02)');
+      column.addColorStop(.5,'rgba(192,132,252,.16)');
+      column.addColorStop(1,'rgba(192,132,252,.02)');
+      ctx.shadowBlur=0;ctx.fillStyle=column;
+      ctx.fillRect(x,FLIGHT_TOP,p.w,GROUND_Y-FLIGHT_TOP);
+      ctx.strokeStyle='rgba(216,180,254,.26)';
+      ctx.lineWidth=1;ctx.strokeRect(x,FLIGHT_TOP,p.w,GROUND_Y-FLIGHT_TOP);
+      ctx.shadowBlur=17;ctx.lineWidth=3;
+    }
     ctx.fillStyle='#161332';ctx.strokeStyle=color;ctx.fillRect(x,p.y,p.w,p.h);ctx.strokeRect(x,p.y,p.w,p.h);
     ctx.fillStyle=color;ctx.textAlign='center';ctx.textBaseline='middle';ctx.font='bold 20px system-ui';
     ctx.fillText(flip?'⇅':'3×',x+p.w/2,p.y+p.h/2+1);ctx.restore();
