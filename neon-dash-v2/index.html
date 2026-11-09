@@ -62,7 +62,7 @@
     <section id="screen-official-levels" class="screen" data-screen="official-levels">
       <div class="section-heading">
         <div><span class="eyebrow">OFFICIAL LEVELS</span><h2>공식 맵</h2></div>
-        <span class="official-level-hint">5개 맵 · 모두 플레이 가능</span>
+        <span class="official-level-hint">10개 맵 · 1~10단계 세분화</span>
       </div>
       <div id="officialLevelList" class="official-level-grid"></div>
     </section>
@@ -1446,70 +1446,19 @@ var OFFICIAL_REPLAY_VERIFIED_TICKS_BY_LEVEL = {"neon-start":13824,"pulse-factory
 var OFFICIAL_REPLAY_VERIFIED_FINGERPRINTS_BY_LEVEL = {"neon-start":"og1-3d76dfff","pulse-factory":"og1-a0d319c5","sky-circuit":"og1-3c9e4f0f","wave-storm":"og1-e17acb97","final-eclipse":"og1-9cf5b501"};
 
 // OFFICIAL_LEVEL_REGISTRY_START
-var OFFICIAL_LEVEL_IDS = [
-  'neon-start',
-  'pulse-factory',
-  'sky-circuit',
-  'wave-storm',
-  'final-eclipse',
-];
-
+// 2026-11-09: 10 levels with intermediate difficulty stages.
+var OFFICIAL_LEVEL_IDS = ['neon-start','neon-rise','pulse-factory','sky-approach','sky-circuit','wave-prelude','wave-storm','eclipse-gate','final-eclipse','final-overdrive'];
 var OFFICIAL_LEVELS = [
-  {
-    id:'neon-start',
-    name:'Neon Start',
-    difficulty:1,
-    difficultyLabel:'쉬움',
-    description:'1단계 전용 리듬 레이저 함정 · 기본 점프 · 비행·Wave',
-    music:'neon-rush',
-    accent:'cyan',
-    createRuntime:createNeonStartRuntime,
-    replay:NEON_START_REPLAY,
-  },
-  {
-    id:'pulse-factory',
-    name:'Pulse Factory',
-    difficulty:2,
-    difficultyLabel:'보통',
-    description:'레이저 누적 + 톱니 함정 · 바운스 · 중력 반전',
-    music:'hyper-drive',
-    accent:'factory',
-    createRuntime:createPulseFactoryRuntime,
-    replay:PULSE_FACTORY_REPLAY,
-  },
-  {
-    id:'sky-circuit',
-    name:'Sky Circuit',
-    difficulty:3,
-    difficultyLabel:'어려움',
-    description:'레이저·톱니 누적 + 이동 칼날 · 3단 점프',
-    music:'neon-rush',
-    accent:'sky',
-    createRuntime:createSkyCircuitRuntime,
-    replay:SKY_CIRCUIT_REPLAY,
-  },
-  {
-    id:'wave-storm',
-    name:'Wave Storm',
-    difficulty:4,
-    difficultyLabel:'매우 어려움',
-    description:'이전 함정 누적 + 전기 바닥 · Wave',
-    music:'hyper-drive',
-    accent:'wave',
-    createRuntime:createWaveStormRuntime,
-    replay:WAVE_STORM_REPLAY,
-  },
-  {
-    id:'final-eclipse',
-    name:'Final Eclipse',
-    difficulty:5,
-    difficultyLabel:'극한',
-    description:'이전 함정 누적 + 실제로 빠지는 모래시계 바닥',
-    music:'dark-pulse',
-    accent:'eclipse',
-    createRuntime:createFinalEclipseRuntime,
-    replay:FINAL_ECLIPSE_REPLAY,
-  },
+{id:'neon-start',name:'Neon Start',difficulty:1,difficultyLabel:'입문',description:'기본 점프 · 비행 · Wave · 리듬 레이저',music:'neon-rush',accent:'cyan',createRuntime:createNeonStartRuntime,replay:NEON_START_REPLAY},
+{id:'neon-rise',name:'Neon Rise',difficulty:2,difficultyLabel:'쉬움+',description:'기본 함정 뒤 바운스 · 중력 반전 연습',music:'hyper-drive',accent:'factory',createRuntime:createPulseFactoryRuntime,replay:PULSE_FACTORY_REPLAY,baseId:'pulse-factory',relief:0.48},
+{id:'pulse-factory',name:'Pulse Factory',difficulty:3,difficultyLabel:'보통−',description:'레이저·톱니 · 바운스 · 중력 반전',music:'hyper-drive',accent:'factory',createRuntime:createPulseFactoryRuntime,replay:PULSE_FACTORY_REPLAY},
+{id:'sky-approach',name:'Sky Approach',difficulty:4,difficultyLabel:'보통',description:'이동 발판 · 3단 점프 · 완화된 비행 통로',music:'neon-rush',accent:'sky',createRuntime:createSkyCircuitRuntime,replay:SKY_CIRCUIT_REPLAY,baseId:'sky-circuit',relief:0.42},
+{id:'sky-circuit',name:'Sky Circuit',difficulty:5,difficultyLabel:'보통+',description:'레이저·톱니 · 이동 칼날 · 3단 점프',music:'neon-rush',accent:'sky',createRuntime:createSkyCircuitRuntime,replay:SKY_CIRCUIT_REPLAY},
+{id:'wave-prelude',name:'Wave Prelude',difficulty:6,difficultyLabel:'어려움−',description:'Wave 방향 전환 · 간격을 넓힌 감전 코스',music:'hyper-drive',accent:'wave',createRuntime:createWaveStormRuntime,replay:WAVE_STORM_REPLAY,baseId:'wave-storm',relief:0.38},
+{id:'wave-storm',name:'Wave Storm',difficulty:7,difficultyLabel:'어려움',description:'바운스·이동 누적 · 감전 블록 · Wave',music:'hyper-drive',accent:'wave',createRuntime:createWaveStormRuntime,replay:WAVE_STORM_REPLAY},
+{id:'eclipse-gate',name:'Eclipse Gate',difficulty:8,difficultyLabel:'매우 어려움',description:'붕괴 바닥 도입 · 고난도 복합 코스 연습',music:'dark-pulse',accent:'eclipse',createRuntime:createFinalEclipseRuntime,replay:FINAL_ECLIPSE_REPLAY,baseId:'final-eclipse',relief:0.3},
+{id:'final-eclipse',name:'Final Eclipse',difficulty:9,difficultyLabel:'극한',description:'바운스·이동·감전·붕괴 전부 · 고밀도 장애물',music:'dark-pulse',accent:'eclipse',createRuntime:createFinalEclipseRuntime,replay:FINAL_ECLIPSE_REPLAY},
+{id:'final-overdrive',name:'Final Overdrive',difficulty:10,difficultyLabel:'최종 극한',description:'최종 복합 코스 + 중력 반전 구간 추가 톱니 함정',music:'dark-pulse',accent:'eclipse',createRuntime:createFinalEclipseRuntime,replay:FINAL_ECLIPSE_REPLAY,baseId:'final-eclipse',overdrive:true}
 ];
 
 function getOfficialLevel(levelId) {
@@ -1517,16 +1466,36 @@ function getOfficialLevel(levelId) {
 }
 
 function createOfficialRuntimeById(levelId) {
-  const level = getOfficialLevel(levelId);
-  if (!level || typeof level.createRuntime !== 'function') return null;
-  const runtime = level.createRuntime();
-  if (!runtime) return null;
-  runtime.id = level.id;
-  runtime.name = level.name;
-  runtime.music = level.music;
-  if(levelId!=='neon-start') upgradeOfficialRuntime(runtime);
-  runtime.fingerprint = officialRuntimeFingerprint(runtime);
-  return runtime;
+ const level=getOfficialLevel(levelId);
+ if(!level||typeof level.createRuntime!=='function')return null;
+ const runtime=level.createRuntime();
+ if(!runtime)return null;
+ const baseId=level.baseId||level.id;
+ runtime.id=baseId;
+ if(baseId!=='neon-start')upgradeOfficialRuntime(runtime);
+ if(level.relief){
+   // Only remove non-structural dangers, preserving AUTO physics/portals.
+   const skip=level.relief>=.45?2:level.relief>=.38?3:4;
+   const ease=a=>a.filter((_,i)=>i%skip!==0);
+   runtime.spikes=ease(runtime.spikes);
+   runtime.flightObstacles=ease(runtime.flightObstacles);
+   runtime.floorHazards=ease(runtime.floorHazards);
+   runtime.challengeVariant='intermediate';
+ }
+ if(level.overdrive){
+   // These real ground traps are under the mandatory inverted-gravity ceiling
+   // traversal; correctly switching gravity bypasses them.
+   const x=runtime.routeStart;
+   runtime.floorHazards.push(
+    {id:'overdrive-gear-1',type:'gear-trap',x:x+390,y:OFFICIAL_GROUND_Y-34,w:34,h:34,phase:0,triggerAt:null,broken:false},
+    {id:'overdrive-gear-2',type:'gear-trap',x:x+455,y:OFFICIAL_GROUND_Y-34,w:34,h:34,phase:0,triggerAt:null,broken:false}
+   );
+   runtime.challengeVariant='overdrive';
+ }
+ runtime.id=level.id;runtime.name=level.name;runtime.music=level.music;
+ runtime.stageNumber=level.difficulty;
+ runtime.fingerprint=officialRuntimeFingerprint(runtime);
+ return runtime;
 }
 
 function getOfficialReplay(levelId) {
@@ -1833,7 +1802,7 @@ function renderOfficialLevelSelect() {
     name.textContent=`${level.difficulty}. ${level.name}`;
     const meta=document.createElement('span');
     meta.className='official-level-meta';
-    meta.textContent=`${'★'.repeat(level.difficulty)}${'☆'.repeat(5-level.difficulty)} · ${level.difficultyLabel}`;
+    meta.textContent=`${'●'.repeat(level.difficulty)}${'○'.repeat(10-level.difficulty)} · ${level.difficultyLabel}`;
     const desc=document.createElement('span');
     desc.className='official-level-desc';
     desc.textContent=level.description;
@@ -2223,7 +2192,7 @@ function startGame(runtime, options={}) {
   const officialLevel=game.kind==='official'?getOfficialLevel(game.officialLevelId):null;
   playLevelName.textContent=runtime.name;
   playModeLabel.textContent=game.kind==='official'
-    ? (officialLevel?`공식 맵 · ${'★'.repeat(officialLevel.difficulty)} · ${officialLevel.difficultyLabel} · 이전 기능 누적`:'공식 맵')
+    ? (officialLevel?`공식 맵 · ${officialLevel.difficulty}/10 · ${officialLevel.difficultyLabel} · 이전 기능 누적`:'공식 맵')
     : game.returnToEditor?'테스트 플레이':'사용자 제작 맵';
   audio.ensureStarted();audio.setTrack(runtime.music||'neon-rush');
   setScreen('play');resetRun(false);game.active=true;game.lastTime=performance.now();
