@@ -19,8 +19,46 @@
 .skill-status{color:#fde68a!important;font-size:11px;font-weight:900;max-width:180px;white-space:nowrap}
 @media(max-width:620px){.cube-customizer{grid-template-columns:1fr;justify-items:center}.cube-settings{width:100%}}
 </style>
-</head>
+<style>
+#accountGate{position:fixed;inset:0;z-index:1000;display:grid;place-items:center;overflow-y:auto;padding:15px;background:radial-gradient(circle at 45% 15%,#392267,#0b102a 48%,#03040c);color:#fff}
+#accountGate .account-card{width:min(470px,100%);padding:clamp(20px,4vw,34px);border-radius:24px;border:1px solid #67e8f960;background:#0a0e26fa;box-shadow:0 22px 90px #000b}
+#accountGate h1{font-size:clamp(27px,5vw,40px);margin:9px 0}
+#accountGate p{font-size:13px;line-height:1.5;color:#cbd5e1}
+#accountGate form{display:grid;gap:10px}
+#accountGate label{font-size:13px;font-weight:800}
+#accountGate input{width:100%;padding:10px 14px;min-height:48px;font-size:16px;color:#fff;background:#0a1532;border:1px solid #67e8f950;border-radius:12px}
+#accountGate input:focus{outline:2px solid #22d3ee}
+.account-controls{display:flex;gap:9px;flex-wrap:wrap}.account-controls button{flex:1;min-width:110px;min-height:43px}
+#accountError{color:#fda4af;min-height:19px;margin:10px 0;font-size:13px;font-weight:750}
+#accountGate .account-warning{font-size:11px;color:#a5b4fc}
+#playerIdentity{display:flex;align-items:center;gap:7px}#playerIdentity span{max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;color:#67e8f9}
+#playerIdentity button{padding:7px;border-radius:9px;min-height:35px;font-size:12px}
+@media(max-width:430px){.account-controls{flex-direction:column}#playerIdentity span{max-width:70px}}
+</style></head>
 <body>
+<div id="accountGate" role="dialog" aria-modal="true" aria-labelledby="accountTitle">
+ <div class="account-card">
+ <div class="eyebrow">NEON DASH · ACCOUNT</div>
+ <h1 id="accountTitle">플레이어 로그인</h1>
+ <p id="accountDescription">닉네임을 입력한 다음 비밀번호로 로그인하세요.</p>
+ <form id="accountNameForm">
+  <label for="accountName">닉네임</label><input id="accountName" placeholder="닉네임 입력" autocomplete="username" maxlength="20" minlength="2" required>
+  <div class="account-controls"><button type="submit" class="primary">다음 · 비밀번호</button><button type="button" id="showRegister" class="secondary">+ 계정 만들기</button></div>
+ </form>
+ <form id="accountPasswordForm" class="hidden">
+  <label for="accountPassword"><span id="accountSelectedName"></span>님의 비밀번호</label><input type="password" id="accountPassword" autocomplete="current-password" minlength="6" required>
+  <div class="account-controls"><button type="submit" class="primary">로그인</button><button type="button" id="backToName" class="secondary">뒤로</button></div>
+ </form>
+ <form id="accountRegisterForm" class="hidden">
+  <label for="registerName">새 닉네임</label><input id="registerName" minlength="2" maxlength="20" required>
+  <label for="registerPassword">새 비밀번호 (6자 이상)</label><input id="registerPassword" type="password" minlength="6" maxlength="128" autocomplete="new-password" required>
+  <label for="registerPassword2">비밀번호 확인</label><input id="registerPassword2" type="password" minlength="6" maxlength="128" autocomplete="new-password" required>
+  <div class="account-controls"><button type="submit" class="primary">계정 만들고 시작</button><button type="button" id="backFromRegister" class="secondary">뒤로</button></div>
+ </form>
+ <div id="accountError" role="alert" aria-live="polite"></div>
+ <p class="account-warning">현재 브라우저에만 계정과 기록이 저장됩니다. 다른 기기로 로그인하거나 동기화할 수 없으며, 브라우저 데이터를 삭제하거나 비밀번호를 잊으면 복구할 수 없습니다.</p>
+ </div>
+</div>
   <div id="deviceGate" class="device-gate">
     <div class="device-card">
       <div class="eyebrow">LANDSCAPE FULLSCREEN</div>
@@ -40,7 +78,8 @@
         <div class="brand"><span>◆</span> NEON DASH</div>
         <div id="screenSubtitle" class="subtitle">CREATE · PLAY · SHARE</div>
       </div>
-      <button id="muteBtn" class="icon-btn" type="button" aria-label="소리 끄기">🔊</button>
+      <div id="playerIdentity"><span id="activeAccountName" class="hidden"></span><button id="logoutAccount" type="button" class="secondary hidden">계정 전환</button></div>
+<button id="muteBtn" class="icon-btn" type="button" aria-label="소리 끄기">🔊</button>
     </header>
 
     <section id="screen-menu" class="screen active" data-screen="menu">
@@ -1664,8 +1703,16 @@ function getSafeStorage() {
   } catch { return new MemoryStorage(); }
 }
 
-const storage = getSafeStorage();
-const store = new LevelStore(storage);
+
+const rawProfileStorage=getSafeStorage();
+const PROFILE_DB_KEY='neonDash:localAccounts:v1';
+let activeProfileId=null;
+const storage={
+ getItem(k){return activeProfileId?rawProfileStorage.getItem('neonDash:profile:v1:'+activeProfileId+':'+k):null;},
+ setItem(k,v){if(!activeProfileId)throw Error('로그인이 필요합니다');rawProfileStorage.setItem('neonDash:profile:v1:'+activeProfileId+':'+k,v);},
+ removeItem(k){if(!activeProfileId)throw Error('로그인이 필요합니다');rawProfileStorage.removeItem('neonDash:profile:v1:'+activeProfileId+':'+k);}
+};
+const store=new LevelStore(storage);
 
 /* Cosmetic preferences are local-only and do not change replay fingerprints. */
 const CUBE_STYLE_KEY='neonDash:cubeStyle:v2';
@@ -1785,7 +1832,7 @@ function migrateLegacyOfficialBest() {
 }
 // OFFICIAL_BEST_CORE_END
 
-migrateLegacyOfficialBest();
+if(activeProfileId)migrateLegacyOfficialBest();
 
 const MUTED_KEY = 'neonDashMuted';
 let currentScreen = 'menu';
@@ -2502,6 +2549,95 @@ muteBtn.addEventListener('click',()=>{audio.ensureStarted();audio.toggle();});
 updateMenuStats();
 setScreen('menu');
 
+</script>
+<script>
+const gate=document.getElementById('accountGate'),nameForm=document.getElementById('accountNameForm'),passwordForm=document.getElementById('accountPasswordForm'),registerForm=document.getElementById('accountRegisterForm');
+const nameField=document.getElementById('accountName'),passwordField=document.getElementById('accountPassword'),newName=document.getElementById('registerName'),newPassword=document.getElementById('registerPassword'),newPassword2=document.getElementById('registerPassword2');
+const errorField=document.getElementById('accountError'),accountLabel=document.getElementById('activeAccountName'),logoutBtn=document.getElementById('logoutAccount');
+let chosenAccount=null,authBusy=false;
+const ACCOUNT_PBKDF2=150000;
+function normalizeAccountName(name){return String(name||'').trim().normalize('NFKC').replace(/\s+/g,' ').toLocaleLowerCase('ko-KR')}
+function checkAccountName(name){const n=String(name||'').trim().normalize('NFKC');return [...n].length>=2&&[...n].length<=20&&!/[<>\u0000-\u001f]/.test(n)}
+function readAccounts(){const value=rawProfileStorage.getItem(PROFILE_DB_KEY);if(!value)return [];const out=JSON.parse(value);if(!Array.isArray(out))throw Error('계정 저장 정보가 손상되었습니다.');return out}
+function hex(bytes){return Array.from(bytes,b=>b.toString(16).padStart(2,'0')).join('')}
+function fromHex(s){return new Uint8Array((String(s).match(/.{2}/g)||[]).map(b=>parseInt(b,16)))}
+async function hashPassword(pw,salt){
+ if(!globalThis.crypto?.subtle||!globalThis.crypto?.getRandomValues)throw Error('보안 기능을 사용할 수 없습니다. HTTPS로 접속해 주세요.');
+ const key=await crypto.subtle.importKey('raw',new TextEncoder().encode(pw),'PBKDF2',false,['deriveBits']);
+ return hex(new Uint8Array(await crypto.subtle.deriveBits({name:'PBKDF2',salt:fromHex(salt),iterations:ACCOUNT_PBKDF2,hash:'SHA-256'},key,256)));
+}
+function sameHash(a,b){if(typeof a!=='string'||typeof b!=='string'||a.length!==b.length)return false;let x=0;for(let i=0;i<a.length;i++)x|=a.charCodeAt(i)^b.charCodeAt(i);return x===0}
+function authView(view){
+ nameForm.classList.toggle('hidden',view!=='name');passwordForm.classList.toggle('hidden',view!=='password');registerForm.classList.toggle('hidden',view!=='register');
+ document.getElementById('accountTitle').textContent=view==='register'?'계정 만들기':view==='password'?'비밀번호 입력':'플레이어 로그인';
+ document.getElementById('accountDescription').textContent=view==='register'?'각 플레이어가 독립된 게임 기록을 갖습니다.':view==='password'?'비밀번호가 맞으면 바로 로그인됩니다.':'닉네임을 입력한 다음 비밀번호로 로그인하세요.';
+ errorField.textContent='';
+ (view==='name'?nameField:view==='password'?passwordField:newName).focus();
+}
+function authError(message){errorField.textContent=message}
+function importLegacyData(){
+ const keys=[STORAGE_KEY,CUBE_STYLE_KEY,LEGACY_BEST_KEY,MUTED_KEY,...OFFICIAL_LEVEL_IDS.map(id=>OFFICIAL_BEST_PREFIX+id)];
+ for(const key of keys){const value=rawProfileStorage.getItem(key);if(value!==null&&storage.getItem(key)===null)storage.setItem(key,value)}
+}
+function loginAs(account){
+ activeProfileId=account.id;cubeStyle=loadCubeStyle();migrateLegacyOfficialBest();setAutoMode(false);
+ game.active=false;game.runtime=null;
+ accountLabel.textContent='👤 '+account.name;accountLabel.classList.remove('hidden');logoutBtn.classList.remove('hidden');
+ audio.muted=storage.getItem(MUTED_KEY)==='1';audio.updateButton();
+ if(audio.master&&audio.ctx)audio.master.gain.setTargetAtTime(audio.muted?0:.72,audio.ctx.currentTime,.02);
+ gate.classList.add('hidden');passwordField.value='';newPassword.value='';newPassword2.value='';setScreen('menu');
+}
+nameForm.addEventListener('submit',event=>{
+ event.preventDefault();if(authBusy)return;
+ if(!checkAccountName(nameField.value)){authError('닉네임은 2~20글자로 입력해 주세요.');return}
+ try{
+ chosenAccount=readAccounts().find(a=>a.key===normalizeAccountName(nameField.value));
+ if(!chosenAccount){authError('등록된 닉네임이 아닙니다. 계정 만들기를 눌러주세요.');return}
+ document.getElementById('accountSelectedName').textContent=chosenAccount.name;
+ passwordField.value='';authView('password');
+ }catch(e){authError(e.message||'계정을 불러올 수 없습니다.')}
+});
+passwordForm.addEventListener('submit',async event=>{
+ event.preventDefault();if(authBusy||!chosenAccount)return;authBusy=true;
+ const button=passwordForm.querySelector('[type=submit]');button.disabled=true;
+ try{
+ const hashed=await hashPassword(passwordField.value,chosenAccount.salt);
+ if(!sameHash(hashed,chosenAccount.verifier)){passwordField.value='';authError('비밀번호가 올바르지 않습니다.');return}
+ loginAs(chosenAccount);
+ }catch(e){authError(e.message||'로그인 실패')}
+ finally{authBusy=false;button.disabled=false}
+});
+document.getElementById('showRegister').addEventListener('click',()=>{newName.value=nameField.value.trim();newPassword.value='';newPassword2.value='';authView('register')});
+document.getElementById('backToName').addEventListener('click',()=>{chosenAccount=null;passwordField.value='';authView('name')});
+document.getElementById('backFromRegister').addEventListener('click',()=>authView('name'));
+registerForm.addEventListener('submit',async event=>{
+ event.preventDefault();if(authBusy)return;
+ const name=newName.value.trim().normalize('NFKC'),pw=newPassword.value;
+ if(!checkAccountName(name)){authError('닉네임은 2~20글자로 입력해 주세요.');return}
+ if(pw.length<6){authError('비밀번호는 6자 이상이어야 합니다.');return}
+ if(pw!==newPassword2.value){authError('비밀번호가 서로 다릅니다.');return}
+ authBusy=true;const button=registerForm.querySelector('[type=submit]');button.disabled=true;
+ try{
+ const accounts=readAccounts();
+ if(accounts.some(a=>a.key===normalizeAccountName(name))){authError('이미 사용 중인 닉네임입니다.');return}
+ if(!globalThis.crypto?.getRandomValues||!globalThis.crypto?.subtle)throw Error('보안 기능을 사용할 수 없습니다. HTTPS로 접속해 주세요.');
+ const salt=hex(crypto.getRandomValues(new Uint8Array(16)));
+ const account={id:hex(crypto.getRandomValues(new Uint8Array(16))),name,key:normalizeAccountName(name),salt,verifier:await hashPassword(pw,salt),createdAt:new Date().toISOString()};
+ rawProfileStorage.setItem(PROFILE_DB_KEY,JSON.stringify([...accounts,account]));
+ activeProfileId=account.id;if(accounts.length===0)importLegacyData();
+ loginAs(account);
+ }catch(e){authError(e.message||'계정을 만들 수 없습니다.')}
+ finally{authBusy=false;button.disabled=false}
+});
+logoutBtn.addEventListener('click',()=>{
+ if(authBusy)return;clearTimeout(returnToEditorTimer);
+ game.active=false;game.runtime=null;game.won=false;editorModel=null;
+ activeProfileId=null;chosenAccount=null;cubeStyle={...CUBE_DEFAULT_STYLE};setAutoMode(false);audio.setMusicActive(false);
+ accountLabel.textContent='';accountLabel.classList.add('hidden');logoutBtn.classList.add('hidden');
+ setScreen('menu');nameField.value='';passwordField.value='';gate.classList.remove('hidden');authView('name');
+});
+// Page reload always asks for the nickname and password anew.
+authView('name');
 </script>
 </body>
 </html>
