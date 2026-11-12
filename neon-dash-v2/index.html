@@ -679,6 +679,33 @@ class LevelStore {
   }
 }
 
+
+/* Spikes hanging directly under a solid block point downward.
+   A tiny gap is allowed to accommodate the editor's 2px inset. */
+function spikeUnderBlock(spike,blocks){
+  return (blocks||[]).some(block=>
+    spike.x<block.x+block.w && spike.x+spike.w>block.x &&
+    spike.y-(block.y+block.h)>=-4 &&
+    spike.y-(block.y+block.h)<=12
+  );
+}
+function orientSpikesUnderBlocks(spikes,blocks){
+  for(const spike of spikes)spike.down=spikeUnderBlock(spike,blocks);
+}
+function spikeHitsPlayer(box,spike){
+  // Preserve the original hitbox for upward spikes to keep existing maps intact.
+  if(!spike.down){
+    return rectsOverlap(box,{x:spike.x+7,y:spike.y+9,w:spike.w-14,h:spike.h-9});
+  }
+  if(!rectsOverlap(box,spike))return false;
+  // Downward triangle: wide at the block attachment (top), narrow at tip (bottom).
+  const top=Math.max(box.y,spike.y);
+  const bottom=Math.min(box.y+box.h,spike.y+spike.h);
+  if(top>=bottom)return false;
+  const inset=(spike.w/2)*Math.max(0,Math.min(1,(top-spike.y)/spike.h));
+  return box.x<spike.x+spike.w-inset&&box.x+box.w>spike.x+inset;
+}
+
 function runtimeFromCustomLevel(level) {
   const l = normalizeLevel(level);
   const check = validateLevel(l);
@@ -706,6 +733,7 @@ function runtimeFromCustomLevel(level) {
     else if (o.type === 'portal-wave') portals.push({id:o.id,x:x+CELL_SIZE/2,y:112,w:22,h:286,type:'wave'});
     else if (o.type === 'portal-cube') portals.push({id:o.id,x:x+CELL_SIZE/2,y:112,w:22,h:286,type:'cube'});
   }
+  orientSpikesUnderBlocks(spikes,blocks);
   return {
     id:l.id,
     name:l.name,
@@ -1600,6 +1628,7 @@ for(const [i,x] of (gravityMidpoints[baseId]||[]).entries()){
 addOfficialPrelude(runtime,level);
 runtime.id=level.id;runtime.name=level.name;runtime.music=level.music;
  runtime.stageNumber=level.difficulty;
+ orientSpikesUnderBlocks(runtime.spikes,runtime.blocks);
  runtime.fingerprint=officialRuntimeFingerprint(runtime);
  return runtime;
 }
@@ -2158,7 +2187,11 @@ function drawEditorObject(o, x, y) {
   if(o.type==='block'){
     const g=ectx.createLinearGradient(x,y,x+40,y+40);g.addColorStop(0,'#67e8f9');g.addColorStop(1,'#6d28d9');ectx.fillStyle=g;ectx.fillRect(x+3,y+3,34,34);ectx.strokeStyle='#ffffff66';ectx.strokeRect(x+7,y+7,26,26);
   } else if(o.type==='spike'){
-    ectx.fillStyle='#f472b6';ectx.beginPath();ectx.moveTo(x+3,y+37);ectx.lineTo(cx,y+3);ectx.lineTo(x+37,y+37);ectx.closePath();ectx.fill();
+    const down=editorModel?.level?.objects?.some(block=>block.type==='block'&&block.x===o.x&&block.y===o.y+1);
+    ectx.fillStyle='#f472b6';ectx.beginPath();
+    if(down){ectx.moveTo(x+3,y+3);ectx.lineTo(x+37,y+3);ectx.lineTo(cx,y+37);}
+    else{ectx.moveTo(x+3,y+37);ectx.lineTo(cx,y+3);ectx.lineTo(x+37,y+37);}
+    ectx.closePath();ectx.fill();
   } else if(o.type==='pad'){
     ectx.shadowColor='#fde047';ectx.shadowBlur=10;ectx.fillStyle='#fde047';ectx.beginPath();ectx.roundRect(x+5,y+28,30,8,4);ectx.fill();
   } else if(o.type==='orb'){
@@ -2388,13 +2421,13 @@ function updateGame(dt){
     player.grounded=false;player.vy=game.waveUp?-430:430;player.y+=player.vy*dt;addWaveTrailPoint();player.rotation=game.waveUp?-Math.PI/4:Math.PI/4;const pr=playerRect(8);
     if(player.y<FLIGHT_TOP||player.y+PLAYER_SIZE>FLIGHT_BOTTOM)kill();
     if(!game.dead){for(const obstacle of [...game.runtime.flightObstacles,...activeSolidBlocks()]){if(rectsOverlap(pr,obstacle)){kill();break;}}}
-    if(!game.dead){for(const sp of game.runtime.spikes){const hit={x:sp.x+7,y:sp.y+9,w:sp.w-14,h:sp.h-9};if(rectsOverlap(pr,hit)){kill();break;}}}
+    if(!game.dead){for(const sp of game.runtime.spikes){if(spikeHitsPlayer(pr,sp)){kill();break;}}}
   }else{
     player.vy+=GRAVITY*player.gravitySign*dt;player.y+=player.vy*dt;if(player.gravitySign>0&&player.y<FLIGHT_TOP){player.y=FLIGHT_TOP;player.vy=Math.max(0,player.vy);}const wasGrounded=player.grounded;player.grounded=false;let landing=null;const prevBottom=player.prevY+PLAYER_SIZE,currBottom=player.y+PLAYER_SIZE;const ceiling=player.gravitySign<0?[gravityCeilingPlatform()]:[];const platforms=[...game.runtime.floors,...activeSolidBlocks(),...ceiling];
     for(const plat of platforms){const horizontal=player.worldX+PLAYER_SIZE-5>plat.x&&player.worldX+5<plat.x+plat.w;if(!horizontal)continue;if(player.gravitySign>0){if(player.vy>=0&&prevBottom<=plat.y+8&&currBottom>=plat.y){if(!landing||plat.y<landing.y)landing=plat;}}else{if(player.vy<=0&&player.prevY>=plat.y+plat.h-8&&player.y<=plat.y+plat.h){if(!landing||plat.y+plat.h>landing.y+landing.h)landing=plat;}}}
     if(landing){player.y=player.gravitySign>0?landing.y-PLAYER_SIZE:landing.y+landing.h;player.vy=0;player.grounded=true;game.coyote=.08;player.airJumpsRemaining=0;game.standingBlockId=landing.kind==='block'?landing.id:null;if(!wasGrounded){const q=Math.PI/2;player.rotation=Math.round(player.rotation/q)*q;}if(landing.behavior==='electric'&&landing.electrified)kill();if(landing.behavior==='collapse'&&landing.collapseAt==null)landing.collapseAt=game.elapsed;if(landing.behavior==='bounce'&&!wasGrounded&&!game.dead){player.vy=-1050*player.gravitySign;player.grounded=false;game.coyote=0;game.standingBlockId=null;audio.pad();burst(player.worldX+20,player.y+40,10,'jump');}}else{game.standingBlockId=null;player.rotation+=dt*5.4;}
     if(!game.dead){const pr=playerRect(5),landingId=landing?.id||null;for(const block of activeSolidBlocks()){if(block.id!==landingId&&rectsOverlap(pr,block)){kill();break;}}}
-    if(!game.dead){const pr=playerRect(7);for(const s of game.runtime.spikes){const hit={x:s.x+7,y:s.y+9,w:s.w-14,h:s.h-9};if(rectsOverlap(pr,hit)){kill();break;}}}
+    if(!game.dead){const pr=playerRect(7);for(const s of game.runtime.spikes){if(spikeHitsPlayer(pr,s)){kill();break;}}}
     if(!game.dead&&player.grounded){const feet={x:player.worldX+7,y:player.y+PLAYER_SIZE-6,w:PLAYER_SIZE-14,h:9};const pad=game.runtime.pads.find(p=>rectsOverlap(feet,p));if(pad&&game.lastPad!==pad.id){player.vy=pad.power*player.gravitySign;player.grounded=false;game.coyote=0;game.jumpBuffer=0;game.lastPad=pad.id;audio.pad();burst(pad.x+pad.w/2,pad.y,14,'pad');}else if(!pad)game.lastPad=null;}
   }
   if(!game.dead)applyPowerBlocks();
@@ -2432,7 +2465,20 @@ function drawThemedBlock(p,x){
   ctx.restore();
 }
 function drawPlatforms(){for(const p of [...game.runtime.floors,...activeSolidBlocks()]){const x=px(p.x);if(x>W+100||x+p.w<-100)continue;const isBlock=p.kind==='block';const blockTheme=game.runtime?.blockTheme||'neon';const topColor=isBlock?(blockTheme==='gear'?'#fb923c':blockTheme==='electric'?'#38bdf8':blockTheme==='lightning'?'#a3e635':blockTheme==='eclipse'?'#f43f5e':'#67e8f9'):'#22d3ee';const g=ctx.createLinearGradient(0,p.y,0,p.y+p.h);g.addColorStop(0,isBlock?'#19214d':'#111a3d');g.addColorStop(1,'#070a20');ctx.fillStyle=g;ctx.fillRect(x,p.y,p.w,p.h);ctx.fillStyle=topColor;ctx.globalAlpha=.9;ctx.fillRect(x,p.y,p.w,4);ctx.globalAlpha=1;if(isBlock){ctx.strokeStyle='rgba(148,163,184,.26)';ctx.lineWidth=2;ctx.strokeRect(x+6,p.y+8,Math.max(0,p.w-12),Math.max(0,p.h-14));drawThemedBlock(p,x);}}}
-function drawSpikes(){for(const s of game.runtime.spikes){const x=px(s.x);if(x<-60||x>W+60)continue;const g=ctx.createLinearGradient(x,s.y,x,s.y+s.h);g.addColorStop(0,'#f9a8d4');g.addColorStop(1,'#db2777');ctx.fillStyle=g;ctx.shadowColor='#ec4899';ctx.shadowBlur=12;ctx.beginPath();ctx.moveTo(x,s.y+s.h);ctx.lineTo(x+s.w/2,s.y);ctx.lineTo(x+s.w,s.y+s.h);ctx.closePath();ctx.fill();ctx.shadowBlur=0;}}
+function drawSpikes(){
+ for(const s of game.runtime.spikes){
+  const x=px(s.x);if(x<-60||x>W+60)continue;
+  const down=!!s.down;
+  const g=ctx.createLinearGradient(x,s.y,x,s.y+s.h);
+  g.addColorStop(0,down?'#db2777':'#f9a8d4');
+  g.addColorStop(1,down?'#f9a8d4':'#db2777');
+  ctx.fillStyle=g;ctx.shadowColor='#ec4899';ctx.shadowBlur=12;
+  ctx.beginPath();
+  if(down){ctx.moveTo(x,s.y);ctx.lineTo(x+s.w,s.y);ctx.lineTo(x+s.w/2,s.y+s.h);}
+  else{ctx.moveTo(x,s.y+s.h);ctx.lineTo(x+s.w/2,s.y);ctx.lineTo(x+s.w,s.y+s.h);}
+  ctx.closePath();ctx.fill();ctx.shadowBlur=0;
+ }
+}
 function drawPowerBlocks(){
   for(const p of game.runtime.powerBlocks||[]){
     const x=px(p.x);if(x<-50||x>W+50)continue;
