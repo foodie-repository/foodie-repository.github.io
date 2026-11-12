@@ -34,8 +34,38 @@
 #playerIdentity{display:flex;align-items:center;gap:7px}#playerIdentity span{max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;color:#67e8f9}
 #playerIdentity button{padding:7px;border-radius:9px;min-height:35px;font-size:12px}
 @media(max-width:430px){.account-controls{flex-direction:column}#playerIdentity span{max-width:70px}}
+</style><style>
+#publishGate{position:fixed;inset:0;z-index:1100;display:grid;place-items:center;padding:16px;background:#02040de9}
+#publishGate .publish-card{width:min(460px,100%);border-radius:22px;padding:26px;background:#0d1230;border:1px solid #67e8f980;box-shadow:0 25px 95px #000b}
+#publishGate h2{margin:9px 0 12px;font-size:24px}
+#publishGate label{display:block;color:#cbd5e1;font-weight:800;font-size:13px;margin:8px 0}
+#publishGate input{width:100%;padding:13px;border-radius:12px;border:1px solid #67e8f980;background:#080d22;color:#fff;font-size:16px}
+#publishGate p{font-size:12px;color:#cbd5e1;line-height:1.6}
+#publishGate .publish-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}
+#publishGate .publish-actions button{flex:1;min-width:110px}
+#publishGate .publish-error{color:#fda4af;min-height:19px;font-size:12px;margin-top:9px}
+.public-map-notice{color:#a5b4fc;font-size:12px;line-height:1.5;margin:4px 0 16px}
+.public-map-stats{color:#67e8f9;font-size:13px;font-weight:900}
+#publishAfterClear{pointer-events:auto;margin-top:13px}
 </style></head>
 <body>
+<div id="publishGate" class="hidden" role="dialog" aria-modal="true" aria-labelledby="publishTitle">
+  <div class="publish-card">
+    <span class="eyebrow">PUBLIC MAPS · 공맵</span>
+    <h2 id="publishTitle">공개 맵 등록하기</h2>
+    <p>내가 직접 클리어한 맵만 공개할 수 있습니다. 공맵에 표시할 이름은 제작자가 정합니다.</p>
+    <form id="publishForm">
+      <label for="publishMapName">공맵 이름</label>
+      <input id="publishMapName" maxlength="40" required placeholder="공개할 맵 이름 입력" autocomplete="off">
+      <p id="publishOwnerLabel"></p>
+      <div class="publish-actions">
+        <button class="primary" type="submit">공맵에 올리기</button>
+        <button class="secondary" type="button" id="publishCancel">취소</button>
+      </div>
+      <div id="publishError" class="publish-error" role="alert" aria-live="polite"></div>
+    </form>
+  </div>
+</div>
 <div id="accountGate" role="dialog" aria-modal="true" aria-labelledby="accountTitle">
  <div class="account-card">
  <div class="eyebrow">NEON DASH · ACCOUNT</div>
@@ -90,7 +120,8 @@
         <button id="playOfficialBtn" class="primary huge" type="button">게임 시작</button>
         <div class="menu-grid">
           <button id="createMapBtn" class="menu-card" type="button"><b>✦ 맵 만들기</b><span>격자 편집기로 나만의 맵 제작</span></button>
-          <button id="myMapsBtn" class="menu-card" type="button"><b>▦ 내가 만든 맵</b><span>저장한 맵 플레이 · 수정 · 공유</span></button>
+          <button id="myMapsBtn" class="menu-card" type="button"><b>▦ 내가 만든 맵</b><span>이 계정의 개인 맵만 보기</span></button>
+          <button id="publicMapsBtn" class="menu-card" type="button"><b>🌐 공맵</b><span>다른 제작자의 맵 플레이</span></button>
         </div>
         <button id="importMapBtn" class="secondary wide" type="button">맵 코드 불러오기</button><button id="customizeCubeBtn" class="secondary wide" type="button" style="margin-top:10px">▣ 네모 꾸미기 · 색상·얼굴·테두리</button>
         <div class="secret-code"><input id="autoCodeInput" type="password" maxlength="12" autocomplete="off" placeholder="비밀 코드" aria-label="비밀 코드"/><button id="autoCodeBtn" class="secondary compact" type="button">입력</button><span id="autoCodeStatus">AUTO OFF</span></div>
@@ -129,12 +160,22 @@
       <div class="progress"><div id="progressFill" class="progress-fill"></div><span id="progressText">0%</span></div>
       <div class="canvas-wrap game-wrap">
         <canvas id="gameCanvas" width="960" height="540" aria-label="Neon Dash 플레이 화면"></canvas>
-        <div id="gameMessage" class="game-message hidden"><div><strong id="gameMessageTitle"></strong><span id="gameMessageText"></span></div></div>
+        <div id="gameMessage" class="game-message hidden"><div><strong id="gameMessageTitle"></strong><span id="gameMessageText"></span><button id="publishAfterClear" type="button" class="primary compact hidden">🌐 공맵에 올리기</button></div></div>
       </div>
       <div class="play-footer"><span id="attemptText">ATTEMPT 1</span><span id="bestText">BEST 0%</span><span>큐브: 점프 · 중력 블록: 위아래 반전 · ◉ 블랙홀: 점프 높이 감소 · ⇅ 중력 반전 · 3단 점프 · WAVE: 탭으로 방향 전환</span></div>
     </section>
 
-    <section id="screen-levels" class="screen" data-screen="levels">
+    <section id="screen-public-levels" class="screen" data-screen="public-levels">
+  <div class="section-heading">
+    <div><span class="eyebrow">PUBLIC LEVELS · COMMUNITY</span><h2>🌐 공맵</h2></div>
+    <span id="publicMapCount" class="public-map-stats">0개</span>
+  </div>
+  <p class="public-map-notice">제작자가 직접 클리어하고 이름을 정해 등록한 맵입니다. 현재 공맵은 같은 기기·같은 브라우저의 모든 계정에서 보입니다.</p>
+  <div id="publicLevelList" class="level-list"></div>
+  <div id="emptyPublicLevels" class="empty-card hidden"><b>아직 공맵이 없습니다.</b><span>내가 만든 맵을 클리어하고 공맵에 등록해 보세요.</span></div>
+</section>
+
+<section id="screen-levels" class="screen" data-screen="levels">
       <div class="section-heading"><div><span class="eyebrow">LOCAL LEVELS</span><h2>내가 만든 맵</h2></div><button id="levelsCreateBtn" class="primary compact" type="button">+ 새 맵</button></div>
       <div id="levelList" class="level-list"></div>
       <div id="emptyLevels" class="empty-card hidden"><b>아직 만든 맵이 없습니다.</b><span>맵 만들기를 눌러 첫 맵을 제작해 보세요.</span></div>
@@ -156,7 +197,8 @@
         <div class="editor-fields"><label>맵 이름<input id="mapNameInput" maxlength="40" value="새 맵" /></label><label>음악<select id="musicSelect"><option value="neon-rush">Neon Rush</option><option value="hyper-drive">Hyper Drive</option><option value="dark-pulse">Dark Pulse</option></select></label></div>
         <div class="editor-actions"><button id="undoBtn" class="secondary compact" type="button">↶ 실행취소</button><button id="redoBtn" class="secondary compact" type="button">↷ 다시실행</button><button id="saveMapBtn" class="secondary compact" type="button">저장</button><button id="testMapBtn" class="primary compact" type="button">▶ 테스트</button></div>
       </div>
-      <div class="verify-strip"><span id="verifyBadge" class="verify-badge unverified">미클리어</span><span id="verifyText">이 버전을 직접 클리어하면 맵 코드를 만들 수 있습니다.</span><button id="shareEditorBtn" class="secondary compact" type="button" disabled>맵 코드</button></div>
+      <div class="verify-strip"><span id="verifyBadge" class="verify-badge unverified">미클리어</span><span id="verifyText">이 버전을 직접 클리어하면 맵 코드를 만들 수 있습니다.</span><button id="shareEditorBtn" class="secondary compact" type="button" disabled>맵 코드</button>
+<button id="publishEditorBtn" class="primary compact" type="button" disabled>🌐 공맵 올리기</button></div>
       <div class="canvas-wrap editor-wrap"><canvas id="editorCanvas" width="960" height="520" aria-label="맵 편집 화면"></canvas></div>
       <div class="pan-controls"><button id="panLeftBtn" type="button" class="icon-btn">◀</button><input id="panRange" type="range" min="0" max="0" value="0" aria-label="맵 좌우 이동"/><button id="panRightBtn" type="button" class="icon-btn">▶</button><button id="extendBtn" class="primary compact" type="button">+ 구간 추가</button></div>
       <div id="palette" class="palette" aria-label="맵 도구">
@@ -1669,6 +1711,12 @@ const playOfficialBtn = $('playOfficialBtn');
 const officialLevelList = $('officialLevelList');
 const createMapBtn = $('createMapBtn');
 const myMapsBtn = $('myMapsBtn');
+const publicMapsBtn=$('publicMapsBtn');
+const publicLevelList=$('publicLevelList');
+const emptyPublicLevels=$('emptyPublicLevels');
+const publicMapCount=$('publicMapCount');
+const publishEditorBtn=$('publishEditorBtn');
+const publishAfterClear=$('publishAfterClear');
 const importMapBtn = $('importMapBtn');
 const levelsCreateBtn = $('levelsCreateBtn');
 const levelList = $('levelList');
@@ -1734,6 +1782,29 @@ function getSafeStorage() {
 
 
 const rawProfileStorage=getSafeStorage();
+
+/* One-time global game-account reset, executed by each browser on its next visit.
+   This resets only Neon Dash data, never unrelated site/account data. */
+const ACCOUNT_RESET_MARKER='neonDash:resetAllLocalProfiles:20261112-v1';
+function resetNeonDashAccountsOnce(){
+ if(rawProfileStorage.getItem(ACCOUNT_RESET_MARKER)==='1')return false;
+ const names=[];
+ if(typeof rawProfileStorage.length==='number'&&typeof rawProfileStorage.key==='function'){
+   for(let i=0;i<rawProfileStorage.length;i++)names.push(rawProfileStorage.key(i));
+ }else if(rawProfileStorage.map instanceof Map){
+   names.push(...rawProfileStorage.map.keys());
+ }
+ for(const key of names){
+   if(typeof key!=='string')continue;
+   if(key==='neonDashBest'||key==='neonDashMuted'||key.startsWith('neonDash:')||key.startsWith('neonDash.')){
+     rawProfileStorage.removeItem(key);
+   }
+ }
+ rawProfileStorage.setItem(ACCOUNT_RESET_MARKER,'1');
+ return true;
+}
+resetNeonDashAccountsOnce();
+
 const PROFILE_DB_KEY='neonDash:localAccounts:v1';
 let activeProfileId=null;
 const storage={
@@ -1886,7 +1957,7 @@ function setScreen(name) {
   for (const screen of screens) screen.classList.toggle('active', screen.dataset.screen === name);
   homeBtn.classList.toggle('hidden', name === 'menu');
   const subtitles = {
-    menu:'CREATE · PLAY · SHARE', customize:'CUBE CUSTOMIZER', 'official-levels':'OFFICIAL LEVELS', play:'PLAY MODE', levels:'LOCAL LEVELS', import:'MAP CODE', editor:'GRID EDITOR'
+    menu:'CREATE · PLAY · SHARE', customize:'CUBE CUSTOMIZER', 'official-levels':'OFFICIAL LEVELS', 'public-levels':'PUBLIC MAPS', play:'PLAY MODE', levels:'LOCAL LEVELS', import:'MAP CODE', editor:'GRID EDITOR'
   };
   screenSubtitle.textContent = subtitles[name] || 'NEON DASH';
   audio.setMusicActive(name === 'play');
@@ -1894,6 +1965,7 @@ function setScreen(name) {
   if (name === 'menu') updateMenuStats();
   if (name === 'official-levels') renderOfficialLevelSelect();
   if (name === 'levels') renderLevelList();
+  if (name === 'public-levels') renderPublicMaps();
   if (name === 'customize') renderCubePreview();
   if (name === 'editor') {
     requestAnimationFrame(() => { syncEditorUI(); drawEditor(); });
@@ -2013,6 +2085,7 @@ playOfficialBtn.addEventListener('click', () => setScreen('official-levels'));
 createMapBtn.addEventListener('click', () => openEditor(createLevel()));
 levelsCreateBtn.addEventListener('click', () => openEditor(createLevel()));
 myMapsBtn.addEventListener('click', () => setScreen('levels'));
+publicMapsBtn.addEventListener('click',()=>setScreen('public-levels'));
 importMapBtn.addEventListener('click', () => openImportScreen());
 
 function makeButton(label, action, opts={}) {
@@ -2023,6 +2096,123 @@ function makeButton(label, action, opts={}) {
   b.addEventListener('click', action);
   return b;
 }
+
+
+/* Shared public map collection (same browser, different local profiles).
+   This deliberately does not claim a cloud-backed or cross-device marketplace. */
+const PUBLIC_MAPS_KEY='neonDash:publicMaps:v1';
+const PUBLIC_MAPS_LIMIT=40;
+let pendingPublicLevel=null;
+const publishGate=$('publishGate'),publishForm=$('publishForm'),publishMapName=$('publishMapName');
+const publishError=$('publishError'),publishOwnerLabel=$('publishOwnerLabel');
+function activeNick(){
+ try{
+  const accounts=JSON.parse(rawProfileStorage.getItem(PROFILE_DB_KEY)||'[]');
+  return accounts.find(a=>a.id===activeProfileId)?.name||'익명 제작자';
+ }catch{return '익명 제작자';}
+}
+function readPublicMaps(){
+ try{
+  const data=JSON.parse(rawProfileStorage.getItem(PUBLIC_MAPS_KEY)||'[]');
+  if(!Array.isArray(data))return [];
+  return data.filter(o=>o&&typeof o.id==='string'&&typeof o.code==='string'&&typeof o.name==='string').slice(0,PUBLIC_MAPS_LIMIT);
+ }catch{return [];}
+}
+function savePublicMaps(items){
+ rawProfileStorage.setItem(PUBLIC_MAPS_KEY,JSON.stringify(items));
+}
+function closePublishDialog(){
+ publishGate.classList.add('hidden');
+ pendingPublicLevel=null;publishError.textContent='';
+}
+function openPublishDialog(level){
+ if(!activeProfileId){toastMessage('먼저 로그인해 주세요.');return;}
+ const own=store.get(level?.id);
+ if(!own||!isLevelVerified(own)){toastMessage('자신의 맵을 직접 클리어해야 공맵에 올릴 수 있습니다.');return;}
+ pendingPublicLevel=own;
+ publishMapName.value=own.name;
+ publishOwnerLabel.textContent='제작자: '+activeNick()+' · '+own.lengthCells+'칸';
+ publishError.textContent='';
+ publishGate.classList.remove('hidden');
+ publishMapName.focus();publishMapName.select();
+}
+function publishOwnLevel(level,requestedName){
+ const own=store.get(level?.id);
+ if(!activeProfileId||!own||!isLevelVerified(own))throw Error('내가 직접 클리어한 맵만 등록할 수 있습니다.');
+ const title=String(requestedName||'').trim();
+ if(!title||title.length>40)throw Error('공맵 이름을 1~40글자로 입력해 주세요.');
+ const code=encodeLevelCode({...own,name:title});
+ if(code.length>240000)throw Error('맵 데이터가 너무 커서 공맵에 등록할 수 없습니다.');
+ const items=readPublicMaps();
+ const existingIndex=items.findIndex(m=>m.ownerId===activeProfileId&&m.sourceId===own.id);
+ if(existingIndex<0&&items.length>=PUBLIC_MAPS_LIMIT)throw Error('공맵은 최대 '+PUBLIC_MAPS_LIMIT+'개까지 등록할 수 있습니다.');
+ const older=existingIndex>=0?items[existingIndex]:null;
+ const record={
+  id:older?.id||makeId('public'),ownerId:activeProfileId,
+  author:activeNick(),sourceId:own.id,name:title,code,
+  lengthCells:own.lengthCells,createdAt:older?.createdAt||nowIso(),updatedAt:nowIso()
+ };
+ if(existingIndex>=0)items.splice(existingIndex,1);
+ items.unshift(record);
+ savePublicMaps(items);
+ return record;
+}
+publishForm.addEventListener('submit',e=>{
+ e.preventDefault();
+ if(!pendingPublicLevel)return;
+ try{
+  const item=publishOwnLevel(pendingPublicLevel,publishMapName.value);
+  closePublishDialog();
+  toastMessage('🌐 '+item.name+' · 공맵 등록 완료!');
+  if(currentScreen==='levels')renderLevelList();
+  if(currentScreen==='public-levels')renderPublicMaps();
+ }catch(err){publishError.textContent=err?.message||'공맵 등록에 실패했습니다.';}
+});
+$('publishCancel').addEventListener('click',closePublishDialog);
+publishGate.addEventListener('pointerdown',e=>{if(e.target===publishGate)closePublishDialog()});
+function playPublicLevel(item){
+ try{
+  const sharedLevel=decodeLevelCode(item.code);
+  const level=normalizeLevel({...sharedLevel,name:item.name});
+  startGame(runtimeFromCustomLevel(level),{kind:'public',publicMapId:item.id});
+ }catch(err){toastMessage(err?.message||'공맵을 불러오지 못했습니다.');}
+}
+function removePublicLevel(item){
+ if(item.ownerId!==activeProfileId)return;
+ if(window.confirm&&!window.confirm("'"+item.name+"' 공맵 게시를 취소할까요?"))return;
+ savePublicMaps(readPublicMaps().filter(m=>m.id!==item.id));
+ renderPublicMaps();
+ toastMessage('공맵 게시를 취소했습니다.');
+}
+function renderPublicMaps(){
+ const items=readPublicMaps().sort((a,b)=>String(b.updatedAt).localeCompare(String(a.updatedAt)));
+ publicLevelList.replaceChildren();
+ publicMapCount.textContent=items.length+'개';
+ emptyPublicLevels.classList.toggle('hidden',items.length!==0);
+ publicLevelList.classList.toggle('hidden',items.length===0);
+ for(const item of items){
+  const card=document.createElement('article');card.className='level-card';
+  const info=document.createElement('div');info.className='level-info';
+  const name=document.createElement('b');name.textContent=item.name;
+  const meta=document.createElement('span');
+  meta.textContent='제작자: '+item.author+' · '+item.lengthCells+'칸 · '+(item.updatedAt||'').slice(0,10);
+  info.append(name,meta);
+  const actions=document.createElement('div');actions.className='level-actions';
+  actions.append(makeButton('▶ 플레이',()=>playPublicLevel(item)));
+  actions.append(makeButton('맵 코드',()=>showModal({title:item.name+' · 맵 코드',text:'친구에게 코드를 보내면 직접 불러올 수 있습니다.',code:item.code})));
+  if(item.ownerId===activeProfileId)actions.append(makeButton('게시 취소',()=>removePublicLevel(item),{danger:true}));
+  card.append(info,actions);publicLevelList.append(card);
+ }
+}
+publishEditorBtn.addEventListener('click',()=>{
+ if(!editorModel)return;
+ const saved=saveEditor();if(saved)openPublishDialog(saved);
+});
+publishAfterClear.addEventListener('click',()=>{
+ if(game.kind!=='custom'||game.autoMode)return;
+ const level=store.get(game.levelId);
+ if(level)openPublishDialog(level);
+});
 
 function renderLevelList() {
   const levels = store.list();
@@ -2044,6 +2234,7 @@ function renderLevelList() {
       makeButton('이름 변경', () => renameLevel(level)),
       makeButton('복제', () => { store.duplicate(level.id); renderLevelList(); toastMessage('맵을 복제했습니다.'); }),
       makeButton('맵 코드', () => showShareCode(level), {disabled:!ok}),
+      makeButton('🌐 공맵 올리기', () => openPublishDialog(level), {disabled:!ok}),
       makeButton('삭제', () => deleteLevel(level), {danger:true}),
     );
     card.append(info,actions); levelList.append(card);
@@ -2137,6 +2328,7 @@ function syncEditorUI() {
   verifyBadge.classList.toggle('verified', verified); verifyBadge.classList.toggle('unverified', !verified);
   verifyText.textContent = verified ? '이 버전은 공유할 수 있습니다.' : '이 버전을 직접 클리어하면 맵 코드를 만들 수 있습니다.';
   shareEditorBtn.disabled = !verified;
+  publishEditorBtn.disabled = !verified;
   const maxCamera = Math.max(0, editorModel.level.lengthCells - EDITOR_VISIBLE_COLS);
   editorCameraCell = Math.max(0, Math.min(editorCameraCell, maxCamera));
   panRange.max = String(maxCamera); panRange.value = String(editorCameraCell);
@@ -2340,19 +2532,19 @@ function startGame(runtime, options={}) {
   playLevelName.textContent=runtime.name;
   playModeLabel.textContent=game.kind==='official'
     ? (officialLevel?`공식 맵 · ${officialLevel.difficulty}/10 · ${officialLevel.difficultyLabel} · 이전 기능 누적`:'공식 맵')
-    : game.returnToEditor?'테스트 플레이':'사용자 제작 맵';
+    : game.kind==='public'?'🌐 공맵 · '+runtime.name:game.returnToEditor?'테스트 플레이':'사용자 제작 맵';
   audio.ensureStarted();audio.setTrack(runtime.music||'neon-rush');
   setScreen('play');resetRun(false);game.active=true;game.lastTime=performance.now();
   if(autoUnavailable)toastMessage(game.kind==='custom'?'직접 클리어 후 AUTO 사용 가능':'공식 AUTO 리플레이를 사용할 수 없습니다.');
 }
 function resetRun(increment=true){if(increment)game.attempt++;player.worldX=game.runtime?.startX||180;player.y=GROUND_Y-PLAYER_SIZE;player.prevY=player.y;player.vy=0;player.grounded=true;player.rotation=0;player.mode='cube';player.gravitySign=1;player.airJumpsRemaining=0;player.lowJumpUntilX=0;game.activePowerContacts=new Set();game.dead=false;game.won=false;game.deathTimer=0;setInputHeld(false,'system');game.jumpBuffer=0;game.coyote=.08;game.cameraX=0;game.particles=[];game.usedOrbs=new Set();game.lastPad=null;game.flash=0;game.waveUp=false;game.elapsed=0;game.introElapsedReset=false;game.standingBlockId=null;for(const h of (game.runtime?.floorHazards||[])){h.triggerAt=null;h.broken=false;}for(const b of (game.runtime?.blocks||[])){if(b.behavior==='moving')b.y=b.baseY;b.collapseAt=null;b.collapsedUntil=0;b.electrified=false;}resetWaveTrail();game.simAccumulator=0;game.simTick=0;game.replayCursor=0;if(game.replayMode==='record')game.recordedEvents=[];hideGameMessage();updateHud();}
 function stopGameInput(){setInputHeld(false,'system');}
-function showGameMessage(title,text){gameMessageTitle.textContent=title;gameMessageText.textContent=text;gameMessage.classList.remove('hidden');}
+function showGameMessage(title,text){gameMessageTitle.textContent=title;gameMessageText.textContent=text;publishAfterClear.classList.add('hidden');gameMessage.classList.remove('hidden');}
 function hideGameMessage(){gameMessage.classList.add('hidden');}
 function burst(x,y,count,kind){for(let i=0;i<count;i++){const angle=Math.PI*2*i/count+Math.random()*.45;const speed=(kind==='crash'?130:70)+Math.random()*(kind==='crash'?220:120);game.particles.push({x,y,vx:Math.cos(angle)*speed,vy:Math.sin(angle)*speed-(kind==='jump'?80:0),life:.35+Math.random()*.55,maxLife:.9,size:3+Math.random()*(kind==='crash'?9:5),kind});}}
 function kill(){if(game.dead||game.won)return;const replayFailed=game.replayMode==='play';resetWaveTrail();game.dead=true;game.deathTimer=.72;const pct=progressPercent(player.worldX-game.runtime.startX,game.runtime.levelEnd-game.runtime.startX);if(game.kind==='official')game.best=setOfficialBest(game.officialLevelId,pct);audio.crash();burst(player.worldX+20,player.y+20,28,'crash');game.flash=1;if(replayFailed){stopReplay('invalid');return;}showGameMessage('CRASH!',`${pct.toFixed(0)}% · 곧 다시 시작합니다`);}
 function completeCustomVerification(){if(game.autoMode)return;if(!game.levelId)return;const stored=store.get(game.levelId);if(!stored)return;const verified=attachVerifiedReplay(stored,game.recordedEvents);store.save(verified);if(editorModel?.level.id===verified.id)editorModel.level=normalizeLevel(verified);}
-function finish(){if(game.won)return;game.won=true;if(game.kind==='official')game.best=setOfficialBest(game.officialLevelId,100);else completeCustomVerification();audio.finish();burst(player.worldX+20,player.y+20,44,'finish');const clearText=game.kind==='official'?`ATTEMPT ${game.attempt}`:(game.autoMode?'AUTO 클리어 · 공유 인증은 직접 플레이로 해야 합니다.':'클리어 인증 완료! 이제 맵 코드를 공유할 수 있습니다.');showGameMessage('LEVEL CLEAR',clearText);if(game.returnToEditor){returnToEditorTimer=setTimeout(()=>{game.active=false;setScreen('editor');syncEditorUI();drawEditor();toastMessage(game.autoMode?'AUTO 클리어입니다. 직접 플레이로 클리어해야 공유 인증됩니다.':'클리어 인증이 완료됐습니다.');},1200);}}
+function finish(){if(game.won)return;game.won=true;if(game.kind==='official')game.best=setOfficialBest(game.officialLevelId,100);else completeCustomVerification();audio.finish();burst(player.worldX+20,player.y+20,44,'finish');const clearText=game.kind==='official'?`ATTEMPT ${game.attempt}`:(game.autoMode?'AUTO 클리어 · 공유 인증은 직접 플레이로 해야 합니다.':'클리어 인증 완료! 이제 맵 코드를 공유할 수 있습니다.');showGameMessage('LEVEL CLEAR',clearText);if(game.kind==='custom'&&!game.autoMode&&!!store.get(game.levelId)&&isLevelVerified(store.get(game.levelId)))publishAfterClear.classList.remove('hidden');if(game.returnToEditor){returnToEditorTimer=setTimeout(()=>{game.active=false;setScreen('editor');syncEditorUI();drawEditor();toastMessage(game.autoMode?'AUTO 클리어입니다. 직접 플레이로 클리어해야 공유 인증됩니다.':'클리어 인증이 완료됐습니다.');},1200);}}
 function switchMode(next){if(player.mode===next)return;if(player.mode==='wave'&&next!=='wave')resetWaveTrail();player.mode=next;player.rotation=0;player.gravitySign=1;player.airJumpsRemaining=0;game.activePowerContacts.clear();game.jumpBuffer=0;game.coyote=0;if(next==='ship'||next==='wave'){player.y=224;player.prevY=224;player.vy=0;player.grounded=false;if(next==='wave'){game.waveUp=game.inputHeld;resetWaveTrail();addWaveTrailPoint();}}else{player.y=GROUND_Y-PLAYER_SIZE;player.prevY=player.y;player.vy=0;player.grounded=true;game.coyote=.08;}audio.portal();burst(player.worldX+20,player.y+20,22,'portal');game.flash=Math.max(game.flash,.45);}
 function performGroundJump(){if(game.dead||game.won||!game.active||player.mode!=='cube')return false;player.vy=jumpVelocity()*player.gravitySign;player.grounded=false;game.coyote=0;game.jumpBuffer=0;audio.jump();burst(player.worldX+20,player.y+40,6,'jump');return true;}
 function performAirJump(){if(player.mode!=='cube'||player.airJumpsRemaining<=0)return false;player.airJumpsRemaining--;player.vy=jumpVelocity()*player.gravitySign;player.grounded=false;game.jumpBuffer=0;game.coyote=0;audio.jump();burst(player.worldX+20,player.y+20,8,'jump');return true;}
@@ -2435,7 +2627,7 @@ function updateGame(dt){
   if(!game.dead&&shouldAutoJump(player.mode,player.grounded,game.inputHeld))performGroundJump();else if(!game.dead&&player.mode==='cube')tryBufferedJump();
   if(player.mode==='cube'&&(player.y>H+110||player.y<FLIGHT_TOP-80))kill();if(player.worldX>=game.runtime.levelEnd)finish();game.cameraX=Math.max(0,player.worldX-PLAYER_SCREEN_X);updateHud();
 }
-function updateHud(){if(!game.runtime)return;if(skillStatus)skillStatus.textContent=player.mode==='cube'?((player.gravitySign<0?'중력 ↑ · 천장 바닥 ON  ':'')+(player.airJumpsRemaining>0?'추가 점프 '+player.airJumpsRemaining+'회  ':'')+(player.worldX<(player.lowJumpUntilX||0)?'블랙홀 · 낮은 점프':'')):'';const pct=game.won?100:progressPercent(player.worldX-game.runtime.startX,game.runtime.levelEnd-game.runtime.startX);progressFill.style.width=`${pct}%`;progressText.textContent=`${Math.floor(pct)}%`;attemptText.textContent=`ATTEMPT ${game.attempt}`;bestText.textContent=game.kind==='official'?`BEST ${Math.floor(game.best)}%`:(isLevelVerified(store.get(game.levelId)||{})?'VERIFIED':'CUSTOM');}
+function updateHud(){if(!game.runtime)return;if(skillStatus)skillStatus.textContent=player.mode==='cube'?((player.gravitySign<0?'중력 ↑ · 천장 바닥 ON  ':'')+(player.airJumpsRemaining>0?'추가 점프 '+player.airJumpsRemaining+'회  ':'')+(player.worldX<(player.lowJumpUntilX||0)?'블랙홀 · 낮은 점프':'')):'';const pct=game.won?100:progressPercent(player.worldX-game.runtime.startX,game.runtime.levelEnd-game.runtime.startX);progressFill.style.width=`${pct}%`;progressText.textContent=`${Math.floor(pct)}%`;attemptText.textContent=`ATTEMPT ${game.attempt}`;bestText.textContent=game.kind==='official'?`BEST ${Math.floor(game.best)}%`:(game.kind==='public'?'PUBLIC MAP':isLevelVerified(store.get(game.levelId)||{})?'VERIFIED':'CUSTOM');}
 
 const stars=Array.from({length:70},(_,i)=>({x:(i*137.21)%W,y:35+((i*83.73)%315),r:1+(i%3)*.5,a:.18+(i%5)*.08}));
 function drawBackground(){const pulse=game.beatPulse,g=ctx.createLinearGradient(0,0,0,H);g.addColorStop(0,`rgb(${10+pulse*10},${11+pulse*4},${40+pulse*18})`);g.addColorStop(.55,'#0b1030');g.addColorStop(1,'#060818');ctx.fillStyle=g;ctx.fillRect(0,0,W,H);ctx.save();for(const s of stars){const sx=(s.x-(game.cameraX*.06)%W+W)%W;ctx.globalAlpha=s.a+pulse*.12;ctx.fillStyle='#dbeafe';ctx.beginPath();ctx.arc(sx,s.y,s.r,0,Math.PI*2);ctx.fill();}ctx.restore();const horizon=325;ctx.save();ctx.globalAlpha=.18+pulse*.06;ctx.strokeStyle='#6366f1';ctx.lineWidth=1;const off=-((game.cameraX*.18)%48);for(let x=off;x<W;x+=48){ctx.beginPath();ctx.moveTo(x,horizon);ctx.lineTo(W/2+(x-W/2)*1.55,H);ctx.stroke();}for(let y=horizon;y<H;y+=24){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}ctx.restore();}
