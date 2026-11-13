@@ -64,6 +64,8 @@
 .gacha-panel strong{font-size:18px}.gacha-panel p{font-size:12px;color:#cbd5e1;line-height:1.55}
 .gacha-panel button{min-height:51px;font-size:17px}
 .gacha-result{color:#67e8f9;font-weight:800;min-height:27px}
+.gacha-result.pop{animation:gachaPop .45s ease-out}
+@keyframes gachaPop{0%{transform:scale(.82);opacity:.2}70%{transform:scale(1.06);opacity:1}100%{transform:scale(1);opacity:1}}
 .gacha-result[data-hidden="true"],.rainbow-prize{background-image:linear-gradient(100deg,#ff4949,#fbbf24,#fef08a,#4ade80,#60a5fa,#a78bfa,#e879f9)!important;background-clip:text!important;-webkit-background-clip:text!important;color:transparent!important;animation:rainbowShift 2.5s linear infinite;background-size:200% 100%!important}
 @keyframes rainbowShift{to{background-position:200% 0}}
 
@@ -143,7 +145,7 @@
           <button id="myMapsBtn" class="menu-card" type="button"><b>▦ 내가 만든 맵</b><span>이 계정의 개인 맵만 보기</span></button>
           <button id="publicMapsBtn" class="menu-card" type="button"><b>🌐 공맵</b><span>다른 제작자의 맵 플레이</span></button>
         </div>
-        <button id="importMapBtn" class="secondary wide" type="button">맵 코드 불러오기</button><button id="customizeCubeBtn" class="secondary wide" type="button" style="margin-top:10px">💎 보석 상점 · 네모·커비·비행기·화살표 꾸미기</button>
+        <button id="importMapBtn" class="secondary wide" type="button">맵 코드 불러오기</button><button id="customizeCubeBtn" class="secondary wide" type="button" style="margin-top:10px">🎰 10보석 꾸미기 뽑기 · 커비·비행기·화살표</button>
         <div style="display:flex;justify-content:center;margin:10px 0"><span class="gem-counter" id="menuGemBalance">💎 0 보석</span></div>
         <div class="secret-code"><input id="autoCodeInput" type="password" maxlength="12" autocomplete="off" placeholder="비밀 코드" aria-label="비밀 코드"/><button id="autoCodeBtn" class="secondary compact" type="button">입력</button><span id="autoCodeStatus">AUTO OFF</span></div>
         <div class="menu-stats"><span>공식 맵 최고 기록</span><strong id="menuBest">0%</strong></div>
@@ -1758,6 +1760,7 @@ const playGemBalance=$('playGemBalance');
 const shopGemBalance=$('shopGemBalance');
 const gemShopTabs=$('gemShopTabs');
 const gemShopGrid=$('gemShopGrid');
+const gemDrawResult=$('gemDrawResult');
 const autoCodeInput = $('autoCodeInput');
 const autoCodeBtn = $('autoCodeBtn');
 const autoCodeStatus = $('autoCodeStatus');
@@ -2081,6 +2084,9 @@ function drawGemPrize(random=Math.random){
  if(gemDrawResult){
    gemDrawResult.textContent=duplicate?('중복! '+item.name+' · 5보석 환급'):item.hidden?('🌈 히든 레인보우 당첨! 1% 확률!'):('축하합니다! '+item.name+' 획득!');
    gemDrawResult.dataset.hidden=item.hidden&&!duplicate?'true':'false';
+   gemDrawResult.classList.remove('pop');
+   void gemDrawResult.offsetWidth;
+   gemDrawResult.classList.add('pop');
  }
  renderGemShop();
  return {item,duplicate,spent:duplicate?5:GEM_DRAW_COST};
@@ -2187,7 +2193,7 @@ function setScreen(name) {
   for (const screen of screens) screen.classList.toggle('active', screen.dataset.screen === name);
   homeBtn.classList.toggle('hidden', name === 'menu');
   const subtitles = {
-    menu:'CREATE · PLAY · SHARE', customize:'CUBE CUSTOMIZER', 'official-levels':'OFFICIAL LEVELS', 'public-levels':'PUBLIC MAPS', shop:'GEM SHOP', play:'PLAY MODE', levels:'LOCAL LEVELS', import:'MAP CODE', editor:'GRID EDITOR'
+    menu:'CREATE · PLAY · SHARE', customize:'CUBE CUSTOMIZER', 'official-levels':'OFFICIAL LEVELS', 'public-levels':'PUBLIC MAPS', shop:'GACHA SHOP', play:'PLAY MODE', levels:'LOCAL LEVELS', import:'MAP CODE', editor:'GRID EDITOR'
   };
   screenSubtitle.textContent = subtitles[name] || 'NEON DASH';
   audio.setMusicActive(name === 'play');
@@ -2195,7 +2201,14 @@ function setScreen(name) {
   if (name === 'menu') updateMenuStats();
   if (name === 'official-levels') renderOfficialLevelSelect();
   if (name === 'levels') renderLevelList();
-  if (name === 'shop') renderGemShop();
+  if (name === 'shop'){
+    renderGemShop();
+    if(gemDrawResult){
+      gemDrawResult.textContent='💎 10개로 아이템을 뽑아보세요!';
+      gemDrawResult.dataset.hidden='false';
+      gemDrawResult.classList.remove('pop');
+    }
+  }
   if (name === 'public-levels') renderPublicMaps();
   if (name === 'customize') renderCubePreview();
   if (name === 'editor') {
