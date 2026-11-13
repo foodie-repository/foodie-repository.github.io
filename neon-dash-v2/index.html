@@ -60,6 +60,13 @@
 .gem-shop-card .gem-item-detail{font-size:11px;color:#9ca3af;min-height:26px}
 .gem-shop-card button{margin-top:auto}
 .shop-intro{color:#a5b4fc;font-size:12px;line-height:1.6}
+.gacha-panel{display:grid;gap:10px;background:linear-gradient(130deg,#0a2040,#2a1456);border:1px solid #a78bfa99;padding:20px;border-radius:18px;margin-bottom:18px}
+.gacha-panel strong{font-size:18px}.gacha-panel p{font-size:12px;color:#cbd5e1;line-height:1.55}
+.gacha-panel button{min-height:51px;font-size:17px}
+.gacha-result{color:#67e8f9;font-weight:800;min-height:27px}
+.gacha-result[data-hidden="true"],.rainbow-prize{background-image:linear-gradient(100deg,#ff4949,#fbbf24,#fef08a,#4ade80,#60a5fa,#a78bfa,#e879f9)!important;background-clip:text!important;-webkit-background-clip:text!important;color:transparent!important;animation:rainbowShift 2.5s linear infinite;background-size:200% 100%!important}
+@keyframes rainbowShift{to{background-position:200% 0}}
+
 </style></head>
 <body>
 <div id="publishGate" class="hidden" role="dialog" aria-modal="true" aria-labelledby="publishTitle">
@@ -153,10 +160,16 @@
 
     <section id="screen-shop" class="screen" data-screen="shop">
   <div class="gem-shop-head">
-    <div><span class="eyebrow">GEM SHOP</span><h2>💎 보석 상점</h2></div>
+    <div><span class="eyebrow">GACHA CUSTOMIZER</span><h2>🎰 꾸미기 뽑기</h2></div>
     <span class="gem-counter" id="shopGemBalance">💎 0 보석</span>
   </div>
-  <p class="shop-intro">공식 스테이지마다 새롭게 돌파한 1%당 1보석을 받습니다. 같은 구간을 다시 플레이해도 중복 지급되지 않습니다. AUTO 플레이는 지급 대상이 아닙니다. 모든 유료 외형은 각 50보석입니다.</p>
+  <p class="shop-intro">공식 스테이지에서 죽을 때 이전 최고기록보다 늘어난 <b>정수 1%당 1보석</b>을 받습니다. 직접 클리어할 때마다 보석 50개가 추가됩니다. AUTO는 보상을 받지 못합니다.</p>
+  <div class="gacha-panel">
+    <div><strong>🎰 꾸미기 뽑기 · 1회 💎 10개</strong>
+    <p>무지개 7색, 비행기, 화살표, 표정, 커비가 등장합니다. <b>히든 레인보우 확률 1%</b> · 일반 아이템 중복 최소화 · 중복이면 5보석 환급.</p></div>
+    <button id="gemDrawBtn" class="primary" type="button">💎 10개로 뽑기!</button>
+    <div id="gemDrawResult" class="gacha-result" role="status" aria-live="polite">뽑은 아이템은 아래 목록에서 언제든 다시 장착할 수 있습니다.</div>
+  </div>
   <div class="gem-shop-tabs" id="gemShopTabs"></div>
   <div class="gem-shop-grid" id="gemShopGrid"></div>
 </section>
@@ -1859,10 +1872,17 @@ function loadCubeStyle(){
   try{
     const o=JSON.parse(storage.getItem(CUBE_STYLE_KEY)||'null');
     if(!o||typeof o!=='object')return {...CUBE_DEFAULT_STYLE};
-    return {color:safeColor(o.color,CUBE_DEFAULT_STYLE.color),border:safeColor(o.border,CUBE_DEFAULT_STYLE.border),glow:safeColor(o.glow,CUBE_DEFAULT_STYLE.glow),face:CUBE_FACE_TYPES.includes(o.face)?o.face:'classic',shipSkin:typeof o.shipSkin==='string'?o.shipSkin:'default',waveSkin:typeof o.waveSkin==='string'?o.waveSkin:'default'};
+    return {color:o.color==='rainbow'?'rainbow':safeColor(o.color,CUBE_DEFAULT_STYLE.color),border:safeColor(o.border,CUBE_DEFAULT_STYLE.border),glow:safeColor(o.glow,CUBE_DEFAULT_STYLE.glow),face:CUBE_FACE_TYPES.includes(o.face)?o.face:'classic',shipSkin:typeof o.shipSkin==='string'?o.shipSkin:'default',waveSkin:typeof o.waveSkin==='string'?o.waveSkin:'default'};
   }catch{return {...CUBE_DEFAULT_STYLE};}
 }
 let cubeStyle=loadCubeStyle();
+// Animated rainbow paint also works when the cube rides a ship.
+function rainbowPaint(c){
+ const gradient=c.createLinearGradient(-22,-22,22,22);
+ const phase=(performance.now()/35)%360;
+ for(let i=0;i<=7;i++)gradient.addColorStop(i/7,'hsl('+((phase+i*360/7)%360)+' 95% 60%)');
+ return gradient;
+}
 function drawKirbySkin(c, mode='cube'){
   // Cosmetics only: all three forms share the game's existing hitbox and controls.
   const palettes={
@@ -1876,7 +1896,7 @@ function drawKirbySkin(c, mode='cube'){
   c.fillStyle=p.shoes;
   c.beginPath();c.ellipse(-11,17,12,6,-.23,0,Math.PI*2);c.fill();
   c.beginPath();c.ellipse(11,17,12,6,.23,0,Math.PI*2);c.fill();
-  c.fillStyle=p.body;
+  c.fillStyle=cubeStyle.color==='rainbow'?rainbowPaint(c):p.body;
   c.beginPath();c.ellipse(-18,2,7,9,-.35,0,Math.PI*2);c.fill();
   c.beginPath();c.ellipse(18,2,7,9,.35,0,Math.PI*2);c.fill();
   c.beginPath();c.arc(0,-2,18,0,Math.PI*2);c.fill();
@@ -1896,7 +1916,7 @@ function drawKirbySkin(c, mode='cube'){
 }
 function drawCustomCube(c){
   const s=cubeStyle;
-  if(s.face==='kirby'){drawKirbySkin(c);return;}c.save();c.shadowColor=s.glow;c.shadowBlur=18;c.fillStyle=s.color;
+  if(s.face==='kirby'){drawKirbySkin(c);return;}c.save();c.shadowColor=s.glow;c.shadowBlur=18;c.fillStyle=s.color==='rainbow'?rainbowPaint(c):s.color;
   c.fillRect(-20,-20,40,40);c.shadowBlur=0;c.strokeStyle=s.border;c.lineWidth=2.8;c.strokeRect(-18,-18,36,36);
   c.fillStyle='#0b1028';c.strokeStyle='#0b1028';c.lineWidth=2.8;
   switch(s.face){
@@ -1918,7 +1938,7 @@ function drawCustomCube(c){
 }
 function renderCubePreview(){
   if(!cubePreviewCanvas)return;
-  cubeColorInput.value=cubeStyle.color;cubeBorderInput.value=cubeStyle.border;cubeGlowInput.value=cubeStyle.glow;cubeFaceSelect.value=cubeStyle.face;
+  cubeColorInput.value=cubeStyle.color==='rainbow'?'#a78bfa':cubeStyle.color;cubeBorderInput.value=cubeStyle.border;cubeGlowInput.value=cubeStyle.glow;cubeFaceSelect.value=cubeStyle.face;
   const c=cubePreviewCanvas.getContext('2d');if(!c)return;c.clearRect(0,0,160,160);
   c.save();c.translate(80,80);c.scale(2.5,2.5);drawCustomCube(c);c.restore();
 }
@@ -1951,16 +1971,27 @@ const GEM_CATALOG=[
  {id:'ship-gold',category:'ship',name:'황금 비행기',symbol:'✈',value:'gold',detail:'골드 비행기'},
  {id:'wave-blue',category:'wave',name:'블루 화살표',symbol:'➤',value:'blue',detail:'파란 네온 궤적'},
  {id:'wave-purple',category:'wave',name:'퍼플 화살표',symbol:'➤',value:'purple',detail:'보라 네온 궤적'},
- {id:'wave-gold',category:'wave',name:'골드 화살표',symbol:'➤',value:'gold',detail:'금빛 네온 궤적'}
+ {id:'wave-gold',category:'wave',name:'골드 화살표',symbol:'➤',value:'gold',detail:'금빛 네온 궤적'},
+{"id":"color-red","category":"cube","name":"레드","symbol":"◆","value":"#ef4444","detail":"무지개 빨강"},
+{"id":"color-orange","category":"cube","name":"오렌지","symbol":"◆","value":"#fb923c","detail":"무지개 주황"},
+{"id":"color-yellow","category":"cube","name":"옐로","symbol":"◆","value":"#fde047","detail":"무지개 노랑"},
+{"id":"color-rainbow-green","category":"cube","name":"그린","symbol":"◆","value":"#22c55e","detail":"무지개 초록"},
+{"id":"color-blue","category":"cube","name":"블루","symbol":"◆","value":"#3b82f6","detail":"무지개 파랑"},
+{"id":"color-indigo","category":"cube","name":"인디고","symbol":"◆","value":"#6366f1","detail":"무지개 남색"},
+{"id":"color-rainbow-violet","category":"cube","name":"바이올렛","symbol":"◆","value":"#a855f7","detail":"무지개 보라"},
+{"id":"color-rainbow-hidden","category":"cube","name":"히든 레인보우","symbol":"🌈","value":"rainbow","detail":"1% 확률 · 움직이는 무지개 컬러","hidden":true}
 ];
 const GEM_CATEGORIES=[['cube','네모 색'],['face','표정·커비'],['ship','비행기'],['wave','화살표']];
 let selectedGemCategory='cube';
+const GEM_DRAW_COST=10;
+const GEM_HIDDEN_RATE=0.01;
 function cleanGemState(raw){
  const o=raw&&typeof raw==='object'?raw:{};
  const maxMap={};
  for(const id of OFFICIAL_LEVEL_IDS)maxMap[id]=Math.max(0,Math.min(100,Math.floor(Number(o.claimed?.[id])||0)));
- return {balance:Math.max(0,Math.min(100000,Math.floor(Number(o.balance)||0))),claimed:maxMap,
-    owned:Array.isArray(o.owned)?o.owned.filter(id=>GEM_CATALOG.some(item=>item.id===id)):[]};
+ const clears={};for(const id of OFFICIAL_LEVEL_IDS)clears[id]=Math.max(0,Math.floor(Number(o.clears?.[id])||0));
+ return {balance:Math.max(0,Math.min(100000,Math.floor(Number(o.balance)||0))),claimed:maxMap,clears,
+    owned:Array.isArray(o.owned)?[...new Set(o.owned.filter(id=>GEM_CATALOG.some(item=>item.id===id)))]:[]};
 }
 function getGemState(){
  if(!activeProfileId)return cleanGemState(null);
@@ -1982,6 +2013,14 @@ function rewardGemMilestones(id,progress){
  if(delta){state.claimed[id]=current;state.balance+=delta;saveGemState(state);refreshGemCounters();}
  return delta;
 }
+function rewardStageClear(levelId){
+ if(!activeProfileId||!OFFICIAL_LEVEL_IDS.includes(levelId)||game.autoMode)return 0;
+ const state=getGemState();
+ state.balance+=50;
+ state.clears[levelId]=(state.clears[levelId]||0)+1;
+ saveGemState(state);refreshGemCounters();
+ return 50;
+}
 function syncRecordedStageGems(){
  if(!activeProfileId)return;
  for(const id of OFFICIAL_LEVEL_IDS)rewardGemMilestones(id,getOfficialBest(id));
@@ -2002,18 +2041,43 @@ function equipGemItem(item){
  storage.setItem(CUBE_STYLE_KEY,JSON.stringify(cubeStyle));
 }
 function buyOrEquipGemItem(itemId){
- if(!activeProfileId){toastMessage('로그인 후 이용할 수 있습니다.');return false;}
- const item=GEM_CATALOG.find(x=>x.id===itemId);if(!item)return false;
- const state=getGemState(),owned=state.owned.includes(item.id);
- if(!owned){
-   if(state.balance<50){toastMessage('보석 '+(50-state.balance)+'개가 더 필요합니다.');return false;}
-   state.balance-=50;state.owned.push(item.id);saveGemState(state);
- }
- equipGemItem(item);
- refreshGemCounters();renderGemShop();
- toastMessage((owned?'착용 완료 · ':'구매 완료 · ')+item.name);
+ if(!activeProfileId)return false;
+ const item=GEM_CATALOG.find(x=>x.id===itemId);
+ if(!item||!getGemState().owned.includes(item.id)){toastMessage('뽑기로 먼저 획득해야 합니다.');return false;}
+ equipGemItem(item);refreshGemCounters();renderGemShop();
+ toastMessage('착용 완료 · '+item.name);
  return true;
 }
+// One ticket costs 10 gems. Never charge 50 for a direct purchase.
+// 1% hidden-rainbow chance, 99% for an unowned ordinary prize.
+// When the ordinary collection is complete, duplicate ordinary prizes refund 5 gems.
+function drawGemPrize(random=Math.random){
+ if(!activeProfileId){toastMessage('로그인 후 뽑기를 이용할 수 있습니다.');return null;}
+ const state=getGemState();
+ if(state.balance<GEM_DRAW_COST){toastMessage('뽑기는 보석 10개가 필요합니다.');return null;}
+ const hidden=GEM_CATALOG.find(x=>x.hidden);
+ const standard=GEM_CATALOG.filter(x=>!x.hidden);
+ const remaining=standard.filter(x=>!state.owned.includes(x.id));
+ const chance=Math.min(.999999999,Math.max(0,Number(random())||0));
+ const roll=Math.min(.999999999,Math.max(0,Number(random())||0));
+ const pool=remaining.length?remaining:standard;
+ const item=chance<GEM_HIDDEN_RATE?hidden:pool[Math.floor(roll*pool.length)];
+ if(!item)return null;
+ state.balance-=GEM_DRAW_COST;
+ const duplicate=state.owned.includes(item.id);
+ if(duplicate)state.balance+=5;
+ else state.owned.push(item.id);
+ saveGemState(state);
+ if(!duplicate)equipGemItem(item);
+ refreshGemCounters();
+ if(gemDrawResult){
+   gemDrawResult.textContent=duplicate?('중복! '+item.name+' · 5보석 환급'):item.hidden?('🌈 히든 레인보우 당첨! 1% 확률!'):('축하합니다! '+item.name+' 획득!');
+   gemDrawResult.dataset.hidden=item.hidden&&!duplicate?'true':'false';
+ }
+ renderGemShop();
+ return {item,duplicate,spent:duplicate?5:GEM_DRAW_COST};
+}
+$('gemDrawBtn')?.addEventListener('click',()=>drawGemPrize());
 function renderGemShop(){
  if(!gemShopTabs||!gemShopGrid)return;
  const wallet=getGemState();
@@ -2029,14 +2093,15 @@ function renderGemShop(){
  for(const item of GEM_CATALOG.filter(x=>x.category===selectedGemCategory)){
    const card=document.createElement('article');card.className='gem-shop-card';
    const visual=document.createElement('div');visual.className='gem-item-visual';visual.textContent=item.symbol;
-   visual.style.color=item.category==='cube'?item.value:item.category==='ship'?'#67e8f9':item.category==='wave'?'#a3e635':'#f9a8d4';
+   visual.style.color=item.hidden?'#fbbf24':item.category==='cube'?item.value:item.category==='ship'?'#67e8f9':item.category==='wave'?'#a3e635':'#f9a8d4';
+   if(item.hidden)visual.classList.add('rainbow-prize');
    const name=document.createElement('div');name.className='gem-item-name';name.textContent=item.name;
    const desc=document.createElement('div');desc.className='gem-item-detail';desc.textContent=item.detail;
    const button=document.createElement('button');button.type='button';
    button.className='secondary compact';
    const owned=wallet.owned.includes(item.id),equipped=equippedGemItem(item);
-   button.textContent=equipped?'✓ 착용 중':owned?'착용하기':'💎 50 · 구매';
-   button.disabled=equipped;
+   button.textContent=equipped?'✓ 착용 중':owned?'착용하기':'🎲 뽑기로 획득';
+   button.disabled=equipped||!owned;
    button.addEventListener('click',()=>buyOrEquipGemItem(item.id));
    card.append(visual,name,desc,button);gemShopGrid.append(card);
  }
@@ -2076,7 +2141,7 @@ function setOfficialBest(levelId, percent) {
   if(typeof game!=='undefined'&&game.autoMode)return current;
   const best = Math.max(current, next);
   if (best !== current || storage.getItem(key) === null) storage.setItem(key, best.toFixed(1));
-  rewardGemMilestones(levelId,best);
+  if(best>current)rewardGemMilestones(levelId,best);
   return best;
 }
 
@@ -2821,9 +2886,32 @@ function stopGameInput(){setInputHeld(false,'system');}
 function showGameMessage(title,text){gameMessageTitle.textContent=title;gameMessageText.textContent=text;publishAfterClear.classList.add('hidden');gameMessage.classList.remove('hidden');}
 function hideGameMessage(){gameMessage.classList.add('hidden');}
 function burst(x,y,count,kind){for(let i=0;i<count;i++){const angle=Math.PI*2*i/count+Math.random()*.45;const speed=(kind==='crash'?130:70)+Math.random()*(kind==='crash'?220:120);game.particles.push({x,y,vx:Math.cos(angle)*speed,vy:Math.sin(angle)*speed-(kind==='jump'?80:0),life:.35+Math.random()*.55,maxLife:.9,size:3+Math.random()*(kind==='crash'?9:5),kind});}}
-function kill(){if(game.dead||game.won)return;const replayFailed=game.replayMode==='play';resetWaveTrail();game.dead=true;game.deathTimer=.72;const pct=progressPercent(player.worldX-game.runtime.startX,game.runtime.levelEnd-game.runtime.startX);if(game.kind==='official')game.best=setOfficialBest(game.officialLevelId,pct);audio.crash();burst(player.worldX+20,player.y+20,28,'crash');game.flash=1;if(replayFailed){stopReplay('invalid');return;}showGameMessage('CRASH!',`${pct.toFixed(0)}% · 곧 다시 시작합니다`);}
+function kill(){
+ if(game.dead||game.won)return;
+ const replayFailed=game.replayMode==='play';
+ resetWaveTrail();game.dead=true;game.deathTimer=.72;
+ const pct=progressPercent(player.worldX-game.runtime.startX,game.runtime.levelEnd-game.runtime.startX);
+ const previousGems=game.kind==='official'?getGemState().balance:0;
+ if(game.kind==='official')game.best=setOfficialBest(game.officialLevelId,pct);
+ const earned=game.kind==='official'?Math.max(0,getGemState().balance-previousGems):0;
+ audio.crash();burst(player.worldX+20,player.y+20,28,'crash');game.flash=1;
+ if(replayFailed){stopReplay('invalid');return;}
+ showGameMessage('CRASH!',Math.floor(pct)+'% · '+(earned?'신기록! 💎 +'+earned:'기록 유지 · 보석 추가 없음')+' · 곧 재시작');
+}
 function completeCustomVerification(){if(game.autoMode)return;if(!game.levelId)return;const stored=store.get(game.levelId);if(!stored)return;const verified=attachVerifiedReplay(stored,game.recordedEvents);store.save(verified);if(editorModel?.level.id===verified.id)editorModel.level=normalizeLevel(verified);}
-function finish(){if(game.won)return;game.won=true;if(game.kind==='official')game.best=setOfficialBest(game.officialLevelId,100);else completeCustomVerification();audio.finish();burst(player.worldX+20,player.y+20,44,'finish');const clearText=game.kind==='official'?`ATTEMPT ${game.attempt}`:(game.autoMode?'AUTO 클리어 · 공유 인증은 직접 플레이로 해야 합니다.':'클리어 인증 완료! 이제 맵 코드를 공유할 수 있습니다.');showGameMessage('LEVEL CLEAR',clearText);if(game.kind==='custom'&&!game.autoMode&&!!store.get(game.levelId)&&isLevelVerified(store.get(game.levelId)))publishAfterClear.classList.remove('hidden');if(game.returnToEditor){returnToEditorTimer=setTimeout(()=>{game.active=false;setScreen('editor');syncEditorUI();drawEditor();toastMessage(game.autoMode?'AUTO 클리어입니다. 직접 플레이로 클리어해야 공유 인증됩니다.':'클리어 인증이 완료됐습니다.');},1200);}}
+function finish(){
+ if(game.won)return;game.won=true;
+ let clearBonus=0;
+ if(game.kind==='official'){
+  game.best=setOfficialBest(game.officialLevelId,100);
+  clearBonus=rewardStageClear(game.officialLevelId);
+ }else if(game.kind==='custom')completeCustomVerification();
+ audio.finish();burst(player.worldX+20,player.y+20,44,'finish');
+ const clearText=game.kind==='official'?(game.autoMode?'AUTO 클리어 · 보상 없음':'완주 보너스 💎 +'+clearBonus+' · 진행률 보석 별도 지급'):(game.autoMode?'AUTO 클리어 · 공유 인증은 직접 플레이로 해야 합니다.':'클리어 인증 완료! 이제 맵 코드를 공유할 수 있습니다.');
+ showGameMessage('LEVEL CLEAR',clearText);
+ if(game.kind==='custom'&&!game.autoMode&&!!store.get(game.levelId)&&isLevelVerified(store.get(game.levelId)))publishAfterClear.classList.remove('hidden');
+ if(game.returnToEditor){returnToEditorTimer=setTimeout(()=>{game.active=false;setScreen('editor');syncEditorUI();drawEditor();toastMessage(game.autoMode?'AUTO 클리어입니다. 직접 플레이로 클리어해야 공유 인증됩니다.':'클리어 인증이 완료됐습니다.');},1200);}
+}
 function switchMode(next){if(player.mode===next)return;if(player.mode==='wave'&&next!=='wave')resetWaveTrail();player.mode=next;player.rotation=0;player.gravitySign=1;player.airJumpsRemaining=0;game.activePowerContacts.clear();game.jumpBuffer=0;game.coyote=0;if(next==='ship'||next==='wave'){player.y=224;player.prevY=224;player.vy=0;player.grounded=false;if(next==='wave'){game.waveUp=game.inputHeld;resetWaveTrail();addWaveTrailPoint();}}else{player.y=GROUND_Y-PLAYER_SIZE;player.prevY=player.y;player.vy=0;player.grounded=true;game.coyote=.08;}audio.portal();burst(player.worldX+20,player.y+20,22,'portal');game.flash=Math.max(game.flash,.45);}
 function performGroundJump(){if(game.dead||game.won||!game.active||player.mode!=='cube')return false;player.vy=jumpVelocity()*player.gravitySign;player.grounded=false;game.coyote=0;game.jumpBuffer=0;audio.jump();burst(player.worldX+20,player.y+40,6,'jump');return true;}
 function performAirJump(){if(player.mode!=='cube'||player.airJumpsRemaining<=0)return false;player.airJumpsRemaining--;player.vy=jumpVelocity()*player.gravitySign;player.grounded=false;game.jumpBuffer=0;game.coyote=0;audio.jump();burst(player.worldX+20,player.y+20,8,'jump');return true;}
