@@ -47,6 +47,19 @@
 .public-map-notice{color:#a5b4fc;font-size:12px;line-height:1.5;margin:4px 0 16px}
 .public-map-stats{color:#67e8f9;font-size:13px;font-weight:900}
 #publishAfterClear{pointer-events:auto;margin-top:13px}
+</style><style>
+.gem-counter{display:inline-flex;align-items:center;gap:6px;background:#10193c;border:1px solid #7c3aed99;color:#e9d5ff;padding:7px 12px;border-radius:12px;font-size:13px;font-weight:900;white-space:nowrap}
+.gem-shop-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:18px}
+.gem-shop-tabs{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0 16px}
+.gem-shop-tabs button{background:#151b3c;border:1px solid #64748b70;padding:11px 14px;border-radius:12px;font-size:13px}
+.gem-shop-tabs button.active{background:#272459;border-color:#c084fc;color:#fff}
+.gem-shop-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(175px,1fr));gap:12px}
+.gem-shop-card{display:grid;align-content:start;gap:8px;border:1px solid #64748b66;background:linear-gradient(140deg,#101638,#151234);border-radius:17px;padding:15px;min-height:175px}
+.gem-shop-card .gem-item-visual{height:64px;display:grid;place-items:center;font-weight:950;font-size:32px;border-radius:12px;background:#060d29}
+.gem-shop-card .gem-item-name{font-size:15px;font-weight:900}
+.gem-shop-card .gem-item-detail{font-size:11px;color:#9ca3af;min-height:26px}
+.gem-shop-card button{margin-top:auto}
+.shop-intro{color:#a5b4fc;font-size:12px;line-height:1.6}
 </style></head>
 <body>
 <div id="publishGate" class="hidden" role="dialog" aria-modal="true" aria-labelledby="publishTitle">
@@ -123,7 +136,8 @@
           <button id="myMapsBtn" class="menu-card" type="button"><b>▦ 내가 만든 맵</b><span>이 계정의 개인 맵만 보기</span></button>
           <button id="publicMapsBtn" class="menu-card" type="button"><b>🌐 공맵</b><span>다른 제작자의 맵 플레이</span></button>
         </div>
-        <button id="importMapBtn" class="secondary wide" type="button">맵 코드 불러오기</button><button id="customizeCubeBtn" class="secondary wide" type="button" style="margin-top:10px">▣ 네모 꾸미기 · 색상·얼굴·테두리</button>
+        <button id="importMapBtn" class="secondary wide" type="button">맵 코드 불러오기</button><button id="customizeCubeBtn" class="secondary wide" type="button" style="margin-top:10px">💎 보석 상점 · 네모·커비·비행기·화살표 꾸미기</button>
+        <div style="display:flex;justify-content:center;margin:10px 0"><span class="gem-counter" id="menuGemBalance">💎 0 보석</span></div>
         <div class="secret-code"><input id="autoCodeInput" type="password" maxlength="12" autocomplete="off" placeholder="비밀 코드" aria-label="비밀 코드"/><button id="autoCodeBtn" class="secondary compact" type="button">입력</button><span id="autoCodeStatus">AUTO OFF</span></div>
         <div class="menu-stats"><span>공식 맵 최고 기록</span><strong id="menuBest">0%</strong></div>
       </div>
@@ -137,7 +151,17 @@
       <div id="officialLevelList" class="official-level-grid"></div>
     </section>
 
-    <section id="screen-customize" class="screen" data-screen="customize">
+    <section id="screen-shop" class="screen" data-screen="shop">
+  <div class="gem-shop-head">
+    <div><span class="eyebrow">GEM SHOP</span><h2>💎 보석 상점</h2></div>
+    <span class="gem-counter" id="shopGemBalance">💎 0 보석</span>
+  </div>
+  <p class="shop-intro">공식 스테이지마다 새롭게 돌파한 1%당 1보석을 받습니다. 같은 구간을 다시 플레이해도 중복 지급되지 않습니다. AUTO 플레이는 지급 대상이 아닙니다. 모든 유료 외형은 각 50보석입니다.</p>
+  <div class="gem-shop-tabs" id="gemShopTabs"></div>
+  <div class="gem-shop-grid" id="gemShopGrid"></div>
+</section>
+
+<section id="screen-customize" class="screen" data-screen="customize">
 <div class="section-heading"><div><span class="eyebrow">CUBE CUSTOMIZER</span><h2>네모 꾸미기</h2></div></div>
 <div class="form-card narrow" style="margin-top:8px"><div class="cube-customizer">
 <canvas id="cubePreview" width="160" height="160" aria-label="커스텀 네모 미리보기"></canvas>
@@ -155,7 +179,7 @@
 <section id="screen-play" class="screen" data-screen="play">
       <div class="play-head">
         <div><strong id="playLevelName">Neon Dash</strong><span id="playModeLabel">공식 맵</span></div>
-        <div class="play-actions"><span id="skillStatus" class="skill-status"></span><span id="autoBadge" class="auto-badge hidden">AUTO</span><button id="restartBtn" class="secondary compact" type="button">↻ 재시작</button></div>
+        <div class="play-actions"><span id="skillStatus" class="skill-status"></span><span class="gem-counter" id="playGemBalance">💎 0</span><span id="autoBadge" class="auto-badge hidden">AUTO</span><button id="restartBtn" class="secondary compact" type="button">↻ 재시작</button></div>
       </div>
       <div class="progress"><div id="progressFill" class="progress-fill"></div><span id="progressText">0%</span></div>
       <div class="canvas-wrap game-wrap">
@@ -1703,6 +1727,11 @@ const homeBtn = $('homeBtn');
 const muteBtn = $('muteBtn');
 const screenSubtitle = $('screenSubtitle');
 const menuBest = $('menuBest');
+const menuGemBalance=$('menuGemBalance');
+const playGemBalance=$('playGemBalance');
+const shopGemBalance=$('shopGemBalance');
+const gemShopTabs=$('gemShopTabs');
+const gemShopGrid=$('gemShopGrid');
 const autoCodeInput = $('autoCodeInput');
 const autoCodeBtn = $('autoCodeBtn');
 const autoCodeStatus = $('autoCodeStatus');
@@ -1816,7 +1845,7 @@ const store=new LevelStore(storage);
 
 /* Cosmetic preferences are local-only and do not change replay fingerprints. */
 const CUBE_STYLE_KEY='neonDash:cubeStyle:v2';
-const CUBE_DEFAULT_STYLE={color:'#22d3ee',border:'#ffffff',glow:'#8b5cf6',face:'classic'};
+const CUBE_DEFAULT_STYLE={color:'#22d3ee',border:'#ffffff',glow:'#8b5cf6',face:'classic',shipSkin:'default',waveSkin:'default'};
 const CUBE_FACE_TYPES=['classic','happy','angry','robot','star','plain','kirby'];
 const cubePreviewCanvas=$('cubePreview');
 const cubeColorInput=$('cubeColorInput'),cubeBorderInput=$('cubeBorderInput'),cubeGlowInput=$('cubeGlowInput'),cubeFaceSelect=$('cubeFaceSelect');
@@ -1825,7 +1854,7 @@ function loadCubeStyle(){
   try{
     const o=JSON.parse(storage.getItem(CUBE_STYLE_KEY)||'null');
     if(!o||typeof o!=='object')return {...CUBE_DEFAULT_STYLE};
-    return {color:safeColor(o.color,CUBE_DEFAULT_STYLE.color),border:safeColor(o.border,CUBE_DEFAULT_STYLE.border),glow:safeColor(o.glow,CUBE_DEFAULT_STYLE.glow),face:CUBE_FACE_TYPES.includes(o.face)?o.face:'classic'};
+    return {color:safeColor(o.color,CUBE_DEFAULT_STYLE.color),border:safeColor(o.border,CUBE_DEFAULT_STYLE.border),glow:safeColor(o.glow,CUBE_DEFAULT_STYLE.glow),face:CUBE_FACE_TYPES.includes(o.face)?o.face:'classic',shipSkin:typeof o.shipSkin==='string'?o.shipSkin:'default',waveSkin:typeof o.waveSkin==='string'?o.waveSkin:'default'};
   }catch{return {...CUBE_DEFAULT_STYLE};}
 }
 let cubeStyle=loadCubeStyle();
@@ -1889,13 +1918,134 @@ function renderCubePreview(){
   c.save();c.translate(80,80);c.scale(2.5,2.5);drawCustomCube(c);c.restore();
 }
 function updateCubeStyle(){
-  cubeStyle={color:cubeColorInput.value,border:cubeBorderInput.value,glow:cubeGlowInput.value,face:cubeFaceSelect.value};
+  cubeStyle={...cubeStyle,color:cubeColorInput.value,border:cubeBorderInput.value,glow:cubeGlowInput.value,face:cubeFaceSelect.value};
   storage.setItem(CUBE_STYLE_KEY,JSON.stringify(cubeStyle));renderCubePreview();
 }
 for(const control of [cubeColorInput,cubeBorderInput,cubeGlowInput,cubeFaceSelect])control?.addEventListener('input',updateCubeStyle);
-$('customizeCubeBtn').addEventListener('click',()=>setScreen('customize'));
+$('customizeCubeBtn').addEventListener('click',()=>setScreen('shop'));
 $('cubeResetBtn').addEventListener('click',()=>{cubeStyle={...CUBE_DEFAULT_STYLE};storage.setItem(CUBE_STYLE_KEY,JSON.stringify(cubeStyle));renderCubePreview();});
 $('cubeSaveBtn').addEventListener('click',()=>{updateCubeStyle();setScreen('menu');toastMessage('꾸민 네모를 저장했습니다.');});
+
+
+/* Stage gem economy: one-time rewards for each new whole percentage reached.
+   Spending/ownership/claim markers are per local player, never shared.
+   Public AUTO replay is a debugging convenience and earns zero gems. */
+const GEM_STATE_KEY='neonDash:gemsAndCosmetics:v1';
+const GEM_CATALOG=[
+ {id:'color-pink',category:'cube',name:'핑크 큐브',symbol:'◆',value:'#f472b6',detail:'분홍빛 네모'},
+ {id:'color-gold',category:'cube',name:'골드 큐브',symbol:'◆',value:'#facc15',detail:'황금빛 네모'},
+ {id:'color-violet',category:'cube',name:'보라 큐브',symbol:'◆',value:'#a78bfa',detail:'보랏빛 네모'},
+ {id:'color-green',category:'cube',name:'에메랄드 큐브',symbol:'◆',value:'#34d399',detail:'초록빛 네모'},
+ {id:'face-happy',category:'face',name:'웃는 얼굴',symbol:'☺',value:'happy',detail:'행복한 표정'},
+ {id:'face-angry',category:'face',name:'화난 얼굴',symbol:'⌁',value:'angry',detail:'용감한 표정'},
+ {id:'face-robot',category:'face',name:'로봇 얼굴',symbol:'▣',value:'robot',detail:'기계식 얼굴'},
+ {id:'face-star',category:'face',name:'별 얼굴',symbol:'★',value:'star',detail:'별빛 표정'},
+ {id:'face-kirby',category:'face',name:'커비 스킨',symbol:'●',value:'kirby',detail:'동그란 커비 캐릭터'},
+ {id:'ship-sky',category:'ship',name:'스카이 비행기',symbol:'✈',value:'sky',detail:'푸른색 네온 비행기'},
+ {id:'ship-fire',category:'ship',name:'불꽃 비행기',symbol:'✈',value:'fire',detail:'주황색 비행기'},
+ {id:'ship-gold',category:'ship',name:'황금 비행기',symbol:'✈',value:'gold',detail:'골드 비행기'},
+ {id:'wave-blue',category:'wave',name:'블루 화살표',symbol:'➤',value:'blue',detail:'파란 네온 궤적'},
+ {id:'wave-purple',category:'wave',name:'퍼플 화살표',symbol:'➤',value:'purple',detail:'보라 네온 궤적'},
+ {id:'wave-gold',category:'wave',name:'골드 화살표',symbol:'➤',value:'gold',detail:'금빛 네온 궤적'}
+];
+const GEM_CATEGORIES=[['cube','네모 색'],['face','표정·커비'],['ship','비행기'],['wave','화살표']];
+let selectedGemCategory='cube';
+function cleanGemState(raw){
+ const o=raw&&typeof raw==='object'?raw:{};
+ const maxMap={};
+ for(const id of OFFICIAL_LEVEL_IDS)maxMap[id]=Math.max(0,Math.min(100,Math.floor(Number(o.claimed?.[id])||0)));
+ return {balance:Math.max(0,Math.min(100000,Math.floor(Number(o.balance)||0))),claimed:maxMap,
+    owned:Array.isArray(o.owned)?o.owned.filter(id=>GEM_CATALOG.some(item=>item.id===id)):[]};
+}
+function getGemState(){
+ if(!activeProfileId)return cleanGemState(null);
+ try{return cleanGemState(JSON.parse(storage.getItem(GEM_STATE_KEY)||'null'))}
+ catch{return cleanGemState(null)}
+}
+function saveGemState(state){if(!activeProfileId)return;storage.setItem(GEM_STATE_KEY,JSON.stringify(cleanGemState(state)));}
+function refreshGemCounters(){
+ const amount=getGemState().balance;
+ if(menuGemBalance)menuGemBalance.textContent='💎 '+amount+' 보석';
+ if(shopGemBalance)shopGemBalance.textContent='💎 '+amount+' 보석';
+ if(playGemBalance)playGemBalance.textContent='💎 '+amount;
+}
+function rewardGemMilestones(id,progress){
+ if(!activeProfileId||!OFFICIAL_LEVEL_IDS.includes(id))return 0;
+ const current=Math.max(0,Math.min(100,Math.floor(Number(progress)||0)));
+ const state=getGemState(),prior=state.claimed[id]||0;
+ const delta=Math.max(0,current-prior);
+ if(delta){state.claimed[id]=current;state.balance+=delta;saveGemState(state);refreshGemCounters();}
+ return delta;
+}
+function syncRecordedStageGems(){
+ if(!activeProfileId)return;
+ for(const id of OFFICIAL_LEVEL_IDS)rewardGemMilestones(id,getOfficialBest(id));
+ refreshGemCounters();
+}
+function equippedGemItem(item){
+ if(item.category==='cube')return cubeStyle.color===item.value;
+ if(item.category==='face')return cubeStyle.face===item.value;
+ if(item.category==='ship')return cubeStyle.shipSkin===item.value;
+ if(item.category==='wave')return cubeStyle.waveSkin===item.value;
+ return false;
+}
+function equipGemItem(item){
+ if(item.category==='cube')cubeStyle.color=item.value;
+ if(item.category==='face')cubeStyle.face=item.value;
+ if(item.category==='ship')cubeStyle.shipSkin=item.value;
+ if(item.category==='wave')cubeStyle.waveSkin=item.value;
+ storage.setItem(CUBE_STYLE_KEY,JSON.stringify(cubeStyle));
+}
+function buyOrEquipGemItem(itemId){
+ if(!activeProfileId){toastMessage('로그인 후 이용할 수 있습니다.');return false;}
+ const item=GEM_CATALOG.find(x=>x.id===itemId);if(!item)return false;
+ const state=getGemState(),owned=state.owned.includes(item.id);
+ if(!owned){
+   if(state.balance<50){toastMessage('보석 '+(50-state.balance)+'개가 더 필요합니다.');return false;}
+   state.balance-=50;state.owned.push(item.id);saveGemState(state);
+ }
+ equipGemItem(item);
+ refreshGemCounters();renderGemShop();
+ toastMessage((owned?'착용 완료 · ':'구매 완료 · ')+item.name);
+ return true;
+}
+function renderGemShop(){
+ if(!gemShopTabs||!gemShopGrid)return;
+ const wallet=getGemState();
+ refreshGemCounters();
+ gemShopTabs.replaceChildren();
+ for(const [id,label] of GEM_CATEGORIES){
+   const button=document.createElement('button');button.type='button';button.textContent=label;
+   if(id===selectedGemCategory)button.classList.add('active');
+   button.addEventListener('click',()=>{selectedGemCategory=id;renderGemShop()});
+   gemShopTabs.append(button);
+ }
+ gemShopGrid.replaceChildren();
+ for(const item of GEM_CATALOG.filter(x=>x.category===selectedGemCategory)){
+   const card=document.createElement('article');card.className='gem-shop-card';
+   const visual=document.createElement('div');visual.className='gem-item-visual';visual.textContent=item.symbol;
+   visual.style.color=item.category==='cube'?item.value:item.category==='ship'?'#67e8f9':item.category==='wave'?'#a3e635':'#f9a8d4';
+   const name=document.createElement('div');name.className='gem-item-name';name.textContent=item.name;
+   const desc=document.createElement('div');desc.className='gem-item-detail';desc.textContent=item.detail;
+   const button=document.createElement('button');button.type='button';
+   button.className='secondary compact';
+   const owned=wallet.owned.includes(item.id),equipped=equippedGemItem(item);
+   button.textContent=equipped?'✓ 착용 중':owned?'착용하기':'💎 50 · 구매';
+   button.disabled=equipped;
+   button.addEventListener('click',()=>buyOrEquipGemItem(item.id));
+   card.append(visual,name,desc,button);gemShopGrid.append(card);
+ }
+}
+function validateGemEquippedStyle(){
+ const owned=getGemState().owned;
+ const allowed=(category,value)=>GEM_CATALOG.some(item=>item.category===category&&item.value===value&&owned.includes(item.id));
+ let dirty=false;
+ if(cubeStyle.color!==CUBE_DEFAULT_STYLE.color&&!allowed('cube',cubeStyle.color)){cubeStyle.color=CUBE_DEFAULT_STYLE.color;dirty=true;}
+ if(cubeStyle.face!=='classic'&&!allowed('face',cubeStyle.face)){cubeStyle.face='classic';dirty=true;}
+ if(cubeStyle.shipSkin!=='default'&&!allowed('ship',cubeStyle.shipSkin)){cubeStyle.shipSkin='default';dirty=true;}
+ if(cubeStyle.waveSkin!=='default'&&!allowed('wave',cubeStyle.waveSkin)){cubeStyle.waveSkin='default';dirty=true;}
+ if(dirty)storage.setItem(CUBE_STYLE_KEY,JSON.stringify(cubeStyle));
+}
 
 // OFFICIAL_BEST_CORE_START
 var LEGACY_BEST_KEY = 'neonDashBest';
@@ -1918,8 +2068,10 @@ function setOfficialBest(levelId, percent) {
   const current = getOfficialBest(levelId);
   const numeric = Number(percent);
   const next = Number.isFinite(numeric) ? Math.max(0, Math.min(100, numeric)) : current;
+  if(typeof game!=='undefined'&&game.autoMode)return current;
   const best = Math.max(current, next);
   if (best !== current || storage.getItem(key) === null) storage.setItem(key, best.toFixed(1));
+  rewardGemMilestones(levelId,best);
   return best;
 }
 
@@ -1957,7 +2109,7 @@ function setScreen(name) {
   for (const screen of screens) screen.classList.toggle('active', screen.dataset.screen === name);
   homeBtn.classList.toggle('hidden', name === 'menu');
   const subtitles = {
-    menu:'CREATE · PLAY · SHARE', customize:'CUBE CUSTOMIZER', 'official-levels':'OFFICIAL LEVELS', 'public-levels':'PUBLIC MAPS', play:'PLAY MODE', levels:'LOCAL LEVELS', import:'MAP CODE', editor:'GRID EDITOR'
+    menu:'CREATE · PLAY · SHARE', customize:'CUBE CUSTOMIZER', 'official-levels':'OFFICIAL LEVELS', 'public-levels':'PUBLIC MAPS', shop:'GEM SHOP', play:'PLAY MODE', levels:'LOCAL LEVELS', import:'MAP CODE', editor:'GRID EDITOR'
   };
   screenSubtitle.textContent = subtitles[name] || 'NEON DASH';
   audio.setMusicActive(name === 'play');
@@ -1965,6 +2117,7 @@ function setScreen(name) {
   if (name === 'menu') updateMenuStats();
   if (name === 'official-levels') renderOfficialLevelSelect();
   if (name === 'levels') renderLevelList();
+  if (name === 'shop') renderGemShop();
   if (name === 'public-levels') renderPublicMaps();
   if (name === 'customize') renderCubePreview();
   if (name === 'editor') {
@@ -1999,6 +2152,7 @@ autoCodeInput?.addEventListener('keydown', e => { if (e.key === 'Enter') { e.pre
 function updateMenuStats() {
   const best = Math.max(...OFFICIAL_LEVEL_IDS.map(id => getOfficialBest(id)));
   menuBest.textContent = `${Math.floor(best)}%`;
+  refreshGemCounters();
 }
 
 function renderOfficialLevelSelect() {
@@ -2461,13 +2615,13 @@ function drawWaveTrail(){
     if(i===0)ctx.moveTo(x,p.y);
     else ctx.lineTo(x,p.y);
   });
-  ctx.strokeStyle='rgba(163,230,53,.82)';
+  ctx.strokeStyle=waveSkinColor();
   ctx.lineWidth=5;
-  ctx.shadowColor='#a3e635';
+  ctx.shadowColor=waveSkinColor();
   ctx.shadowBlur=16;
   ctx.stroke();
   ctx.shadowBlur=0;
-  ctx.strokeStyle='rgba(236,252,203,.9)';
+  ctx.strokeStyle='rgba(255,255,255,.88)';
   ctx.lineWidth=1.6;
   ctx.stroke();
   ctx.restore();
@@ -2627,7 +2781,7 @@ function updateGame(dt){
   if(!game.dead&&shouldAutoJump(player.mode,player.grounded,game.inputHeld))performGroundJump();else if(!game.dead&&player.mode==='cube')tryBufferedJump();
   if(player.mode==='cube'&&(player.y>H+110||player.y<FLIGHT_TOP-80))kill();if(player.worldX>=game.runtime.levelEnd)finish();game.cameraX=Math.max(0,player.worldX-PLAYER_SCREEN_X);updateHud();
 }
-function updateHud(){if(!game.runtime)return;if(skillStatus)skillStatus.textContent=player.mode==='cube'?((player.gravitySign<0?'중력 ↑ · 천장 바닥 ON  ':'')+(player.airJumpsRemaining>0?'추가 점프 '+player.airJumpsRemaining+'회  ':'')+(player.worldX<(player.lowJumpUntilX||0)?'블랙홀 · 낮은 점프':'')):'';const pct=game.won?100:progressPercent(player.worldX-game.runtime.startX,game.runtime.levelEnd-game.runtime.startX);progressFill.style.width=`${pct}%`;progressText.textContent=`${Math.floor(pct)}%`;attemptText.textContent=`ATTEMPT ${game.attempt}`;bestText.textContent=game.kind==='official'?`BEST ${Math.floor(game.best)}%`:(game.kind==='public'?'PUBLIC MAP':isLevelVerified(store.get(game.levelId)||{})?'VERIFIED':'CUSTOM');}
+function updateHud(){if(!game.runtime)return;refreshGemCounters();if(skillStatus)skillStatus.textContent=player.mode==='cube'?((player.gravitySign<0?'중력 ↑ · 천장 바닥 ON  ':'')+(player.airJumpsRemaining>0?'추가 점프 '+player.airJumpsRemaining+'회  ':'')+(player.worldX<(player.lowJumpUntilX||0)?'블랙홀 · 낮은 점프':'')):'';const pct=game.won?100:progressPercent(player.worldX-game.runtime.startX,game.runtime.levelEnd-game.runtime.startX);progressFill.style.width=`${pct}%`;progressText.textContent=`${Math.floor(pct)}%`;attemptText.textContent=`ATTEMPT ${game.attempt}`;bestText.textContent=game.kind==='official'?`BEST ${Math.floor(game.best)}%`:(game.kind==='public'?'PUBLIC MAP':isLevelVerified(store.get(game.levelId)||{})?'VERIFIED':'CUSTOM');}
 
 const stars=Array.from({length:70},(_,i)=>({x:(i*137.21)%W,y:35+((i*83.73)%315),r:1+(i%3)*.5,a:.18+(i%5)*.08}));
 function drawBackground(){const pulse=game.beatPulse,g=ctx.createLinearGradient(0,0,0,H);g.addColorStop(0,`rgb(${10+pulse*10},${11+pulse*4},${40+pulse*18})`);g.addColorStop(.55,'#0b1030');g.addColorStop(1,'#060818');ctx.fillStyle=g;ctx.fillRect(0,0,W,H);ctx.save();for(const s of stars){const sx=(s.x-(game.cameraX*.06)%W+W)%W;ctx.globalAlpha=s.a+pulse*.12;ctx.fillStyle='#dbeafe';ctx.beginPath();ctx.arc(sx,s.y,s.r,0,Math.PI*2);ctx.fill();}ctx.restore();const horizon=325;ctx.save();ctx.globalAlpha=.18+pulse*.06;ctx.strokeStyle='#6366f1';ctx.lineWidth=1;const off=-((game.cameraX*.18)%48);for(let x=off;x<W;x+=48){ctx.beginPath();ctx.moveTo(x,horizon);ctx.lineTo(W/2+(x-W/2)*1.55,H);ctx.stroke();}for(let y=horizon;y<H;y+=24){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}ctx.restore();}
@@ -2726,11 +2880,49 @@ function drawDangerTiles(){
 function drawPadsOrbs(){for(const p of game.runtime.pads){const x=px(p.x);if(x<-100||x>W+100)continue;ctx.shadowColor='#fde047';ctx.shadowBlur=16;ctx.fillStyle='#facc15';ctx.beginPath();ctx.roundRect(x,p.y,p.w,p.h,6);ctx.fill();ctx.shadowBlur=0;}for(const o of game.runtime.orbs){const x=px(o.x);if(x<-80||x>W+80)continue;const used=game.usedOrbs.has(o.id);ctx.save();ctx.globalAlpha=used?.22:1;ctx.shadowColor='#fde047';ctx.shadowBlur=used?0:20+game.beatPulse*8;ctx.strokeStyle='#fde047';ctx.lineWidth=6;ctx.beginPath();ctx.arc(x,o.y,o.r+4,0,Math.PI*2);ctx.stroke();ctx.fillStyle='rgba(250,204,21,.2)';ctx.beginPath();ctx.arc(x,o.y,o.r-4,0,Math.PI*2);ctx.fill();ctx.restore();}}
 function drawFlightElements(){for(const o of game.runtime.flightObstacles){const x=px(o.x);if(x>W+120||x+o.w<-120)continue;const g=ctx.createLinearGradient(x,o.y,x+o.w,o.y+o.h);g.addColorStop(0,'#312e81');g.addColorStop(1,'#0f172a');ctx.fillStyle=g;ctx.fillRect(x,o.y,o.w,o.h);ctx.strokeStyle='#a78bfa';ctx.lineWidth=3;ctx.strokeRect(x+2,o.y+2,o.w-4,o.h-4);}for(const p of game.runtime.portals){const x=px(p.x);if(x<-100||x>W+100)continue;const cy=p.y+p.h/2;ctx.save();ctx.shadowColor=p.type==='ship'?'#22d3ee':'#f472b6';ctx.shadowBlur=22;ctx.strokeStyle=p.type==='ship'?'#67e8f9':'#f9a8d4';ctx.lineWidth=7;ctx.beginPath();ctx.ellipse(x,cy,18,p.h/2,0,0,Math.PI*2);ctx.stroke();ctx.restore();}if(player.mode==='ship'||player.mode==='wave'){ctx.fillStyle=player.mode==='wave'?'#a3e635':'#67e8f9';ctx.font='800 15px system-ui';ctx.textAlign='center';ctx.fillText(player.mode==='wave'?'WAVE · TAP TO SWITCH ↗ ↘':'FLIGHT · HOLD TO RISE',W/2,34);ctx.textAlign='left';}}
 function drawFinish(){const x=px(game.runtime.levelEnd);if(x<-100||x>W+140)return;ctx.save();ctx.shadowColor='#a78bfa';ctx.shadowBlur=24;ctx.strokeStyle='#c4b5fd';ctx.lineWidth=8;ctx.beginPath();ctx.arc(x,GROUND_Y-92,58,0,Math.PI*2);ctx.stroke();ctx.restore();}
-function drawPlayer(){if(game.dead&&game.particles.length>10)return;const x=px(player.worldX),cx=x+20,cy=player.y+20;ctx.save();ctx.translate(cx,cy);ctx.rotate(player.rotation);if(player.mode==='cube'&&player.gravitySign<0)ctx.scale(1,-1);ctx.shadowColor='#22d3ee';ctx.shadowBlur=20+game.beatPulse*8;const g=ctx.createLinearGradient(-20,-20,20,20);g.addColorStop(0,'#67e8f9');g.addColorStop(.55,'#8b5cf6');g.addColorStop(1,'#f472b6');ctx.fillStyle=g;if(cubeStyle.face==='kirby'){
-  // Ship is blue, Wave is green, Cube remains pink.
-  if(player.mode!=='cube')ctx.scale(.8,.8);
-  drawKirbySkin(ctx,player.mode);
-}else if(player.mode==='ship'){ctx.beginPath();ctx.moveTo(22,0);ctx.lineTo(-16,-15);ctx.lineTo(-9,0);ctx.lineTo(-16,15);ctx.closePath();ctx.fill();ctx.shadowBlur=0;ctx.strokeStyle='rgba(255,255,255,.8)';ctx.lineWidth=2;ctx.stroke();ctx.fillStyle=game.inputHeld?'#fde047':'#f472b6';ctx.beginPath();ctx.moveTo(-13,-7);ctx.lineTo(-29,0);ctx.lineTo(-13,7);ctx.closePath();ctx.fill();}else if(player.mode==='wave'){ctx.shadowColor='#a3e635';ctx.fillStyle='#a3e635';ctx.beginPath();ctx.moveTo(24,0);ctx.lineTo(-15,-15);ctx.lineTo(-7,0);ctx.lineTo(-15,15);ctx.closePath();ctx.fill();ctx.shadowBlur=0;ctx.strokeStyle='rgba(255,255,255,.9)';ctx.lineWidth=2;ctx.stroke();ctx.fillStyle='#0f172a';ctx.beginPath();ctx.moveTo(7,0);ctx.lineTo(-7,-6);ctx.lineTo(-3,0);ctx.lineTo(-7,6);ctx.closePath();ctx.fill();}else{drawCustomCube(ctx);}ctx.restore();}
+function drawShipWithRider(){
+ const themes={
+  default:['#38bdf8','#8b5cf6','#67e8f9'],sky:['#2563eb','#22d3ee','#bfdbfe'],
+  fire:['#ea580c','#f43f5e','#fed7aa'],gold:['#d97706','#fde047','#fef08a']
+ };
+ const palette=themes[cubeStyle.shipSkin]||themes.default;
+ ctx.save();ctx.shadowColor=palette[1];ctx.shadowBlur=16;
+ const body=ctx.createLinearGradient(-28,-13,25,11);
+ body.addColorStop(0,palette[0]);body.addColorStop(.58,palette[1]);body.addColorStop(1,palette[2]);
+ ctx.fillStyle=body;ctx.beginPath();
+ ctx.moveTo(26,2);ctx.lineTo(4,-8);ctx.lineTo(-13,-13);ctx.lineTo(-23,-8);ctx.lineTo(-15,11);ctx.lineTo(11,12);ctx.closePath();ctx.fill();
+ ctx.strokeStyle='rgba(255,255,255,.9)';ctx.lineWidth=2;ctx.stroke();
+ ctx.shadowBlur=0;
+ ctx.fillStyle='#0f172a';ctx.beginPath();ctx.ellipse(1,-2,11,5,0,Math.PI,0);ctx.fill();
+ ctx.fillStyle=palette[2];ctx.fillRect(-19,5,20,3);
+ // A visually separate cubical passenger rests on the ship.
+ ctx.save();ctx.translate(-7,-21);ctx.rotate(-player.rotation*.18);ctx.scale(.46,.46);
+ drawCustomCube(ctx);ctx.restore();
+ ctx.fillStyle=game.inputHeld? '#fde047':'#fb7185';ctx.shadowColor=ctx.fillStyle;ctx.shadowBlur=10;
+ ctx.beginPath();ctx.moveTo(-22,-4);ctx.lineTo(-34,0);ctx.lineTo(-22,5);ctx.closePath();ctx.fill();
+ ctx.restore();
+}
+function waveSkinColor(){
+ return ({default:'#a3e635',blue:'#38bdf8',purple:'#c084fc',gold:'#fde047'})[cubeStyle.waveSkin]||'#a3e635';
+}
+function drawPlayer(){
+ if(game.dead&&game.particles.length>10)return;
+ const x=px(player.worldX),cx=x+20,cy=player.y+20;
+ ctx.save();ctx.translate(cx,cy);ctx.rotate(player.rotation);
+ if(player.mode==='cube'&&player.gravitySign<0)ctx.scale(1,-1);
+ if(player.mode==='ship'){
+   drawShipWithRider();
+ }else if(player.mode==='wave'){
+   const waveColor=waveSkinColor();
+   ctx.shadowColor=waveColor;ctx.shadowBlur=18;ctx.fillStyle=waveColor;
+   ctx.beginPath();ctx.moveTo(24,0);ctx.lineTo(-15,-16);ctx.lineTo(-7,0);ctx.lineTo(-15,16);ctx.closePath();ctx.fill();
+   ctx.shadowBlur=0;ctx.strokeStyle='rgba(255,255,255,.88)';ctx.lineWidth=2;ctx.stroke();
+   ctx.fillStyle='#0f172a';ctx.beginPath();ctx.moveTo(7,0);ctx.lineTo(-7,-6);ctx.lineTo(-3,0);ctx.lineTo(-7,6);ctx.closePath();ctx.fill();
+ }else{
+   drawCustomCube(ctx);
+ }
+ ctx.restore();
+}
 function drawParticles(){ctx.save();for(const p of game.particles){const x=px(p.x),a=clamp(p.life/p.maxLife,0,1);ctx.globalAlpha=a;ctx.fillStyle=p.kind==='crash'?'#f472b6':p.kind==='orb'||p.kind==='pad'?'#fde047':p.kind==='finish'||p.kind==='portal'?'#c4b5fd':'#67e8f9';ctx.fillRect(x-p.size/2,p.y-p.size/2,p.size,p.size);}ctx.restore();}
 function drawGame(){if(!game.runtime)return;drawBackground();drawGravityCeiling();drawPlatforms();drawPadsOrbs();drawPowerBlocks();drawDangerTiles();drawFlightElements();drawSpikes();drawFinish();drawParticles();drawWaveTrail();drawPlayer();if(game.flash>0){ctx.fillStyle=`rgba(255,255,255,${game.flash*.24})`;ctx.fillRect(0,0,W,H);}}
 function frame(now){
@@ -2818,7 +3010,7 @@ function importLegacyData(){
  for(const key of keys){const value=rawProfileStorage.getItem(key);if(value!==null&&storage.getItem(key)===null)storage.setItem(key,value)}
 }
 function loginAs(account){
- activeProfileId=account.id;cubeStyle=loadCubeStyle();migrateLegacyOfficialBest();setAutoMode(false);
+ activeProfileId=account.id;cubeStyle=loadCubeStyle();migrateLegacyOfficialBest();validateGemEquippedStyle();syncRecordedStageGems();setAutoMode(false);
  game.active=false;game.runtime=null;
  accountLabel.textContent='👤 '+account.name;accountLabel.classList.remove('hidden');logoutBtn.classList.remove('hidden');
  audio.muted=storage.getItem(MUTED_KEY)==='1';audio.updateButton();
