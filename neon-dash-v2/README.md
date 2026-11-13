@@ -186,3 +186,16 @@
 - 로컬 보석 최초 진행률 보상/반복 방지/50보석 구매·재착용 단위 테스트 통과.
 - Supabase 모의 클라이언트에서 서로 다른 계정 2개가 온라인 공맵을 게시·열람·이름 변경하는 흐름 검증.
 - GitHub 원본 HTML의 JavaScript 문법 검사 통과. 실제 서버 연결/안드로이드 렌더·터치·오디오 E2E 테스트는 아직 수행하지 않음.
+
+
+## 2026-11-13: 전용 Supabase 프로젝트 실제 생성 및 연결
+
+- 생성 조직: `ovywntxctkipkrjejpcl`.
+- 새 프로젝트: `neon-dash-online`, 프로젝트 ref `iurkvgvemwjgcnrycnay`, 리전 `ap-northeast-2`(Seoul), 생성 직후 상태 `ACTIVE_HEALTHY`.
+- 생성 전 `get_cost(type=project, organization_id=...)`에 반환된 가격: **월 $0**. 프로젝트 생성 시 추가 비용 청구 승인 필요 없음.
+- 서버 주소: `https://iurkvgvemwjgcnrycnay.supabase.co`.
+- 전용 Supabase 프로젝트에 `create_neon_dash_public_maps` 마이그레이션 성공. `public.neon_dash_public_maps` (RLS 사용, 현재 0건) 및 게시자 본인만 INSERT/UPDATE/DELETE, 모두가 SELECT 가능한 4개의 RLS 정책 확인. 보안 Advisor 반환 lint 0건.
+- GitHub Pages `neon-dash-v2/cloud-config.js`에 새 프로젝트 URL과 **공개용 publishable key**를 입력하고 `index.html`에서 캐시 무효화 버전 쿼리를 붙여 로딩하도록 수정. 비밀 service_role 키 사용하지 않음.
+- **남은 설정 1개: 프로젝트 대시보드에서 Auth > Providers > Anonymous Sign-Ins를 ON으로 활성화해야 가입 없는 공맵 게재가 동작함.** 이 대화의 도구는 해당 Auth 공급자 설정을 바꿀 수 없으므로 활성화 여부 미확인. 활성화 전에도 온라인 공맵 조회는 RLS SELECT 정책으로 가능.
+- 온라인 공맵은 다른 기기에서도 열람/플레이할 수 있으나 계정 닉네임/비밀번호, 보석, 개인 맵 등은 계속 브라우저 로컬 데이터이므로 동일 계정의 다중 기기 로그인을 제공하지 않음.
+- 제한: 실제 Android/Chrome에서 실시간 공맵 읽기·익명 인증·등록 통합 E2E는 아직 미실시. Supabase Auth Anonymous Sign-Ins를 활성화한 뒤 별도 확인 필요.
