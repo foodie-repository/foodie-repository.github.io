@@ -406,14 +406,14 @@ function runtimeSpeedProgress(runtime, worldX) {
       if(local<0)local+=runtime.speedCycleLength;
       return clamp(local/runtime.speedCycleLength,0,1);
     }
-    return clamp((base-runtime.startX)/(runtime.levelEnd-runtime.introLength-runtime.startX),0,1);
+    return clamp((base-runtime.startX)/((runtime.originalLevelEnd||runtime.levelEnd)-runtime.introLength-runtime.startX),0,1);
   }
   if(runtime?.speedCycleLength>0){
     let local=(worldX-runtime.startX)%runtime.speedCycleLength;
     if(local<0)local+=runtime.speedCycleLength;
     return clamp(local/runtime.speedCycleLength,0,1);
   }
-  return clamp((worldX-runtime.startX)/(runtime.levelEnd-runtime.startX),0,1);
+  return clamp((worldX-runtime.startX)/((runtime.originalLevelEnd||runtime.levelEnd)-runtime.startX),0,1);
 }
 function flightVerticalVelocity(currentVy, held, dt) {
   const acceleration = held ? -1500 : 1650;
@@ -1711,8 +1711,16 @@ for(const [i,x] of (gravityMidpoints[baseId]||[]).entries()){
 }
 addOfficialPrelude(runtime,level);
 runtime.id=level.id;runtime.name=level.name;runtime.music=level.music;
+
  runtime.stageNumber=level.difficulty;
  orientSpikesUnderBlocks(runtime.spikes,runtime.blocks);
+ runtime.originalLevelEnd=runtime.levelEnd;
+ runtime.trimmedEndBy=level.id==='neon-start'?2200:550;
+ runtime.levelEnd-=runtime.trimmedEndBy;
+ for(const k of ['blocks','spikes','pads','orbs','portals','flightObstacles','powerBlocks','floorHazards']){
+  runtime[k]=(runtime[k]||[]).filter(o=>o.x<runtime.levelEnd-12);
+ }
+ runtime.floors=(runtime.floors||[]).filter(o=>o.x<runtime.levelEnd).map(o=>({...o,w:Math.min(o.w,runtime.levelEnd-o.x+640)}));
  runtime.fingerprint=officialRuntimeFingerprint(runtime);
  return runtime;
 }
