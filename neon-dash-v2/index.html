@@ -1631,43 +1631,55 @@ var OFFICIAL_LEVELS = [
 
 /* Separate playable opening gauntlets for alternating official stages. */
 const OFFICIAL_PRELUDE_LENGTH=2400,OFFICIAL_PRELUDE_TICKS=900;
+const OFFICIAL_ROUTE_SHAPES={
+'neon-rise':{second:[560,1050,1490,1930],third:[700,1130,1550,1980],baseEnd:8920},
+'sky-approach':{second:[750,1190,1630,2050],third:[580,1000,1460,1880],baseEnd:6700},
+'wave-prelude':{second:[600,1060,1540,2030],third:[790,1220,1640,2040],baseEnd:6700},
+'eclipse-gate':{second:[680,1130,1620,2070],third:[530,960,1440,1960],baseEnd:6700},
+'final-overdrive':{second:[740,1180,1620,2060],third:[610,1040,1480,1930]}
+};
+function officialPreludePositions(id){const s=OFFICIAL_ROUTE_SHAPES[id];return s?[[650,1080,1510,1940],s.second,s.third]:[];}
+
 const OFFICIAL_PRELUDE_CONFIG={"neon-rise":{"blackholeX":390,"types":["gear-trap","pulse-tile","electric-tile","moving-blade"],"label":"블랙홀 → 톱니 → 레이저 → 전기 → 이동 칼날"},"sky-approach":{"blackholeX":820,"types":["moving-blade","gear-trap","pulse-tile","electric-tile"],"label":"이동 칼날 → 블랙홀 → 톱니 → 레이저 → 전기"},"wave-prelude":{"blackholeX":1200,"types":["electric-tile","moving-blade","gear-trap","pulse-tile"],"label":"전기 → 이동 칼날 → 블랙홀 → 톱니 → 레이저"},"eclipse-gate":{"blackholeX":1600,"types":["collapse-floor","gear-trap","electric-tile","moving-blade"],"label":"붕괴 바닥 → 톱니 → 전기 → 블랙홀 → 이동 칼날"},"final-overdrive":{"blackholeX":390,"types":["collapse-floor","moving-blade","electric-tile","gear-trap"],"label":"블랙홀 → 붕괴 바닥 → 이동 칼날 → 전기 → 톱니"}};
 for(const level of OFFICIAL_LEVELS){
   const config=OFFICIAL_PRELUDE_CONFIG[level.id];
   if(config)level.description='시작 순서: '+config.label+' · '+level.description;
 }
 function addOfficialPrelude(runtime,level){
-  const config=OFFICIAL_PRELUDE_CONFIG[level.id];
-  if(!config)return runtime;
-  const dx=OFFICIAL_PRELUDE_LENGTH;
-  for(const key of ['floors','blocks','spikes','pads','orbs','portals','flightObstacles','powerBlocks','floorHazards']){
-    for(const object of runtime[key]||[])object.x+=dx;
-  }
-  if(runtime.gravitySection){runtime.gravitySection.start+=dx;runtime.gravitySection.end+=dx;}
-  if(runtime.routeStart!=null)runtime.routeStart+=dx;
-  runtime.levelEnd+=dx;runtime.introLength=dx;
-  runtime.floors.unshift({id:level.id+'-intro-floor',x:-300,y:OFFICIAL_GROUND_Y,
-    w:dx+100,h:OFFICIAL_H-OFFICIAL_GROUND_Y+120,kind:'floor'});
-  const enemyXs=[650,1080,1510,1940];
-  for(let i=0;i<config.types.length;i++)runtime.floorHazards.push({
-    id:level.id+'-intro-'+i,type:config.types[i],x:enemyXs[i],y:396,w:34,h:34,
-    phase:0,triggerAt:null,broken:false
-  });
-  runtime.powerBlocks.push({id:level.id+'-blackhole',type:'blackhole',
-    x:config.blackholeX,y:392,w:48,h:38,triggerColumn:true,effectRange:850});
-  runtime.introHazardOrder=config.types.slice();
-  return runtime;
+ const config=OFFICIAL_PRELUDE_CONFIG[level.id];
+ if(!config)return runtime;
+ const chapters=officialPreludePositions(level.id),dx=OFFICIAL_PRELUDE_LENGTH*chapters.length;
+ for(const key of ['floors','blocks','spikes','pads','orbs','portals','flightObstacles','powerBlocks','floorHazards'])
+  for(const object of runtime[key]||[])object.x+=dx;
+ if(runtime.gravitySection){runtime.gravitySection.start+=dx;runtime.gravitySection.end+=dx;}
+ if(runtime.routeStart!=null)runtime.routeStart+=dx;
+ runtime.levelEnd+=dx;runtime.introLength=dx;
+ runtime.floors.unshift({id:level.id+'-intro-floor',x:-300,y:OFFICIAL_GROUND_Y,
+  w:dx+100,h:OFFICIAL_H-OFFICIAL_GROUND_Y+120,kind:'floor'});
+ chapters.forEach((positions,chapter)=>positions.forEach((relativeX,i)=>
+  runtime.floorHazards.push({id:level.id+'-intro-'+chapter+'-'+i,
+   type:config.types[(i+chapter)%config.types.length],
+   x:chapter*OFFICIAL_PRELUDE_LENGTH+relativeX,y:396,w:34,h:34,
+   phase:0,triggerAt:null,broken:false})));
+ runtime.powerBlocks.push({id:level.id+'-blackhole',type:'blackhole',
+  x:config.blackholeX,y:392,w:48,h:38,triggerColumn:true,effectRange:850});
+ runtime.introHazardOrder=chapters.map((_,chapter)=>
+  config.types.map((_,i)=>config.types[(i+chapter)%config.types.length]));
+ return runtime;
 }
 function preludeReplayEvents(level){
-  if(!OFFICIAL_PRELUDE_CONFIG[level.id])return level.replay.events;
-  const introEvents=[];
-  for(const x of [650,1080,1510,1940]){
-    const tick=Math.round((x-80-180)*120/320);
-    introEvents.push({tick,action:'press'},{tick:tick+1,action:'release'});
+ const chapters=officialPreludePositions(level.id);
+ if(!chapters.length)return level.replay.events;
+ const introEvents=[];
+ chapters.forEach((positions,chapter)=>{
+  for(const x of positions){
+   const tick=chapter*OFFICIAL_PRELUDE_TICKS+Math.round((x-80-180)*120/320);
+   introEvents.push({tick,action:'press'},{tick:tick+1,action:'release'});
   }
-  return [...introEvents,...level.replay.events.map(e=>({
-    tick:e.tick+OFFICIAL_PRELUDE_TICKS,action:e.action
-  }))];
+ });
+ return [...introEvents,...level.replay.events.map(e=>({
+  tick:e.tick+OFFICIAL_PRELUDE_TICKS*chapters.length,action:e.action
+ }))];
 }
 
 function getOfficialLevel(levelId) {
@@ -1712,6 +1724,8 @@ for(const [i,x] of (gravityMidpoints[baseId]||[]).entries()){
   );
 }
 addOfficialPrelude(runtime,level);
+const routeShape=OFFICIAL_ROUTE_SHAPES[level.id];
+if(routeShape?.baseEnd)runtime.levelEnd=Math.min(runtime.levelEnd,runtime.introLength+routeShape.baseEnd+550);
 runtime.id=level.id;runtime.name=level.name;runtime.music=level.music;
 
  runtime.stageNumber=level.difficulty;
